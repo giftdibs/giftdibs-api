@@ -4,7 +4,8 @@
   "description": "giftdibs API service",
   "main": "index.js",
   "scripts": {
-    "start": "node ./index.js"
+    "start": "nodemon ./server.js",
+    "lint": "node ./node_modules/.bin/eslint app"
   },
   "repository": {
     "type": "git",
@@ -23,9 +24,12 @@
     "eslint": "^3.15.0",
     "eslint-config-standard": "^6.2.1",
     "eslint-plugin-promise": "^3.4.0",
-    "eslint-plugin-standard": "^2.0.1"
+    "eslint-plugin-standard": "^2.0.1",
+    "nodemon": "^1.11.0"
   },
   "dependencies": {
-    "express": "^4.14.1"
+    "bluebird": "^3.4.7",
+    "express": "^4.14.1",
+    "pg-promise": "^5.5.7"
   }
 }

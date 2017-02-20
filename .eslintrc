@@ -1,4 +1,4 @@
-module.exports = {
+{
     "extends": "standard",
     "plugins": [
         "standard",
@@ -7,4 +7,4 @@ module.exports = {
     "rules": {
         "semi": 0
     }
-};
+}
