@@ -1,19 +1,26 @@
 # GiftDibs.com API
 
-## Create Database:
+## Create database:
 ```
 bash$ postgres -D /usr/local/var/postgres
-bash$ createuser --pwprompt <user>
-bash$ createdb -O <user> -E utf8 <db>
-bash$ psql -U <user> -W <db>
+createuser --pwprompt <user>
+createdb -O <user> -E utf8 <db>
+psql -U <user> -W <db>
+CREATE SCHEMA <yourschema>;
 ```
 
-## Stop Database:
+## Stop PostgreSQL CLI:
 ```
-bash$ \q
+\q
 ```
 
 ## Start server:
 ```
-bash$ npm start
+npm start
+```
+
+## Run database setup:
+```
+npm run db:drop # clears all records!
+npm run db:setup
 ```

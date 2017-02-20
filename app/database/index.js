@@ -9,7 +9,9 @@ const pgp = pgPromise({
 const sql = pgp.utils.enumSql(path.join(__dirname, 'sql'), { recursive: true }, file => {
   return new pgp.QueryFile(file, {
     minify: true,
-    params: { schema: 'public' }
+    params: {
+      schema: 'giftdibs'
+    }
   });
 });
 
@@ -23,9 +25,4 @@ const connection = {
 
 const db = pgp(connection);
 
-// Create the users table
-db.query(sql.user.create.query).catch((error) => {
-  console.log(error.message);
-});
-
-module.exports = { db, pgp };
+module.exports = { db, pgp, sql };

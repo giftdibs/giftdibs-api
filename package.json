@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon ./server.js",
-    "lint": "node ./node_modules/.bin/eslint app"
+    "lint": "node ./node_modules/.bin/eslint app",
+    "db:setup": "node ./scripts/database/setup.js",
+    "db:truncate": "node ./scripts/database/truncate.js",
+    "db:drop": "node ./scripts/database/drop.js"
   },
   "repository": {
     "type": "git",
