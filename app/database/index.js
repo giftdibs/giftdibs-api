@@ -24,7 +24,7 @@ const connection = {
 const db = pgp(connection);
 
 // Create the users table
-db.query(sql.user.create.query).catch((error) => {
+db.query(sql.user.create).catch((error) => {
   console.log(error.message);
 });
 
