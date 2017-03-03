@@ -6,6 +6,7 @@
   "scripts": {
     "start": "nodemon ./server.js",
     "lint": "node ./node_modules/.bin/eslint app",
+    "db:boot": "postgres -D /usr/local/var/postgres",
     "db:setup": "node ./scripts/database/setup.js",
     "db:truncate": "node ./scripts/database/truncate.js",
     "db:drop": "node ./scripts/database/drop.js"
