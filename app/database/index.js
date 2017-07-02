@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 mongoose.Promise = Promise;
 
-const databaseUri = process.env.DATABASE_URI || 'mongodb://localhost/giftdibs-api';
+const databaseUri = process.env.DATABASE_URI;
 
 module.exports = {
   connect: () => {
