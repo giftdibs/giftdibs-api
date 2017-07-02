@@ -1,28 +1,20 @@
+const mongoose = require('mongoose');
+mongoose.Promise = Promise;
 
-const bluebird = require('bluebird');
-const path = require('path');
-const pgPromise = require('pg-promise');
-const pgp = pgPromise({
-  promiseLib: bluebird
-});
+const databaseUri = process.env.DATABASE_URI || 'mongodb://localhost/giftdibs-api';
 
-const sql = pgp.utils.enumSql(path.join(__dirname, 'sql'), { recursive: true }, file => {
-  return new pgp.QueryFile(file, {
-    minify: true,
-    params: {
-      schema: 'giftdibs'
-    }
-  });
-});
+module.exports = {
+  connect: () => {
+    mongoose.connect(databaseUri);
 
-const connection = {
-  host: 'localhost',
-  port: 5432,
-  database: 'giftdibs',
-  user: 'postgres',
-  password: 'test'
+    const db = mongoose.connection;
+
+    db.on('error', () => {
+      console.log('Database connection error.');
+    });
+
+    db.once('open', () => {
+      console.log(`Database connected at ${databaseUri}`);
+    });
+  }
 };
-
-const db = pgp(connection);
-
-module.exports = { db, pgp, sql };

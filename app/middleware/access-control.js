@@ -1,4 +1,4 @@
 module.exports = (req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'http://giftdibs.com');
+  res.setHeader('Access-Control-Allow-Origin', '*');
   next();
 };

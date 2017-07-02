@@ -1,15 +1,11 @@
 {
   "name": "giftdibs-api",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "giftdibs API service",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "start": "nodemon ./server.js",
-    "lint": "node ./node_modules/.bin/eslint app",
-    "db:boot": "postgres -D /usr/local/var/postgres",
-    "db:setup": "node ./scripts/database/setup.js",
-    "db:truncate": "node ./scripts/database/truncate.js",
-    "db:drop": "node ./scripts/database/drop.js"
+    "lint": "node ./node_modules/.bin/eslint app"
   },
   "repository": {
     "type": "git",
@@ -22,18 +18,20 @@
   },
   "homepage": "https://github.com/stevebrush/giftdibs-api#readme",
   "engines": {
-    "node": "7.4.0"
-  },
-  "devDependencies": {
-    "eslint": "^3.15.0",
-    "eslint-config-standard": "^6.2.1",
-    "eslint-plugin-promise": "^3.4.0",
-    "eslint-plugin-standard": "^2.0.1",
-    "nodemon": "^1.11.0"
+    "node": ">=6.9.1"
   },
   "dependencies": {
-    "bluebird": "^3.4.7",
-    "express": "^4.14.1",
-    "pg-promise": "^5.5.7"
+    "body-parser": "1.17.2",
+    "express": "4.15.3",
+    "mongoose": "4.10.8"
+  },
+  "devDependencies": {
+    "eslint": "4.1.1",
+    "eslint-config-standard": "10.2.1",
+    "eslint-plugin-import": "2.6.1",
+    "eslint-plugin-node": "5.1.0",
+    "eslint-plugin-promise": "3.5.0",
+    "eslint-plugin-standard": "3.0.1",
+    "nodemon": "1.11.0"
   }
 }
