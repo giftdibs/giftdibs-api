@@ -1,14 +1,15 @@
+const express = require('express');
 const passport = require('passport');
-const jwt = require('jsonwebtoken');
+
 const User = require('../database/models/user');
+const jwtResponse = require('../middleware/jwt-response');
 
 const register = (req, res, next) => {
   let user = new User({
     emailAddress: req.body.emailAddress,
     firstName: req.body.firstName,
     lastName: req.body.lastName,
-    dateCreated: new Date(),
-    dateUpdated: new Date()
+    dateLastLoggedIn: new Date()
   });
 
   user.setPassword(req.body.password)
@@ -19,22 +20,11 @@ const register = (req, res, next) => {
 
 const login = [
   passport.authenticate('local', { session: false }),
-  (req, res, next) => {
-    const payload = { id: req.user._id };
-    const token = jwt.sign(payload, process.env.JWT_SECRET);
-    res.json({ token });
-  }
+  jwtResponse
 ];
 
-const logout = (req, res) => {
-  req.logout();
-  res.json({
-    message: 'Logged out.'
-  });
-};
+const router = express.Router();
+router.post('/auth/register', register);
+router.post('/auth/login', login);
 
-module.exports = (router) => {
-  router.post('/auth/register', register);
-  router.post('/auth/login', login);
-  router.post('/auth/logout', logout);
-};
+module.exports = router;

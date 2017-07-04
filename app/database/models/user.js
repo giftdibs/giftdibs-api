@@ -20,17 +20,16 @@ const userSchema = new Schema({
     type: String,
     required: true
   },
-  facebookId: Number,
-  dateCreated: {
-    type: Date,
-    required: true
-  },
-  dateUpdated: {
+  dateLastLoggedIn: {
     type: Date,
     required: true
   }
 }, {
-  collection: 'User'
+  collection: 'User',
+  timestamps: {
+    createdAt: 'dateCreated',
+    updatedAt: 'dateUpdated'
+  }
 });
 
 userSchema.methods.validatePassword = function (password) {
@@ -41,7 +40,9 @@ userSchema.methods.validatePassword = function (password) {
         if (valid) {
           resolve();
         } else {
-          reject();
+          const err = new Error('Password invalid.');
+          err.status = 401;
+          reject(err);
         }
       });
   });

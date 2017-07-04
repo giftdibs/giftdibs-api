@@ -1,33 +1,31 @@
+const express = require('express');
 const passport = require('passport');
 const User = require('../database/models/user');
+const confirmUserOwnership = require('../middleware/confirm-user-ownership');
 
-// const createUser = (req, res, next) => {
-//   let user = new User({
-//     emailAddress: req.body.emailAddress,
-//     firstName: req.body.firstName,
-//     lastName: req.body.lastName,
-//     dateCreated: new Date(),
-//     dateUpdated: new Date()
-//   });
+const getUser = [
+  (req, res, next) => {
+    User
+      .find({ _id: req.params.id })
+      .limit(1)
+      .lean()
+      .exec()
+      .then(docs => {
+        const user = docs[0];
 
-//   user
-//     .save()
-//     .then(doc => res.json(doc._id))
-//     .catch(next);
-// };
+        if (!user) {
+          const err = new Error('User not found.');
+          err.status = 404;
+          return Promise.reject(err);
+        }
 
-const getUser = (req, res, next) => {
-  User
-    .find({ _id: req.params.id })
-    .limit(1)
-    .lean()
-    .exec()
-    .then(doc => res.json(doc[0]))
-    .catch(next);
-};
+        res.json(user);
+      })
+      .catch(next);
+  }
+];
 
 const getUsers = [
-  passport.authenticate('jwt', { session: false }),
   (req, res, next) => {
     User
       .find({})
@@ -38,29 +36,46 @@ const getUsers = [
   }
 ]
 
-const updateUser = (req, res, next) => {
-  let changes = req.body;
-  changes.dateUpdated = new Date();
+const updateUser = [
+  confirmUserOwnership,
+  (req, res, next) => {
+    let changes = {};
+    const validFields = [
+      'firstName',
+      'lastName',
+      'emailAddress'
+    ];
 
-  User
-    .update({ _id: req.params.id }, changes)
-    .then(doc => res.json(doc._id))
-    .catch(next);
-};
+    validFields.forEach(field => {
+      if (req.body[field]) {
+        changes[field] = req.body[field];
+      }
+    });
 
-const deleteUser = (req, res, next) => {
-  User
-    .remove({ _id: req.params.id })
-    .then(() => res.json({ message: 'success' }))
-    .catch(next);
-};
+    User
+      .update({ _id: req.params.id }, changes)
+      .then(result => res.json({ message: 'User updated.' }))
+      .catch(next);
+  }
+];
 
-module.exports = (router) => {
-  router.route('/users')
-    .get(getUsers);
-    // .post(createUser);
-  router.route('/users/:id')
-    .get(getUser)
-    .put(updateUser)
-    .delete(deleteUser);
-};
+const deleteUser = [
+  confirmUserOwnership,
+  (req, res, next) => {
+    User
+      .remove({ _id: req.params.id })
+      .then(() => res.json({ message: 'success' }))
+      .catch(next);
+  }
+];
+
+const router = express.Router();
+router.use(passport.authenticate('jwt', { session: false }));
+router.route('/users')
+  .get(getUsers);
+router.route('/users/:id')
+  .get(getUser)
+  .patch(updateUser)
+  .delete(deleteUser);
+
+module.exports = router;

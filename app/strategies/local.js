@@ -1,5 +1,4 @@
 const LocalStrategy = require('passport-local').Strategy;
-
 const User = require('../database/models/user');
 
 const config = {
@@ -19,9 +18,10 @@ const strategy = new LocalStrategy(config, (emailAddress, password, done) => {
         return;
       }
 
-      user.validatePassword(password)
+      user
+        .validatePassword(password)
         .then(() => {
-          user.dateUpdated = new Date();
+          user.dateLastLoggedIn = new Date();
           user
             .save()
             .then(() => done(null, user));

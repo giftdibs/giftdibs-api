@@ -13,13 +13,12 @@ app.use(bodyParser.json());
 
 // Passport
 const passport = require('passport');
-passport.use(require('./strategies/facebook'));
 passport.use(require('./strategies/jwt'));
 passport.use(require('./strategies/local'));
 app.use(passport.initialize());
 
 app.use(require('./middleware/access-control'));
-app.use('/', require('./routes'));
+app.use(require('./routes'));
 app.use(require('./middleware/404'));
 app.use(require('./middleware/error-handler'));
 

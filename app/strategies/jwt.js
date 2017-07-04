@@ -5,10 +5,11 @@ const User = require('../database/models/user');
 
 let config = {
   jwtFromRequest: ExtractJwt.fromAuthHeader(),
-  secretOrKey: process.env.JWT_SECRET
+  secretOrKey: process.env.JWT_SECRET,
+  passReqToCallback: true
 }
 
-const verify = (payload, done) => {
+const verify = (req, payload, done) => {
   User
     .find({ _id: payload.id })
     .limit(1)
@@ -20,6 +21,7 @@ const verify = (payload, done) => {
         return;
       }
 
+      req.user = user;
       done(undefined, user);
     })
     .catch(err => done(err, false));
