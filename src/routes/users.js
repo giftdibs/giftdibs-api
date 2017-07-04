@@ -53,7 +53,7 @@ const updateUser = [
     });
 
     User
-      .update({ _id: req.params.id }, changes)
+      .update({ _id: req.params.id }, changes, { runValidators: true })
       .then(result => res.json({ message: 'User updated.' }))
       .catch(next);
   }
