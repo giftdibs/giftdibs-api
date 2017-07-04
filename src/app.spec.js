@@ -15,9 +15,14 @@ describe('app', () => {
       initialize: () => {},
       authenticate: () => {}
     })
+
+    mock('./middleware/access-control', {});
+    mock('./routes', {});
+    mock('./middleware/404', {});
+    mock('./middleware/error-handler', {});
+
     mock('./strategies/jwt', {});
     mock('./strategies/local', {});
-    mock('./routes', {});
     mock('./database', {
       connect: () => {}
     });

@@ -2,4 +2,4 @@ instrumentation:
   root: src
   include-all-sources: true
   verbose: true
-  excludes: ['*.spec.js']
+  excludes: ['**/*.spec.js']
