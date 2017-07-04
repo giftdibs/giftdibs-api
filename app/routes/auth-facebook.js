@@ -1,14 +1,16 @@
 const passport = require('passport');
 
 const authenticate = [
-  passport.authenticate('facebook')
+  passport.authenticate('facebook', { session: false })
 ];
 
 const callback = [
-  passport.authenticate('facebook'),
-  (req, res) => res.json({
-    message: 'Logged in using Facebook.'
-  })
+  passport.authenticate('facebook', { session: false }),
+  (req, res) => {
+    res.json({
+      message: 'Logged in using Facebook.'
+    });
+  }
 ];
 
 module.exports = (router) => {

@@ -1,28 +1,30 @@
-// const User = require('../database/models/user');
+const passport = require('passport');
+const jwt = require('jsonwebtoken');
+const User = require('../database/models/user');
 
-const register = (req, res) => {
-  res.json({});
-  // let user = new User({
-  //   emailAddress: req.body.emailAddress,
-  //   firstName: req.body.firstName,
-  //   lastName: req.body.lastName,
-  //   dateCreated: new Date(),
-  //   dateUpdated: new Date()
-  // });
+const register = (req, res, next) => {
+  let user = new User({
+    emailAddress: req.body.emailAddress,
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    dateCreated: new Date(),
+    dateUpdated: new Date()
+  });
 
-  // user
-  //   .save()
-  //   .then(doc => res.json(doc._id))
-  //   .catch(res.send);
+  user.setPassword(req.body.password)
+    .then(() => user.save())
+    .then(doc => res.json({ id: doc._id }))
+    .catch(next);
 };
 
-const login = (req, res) => {
-  // 1. find user, then
-  // req.login(user, function(err) {
-  //   if (err) { return next(err); }
-  //   return res.redirect('/users/' + req.user.username);
-  // });
-};
+const login = [
+  passport.authenticate('local', { session: false }),
+  (req, res, next) => {
+    const payload = { id: req.user._id };
+    const token = jwt.sign(payload, process.env.JWT_SECRET);
+    res.json({ token });
+  }
+];
 
 const logout = (req, res) => {
   req.logout();
