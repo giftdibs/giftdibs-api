@@ -1,4 +1,4 @@
-require('./environment');
+require('./environment')();
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -11,7 +11,6 @@ app.set('port', process.env.PORT);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// Passport
 const passport = require('passport');
 passport.use(require('./strategies/jwt'));
 passport.use(require('./strategies/local'));

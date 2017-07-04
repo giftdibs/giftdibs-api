@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon ./index.js",
-    "test": "npm run test:lint && npm run test:coverage",
-    "test:lint": "node ./node_modules/.bin/eslint app",
-    "test:coverage": "istanbul cover jasmine JASMINE_CONFIG_PATH=jasmine.json"
+    "test": "npm run lint && npm run coverage",
+    "lint": "node ./node_modules/.bin/eslint app",
+    "coverage": "istanbul cover jasmine JASMINE_CONFIG_PATH=jasmine.json"
   },
   "repository": {
     "type": "git",
@@ -32,7 +32,8 @@
     "passport": "0.3.2",
     "passport-facebook": "2.1.1",
     "passport-jwt": "2.2.1",
-    "passport-local": "1.0.0"
+    "passport-local": "1.0.0",
+    "winston": "2.3.1"
   },
   "devDependencies": {
     "eslint": "4.1.1",
@@ -45,6 +46,7 @@
     "istanbul": "0.4.5",
     "jasmine": "2.6.0",
     "jasmine-spec-reporter": "4.1.1",
+    "mock-require": "2.0.2",
     "mockgoose": "7.3.3",
     "nodemon": "1.11.0"
   }

@@ -1,10 +1,14 @@
-if (process.env.NODE_ENV !== 'production') {
-  const dotenv = require('dotenv');
-  try {
-    dotenv.config({ path: 'config.env' });
-  } catch (e) {
-    console.log('Environment configuration not found! Please provide a config.env file to continue.');
-  }
-}
+const dotenv = require('dotenv');
+const logger = require('winston');
 
-module.exports = process.env;
+const getEnvironment = (filePath = 'config.env') => {  
+  const result = dotenv.config({ path: filePath });
+
+  if (result.error) {
+    logger.info(`Environment configuration could not be parsed from ${filePath}.`);
+  }
+
+  return process.env;
+};
+
+module.exports = getEnvironment;
