@@ -22,7 +22,9 @@ const strategy = new LocalStrategy(config, (emailAddress, password, done) => {
       user.validatePassword(password)
         .then(() => {
           user.dateUpdated = new Date();
-          user.save().then(() => done(null, user));
+          user
+            .save()
+            .then(() => done(null, user));
         })
         .catch(() => {
           done(null, false, { message: 'Invalid password.' })
