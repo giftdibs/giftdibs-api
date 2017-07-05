@@ -3,13 +3,14 @@
     "standard",
     "jasmine"
   ],
+  "env": {
+    "jasmine": true
+  },
   "extends": ["standard", "plugin:jasmine/recommended"],
   "rules": {
     "semi": 0,
     "object-curly-spacing": ["error", "always"],
-    "space-before-function-paren": ["error", {"anonymous": "always", "named": "never", "asyncArrow": "always"}]
-  },
-  "env": {
-    "jasmine": true
+    "space-before-function-paren": ["error", {"anonymous": "always", "named": "never", "asyncArrow": "always"}],
+    "jasmine/new-line-before-expect": 0
   }
 }

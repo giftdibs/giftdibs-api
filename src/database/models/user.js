@@ -1,28 +1,39 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 const bcrypt = require('bcrypt');
+const { isEmail } = require('validator');
 
+const Schema = mongoose.Schema;
 const userSchema = new Schema({
   firstName: {
     type: String,
-    required: true,
-    trim: true
+    required: [true, 'Please provide a first name.'],
+    trim: true,
+    maxlength: [50, 'Your first name cannot be longer than 50 characters.'],
+    minlength: [1, 'Your first name must be at least 1 character long.']
   },
   lastName: {
     type: String,
-    required: true,
-    trim: true
+    required: [true, 'Please provide a last name.'],
+    trim: true,
+    maxlength: [50, 'Your last name cannot be longer than 50 characters.'],
+    minlength: [1, 'Your last name must be at least 1 character long.']
   },
   emailAddress: {
     type: String,
-    required: true,
+    required: [true, 'Please provide an email address.'],
     lowercase: true,
-    unique: true,
-    trim: true
+    unique: [true, 'An account with that email address already exists.'],
+    trim: true,
+    validate: {
+      type: 'isEmail',
+      validator: isEmail,
+      message: 'The email address you provided is not formatted correctly.',
+      isAsync: false
+    }
   },
   password: {
     type: String,
-    required: true
+    required: [true, 'Please provide a valid password.']
   },
   dateLastLoggedIn: {
     type: Date,

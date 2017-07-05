@@ -9,7 +9,6 @@ const getUser = [
       .find({ _id: req.params.id })
       .limit(1)
       .lean()
-      .exec()
       .then(docs => {
         const user = docs[0];
 
@@ -30,7 +29,6 @@ const getUsers = [
     User
       .find({})
       .lean()
-      .exec()
       .then(docs => res.json(docs))
       .catch(next);
   }

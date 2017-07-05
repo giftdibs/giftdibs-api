@@ -34,9 +34,7 @@ describe('app', () => {
 
   it('should export an ExpressJS app object', () => {
     const app = require('./app');
-
     expect(app).toBeDefined();
-
     expect(typeof app.port).toEqual('function');
   });
 });

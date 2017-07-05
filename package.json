@@ -32,6 +32,7 @@
     "passport": "0.3.2",
     "passport-jwt": "2.2.1",
     "passport-local": "1.0.0",
+    "validator": "7.2.0",
     "winston": "2.3.1"
   },
   "devDependencies": {
@@ -46,7 +47,6 @@
     "jasmine": "2.6.0",
     "jasmine-spec-reporter": "4.1.1",
     "mock-require": "2.0.2",
-    "mockgoose": "7.3.3",
     "nodemon": "1.11.0"
   }
 }

@@ -1,28 +1,31 @@
 const mock = require('mock-require');
 
 describe('local passport strategy', () => {
-  let context = {};
-  let mockStrategy;
+  let mockExec = () => {};
 
   beforeEach(() => {
-    context = {};
-    mockStrategy = function MockStrategy(config) {
-      context.config = config;
-    }
+    mock('../database/models/user', {
+      find: () => {
+        return {
+          limit: () => mockExec()
+        }
+      }
+    });
   });
 
   afterEach(() => {
     mock.stopAll();
-    context = {};
   });
 
   it('should change the "username" field', () => {
+    let _config;
     mock('passport-local', {
-      Strategy: mockStrategy
+      Strategy: function MockStrategy(config) {
+        _config = config;
+      }
     });
     require('./local');
-
-    expect(context.config.usernameField).toEqual('emailAddress');
+    expect(_config.usernameField).toEqual('emailAddress');
   });
 
   it('should pass if the email address and password match a record in the database', (done) => {
@@ -33,33 +36,60 @@ describe('local passport strategy', () => {
     mock('passport-local', {
       Strategy: function MockStrategy(config, verify) {
         verify('', '', (err, user, info) => {
-          if (!err) {
-            expect(user.dateLastLoggedIn).toBeDefined();
-          }
-
+          expect(err).toEqual(null);
+          expect(user.dateLastLoggedIn).toBeDefined();
           done();
         });
       }
     });
-    mock('../database/models/user', {
-      find: () => {
-        return {
-          limit: () => {
-            return {
-              exec: () => Promise.resolve([ mockUser ])
-            }
-          }
-        }
-      }
-    });
+    mockExec = () => Promise.resolve([ mockUser ]);
     mock.reRequire('./local');
   });
 
-  it('should fail if the email address is not found', () => {});
+  it('should fail if the email address is not found', (done) => {
+    mock('passport-local', {
+      Strategy: function MockStrategy(config, verify) {
+        verify('', '', (err, user, info) => {
+          expect(err).toEqual(null);
+          expect(user).toEqual(false);
+          expect(info.message).toEqual('Invalid email address.');
+          done();
+        });
+      }
+    });
+    mockExec = () => Promise.resolve([]);
+    mock.reRequire('./local');
+  });
 
-  it('should fail if the password is invalid', () => {});
+  it('should fail if the password is invalid', (done) => {
+    const mockUser = {
+      validatePassword: () => Promise.reject(new Error()),
+      save: () => Promise.resolve()
+    };
+    mock('passport-local', {
+      Strategy: function MockStrategy(config, verify) {
+        verify('', '', (err, user, info) => {
+          expect(err).toEqual(null);
+          expect(user).toEqual(false);
+          expect(info.message).toEqual('Invalid password.');
+          done();
+        });
+      }
+    });
+    mockExec = () => Promise.resolve([ mockUser ]);
+    mock.reRequire('./local');
+  });
 
-  it('should handle mongoose errors', () => {});
-
-  it('should set the last logged in date on the user', () => {});
+  it('should handle mongoose errors', (done) => {
+    mock('passport-local', {
+      Strategy: function MockStrategy(config, verify) {
+        verify('', '', (err) => {
+          expect(err).toBeDefined();
+          done();
+        });
+      }
+    });
+    mockExec = () => Promise.reject(new Error());
+    mock.reRequire('./local');
+  });
 });

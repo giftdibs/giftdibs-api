@@ -9,7 +9,6 @@ const verify = (emailAddress, password, done) => {
   User
     .find({ emailAddress })
     .limit(1)
-    .exec()
     .then(results => {
       const user = results[0];
 
