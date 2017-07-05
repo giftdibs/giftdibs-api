@@ -1,7 +1,7 @@
 const dotenv = require('dotenv');
 const logger = require('winston');
 
-const getEnvironment = (filePath = 'config.env') => {  
+const getEnvironment = (filePath = 'config.env') => {
   const result = dotenv.config({ path: filePath });
 
   if (result.error) {

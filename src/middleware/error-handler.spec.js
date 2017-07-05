@@ -8,6 +8,7 @@ describe('error handler middleware', () => {
         return {
           json: (result) => {
             expect(result.message).toBe('invalid');
+
             expect(code).toEqual(403);
           }
         };

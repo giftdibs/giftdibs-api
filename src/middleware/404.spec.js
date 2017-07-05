@@ -3,6 +3,7 @@ describe('404 middleware', () => {
     const middleware = require('./404');
     middleware(null, null, (err) => {
       expect(err).toBeDefined();
+
       expect(err.status).toBe(404);
     });
   });

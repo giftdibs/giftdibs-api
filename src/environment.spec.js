@@ -6,6 +6,7 @@ describe('environment', () => {
     spyOn(dotenv, 'config').and.returnValue({});
     const environment = require('./environment');
     environment();
+
     expect(dotenv.config).toHaveBeenCalled();
   });
 
@@ -13,6 +14,7 @@ describe('environment', () => {
     spyOn(dotenv, 'config').and.returnValue({});
     const environment = require('./environment');
     environment('sample.env');
+
     expect(dotenv.config).toHaveBeenCalledWith({ path: 'sample.env' });
   });
 
@@ -23,6 +25,7 @@ describe('environment', () => {
     });
     const environment = require('./environment');
     environment();
+
     expect(logger.info).toHaveBeenCalled();
   });
 });

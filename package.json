@@ -6,7 +6,7 @@
   "scripts": {
     "start": "nodemon ./index.js",
     "test": "npm run lint && npm run coverage",
-    "lint": "node ./node_modules/.bin/eslint app",
+    "lint": "node ./node_modules/.bin/eslint src",
     "coverage": "istanbul cover jasmine JASMINE_CONFIG_PATH=jasmine.json"
   },
   "repository": {
@@ -30,7 +30,6 @@
     "jsonwebtoken": "7.4.1",
     "mongoose": "4.11.1",
     "passport": "0.3.2",
-    "passport-facebook": "2.1.1",
     "passport-jwt": "2.2.1",
     "passport-local": "1.0.0",
     "winston": "2.3.1"

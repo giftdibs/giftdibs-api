@@ -3,3 +3,6 @@ instrumentation:
   include-all-sources: true
   verbose: true
   excludes: ['**/*.spec.js']
+reporting:
+    reports:
+      - html
