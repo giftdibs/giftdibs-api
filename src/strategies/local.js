@@ -5,7 +5,7 @@ const config = {
   usernameField: 'emailAddress'
 };
 
-const strategy = new LocalStrategy(config, (emailAddress, password, done) => {
+const verify = (emailAddress, password, done) => {
   User
     .find({ emailAddress })
     .limit(1)
@@ -31,6 +31,8 @@ const strategy = new LocalStrategy(config, (emailAddress, password, done) => {
         });
     })
     .catch(err => done(err));
-});
+};
+
+const strategy = new LocalStrategy(config, verify);
 
 module.exports = strategy;

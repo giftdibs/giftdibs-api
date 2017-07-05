@@ -61,6 +61,6 @@ userSchema.methods.setPassword = function (password) {
     });
 };
 
-const User = mongoose.connection.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
 
 module.exports = User;
