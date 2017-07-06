@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const { isEmail, isAlpha } = require('validator');
+const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
+
 const hasDuplicateChars = (str) => {
   let regex = /(.)\1{2,}/;
   return !regex.test(str);
@@ -101,6 +103,8 @@ userSchema.methods.setPassword = function (password) {
       this.password = hash;
     });
 };
+
+userSchema.plugin(MongoDbErrorHandlerPlugin);
 
 const User = mongoose.model('User', userSchema);
 

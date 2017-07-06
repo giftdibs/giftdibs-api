@@ -1,9 +1,22 @@
 const mongoose = require('mongoose');
+const mock = require('mock-require');
+
 mongoose.Promise = Promise;
 
 describe('user model', () => {
+  let User;
+
+  beforeEach(() => {
+    User = mock.reRequire('./user');
+  });
+
+  afterEach(() => {
+    delete mongoose.models.User;
+    delete mongoose.modelSchemas.User;
+    mock.stopAll();
+  });
+
   it('should add a user record', () => {
-    const User = require('./user');
     let user = new User({
       firstName: 'Foo',
       lastName: 'Bar',
@@ -16,7 +29,6 @@ describe('user model', () => {
   });
 
   it('should be invalid if firstName is empty', () => {
-    const User = require('./user');
     let user = new User();
     let err = user.validateSync();
     expect(err.errors.firstName.properties.type).toEqual('required');
@@ -27,21 +39,18 @@ describe('user model', () => {
   });
 
   it('should be invalid if firstName is not between 1 and 50 characters', () => {
-    const User = require('./user');
     let user = new User({ firstName: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' });
     const err = user.validateSync()
     expect(err.errors.firstName.properties.type).toEqual('maxlength');
   });
 
   it('should be invalid if firstName contains duplicate characters', () => {
-    const User = require('./user');
     let user = new User({ firstName: 'aaa' });
     const err = user.validateSync()
     expect(err.errors.firstName.properties.type).toEqual('hasDuplicateChars');
   });
 
   it('should be invalid if firstName contains symbols or numbers', () => {
-    const User = require('./user');
     let user = new User({ firstName: 'abc-abc' });
     let err = user.validateSync()
     expect(err.errors.firstName.properties.type).toEqual('isAlpha');
@@ -52,7 +61,6 @@ describe('user model', () => {
   });
 
   it('should be invalid if lastName is empty', () => {
-    const User = require('./user');
     let user = new User();
     let err = user.validateSync();
     expect(err.errors.lastName.properties.type).toEqual('required');
@@ -63,24 +71,19 @@ describe('user model', () => {
   });
 
   it('should be invalid if lastName is not between 1 and 50 characters', () => {
-    const User = require('./user');
     let user = new User({ lastName: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' });
     const err = user.validateSync();
     expect(err.errors.lastName.properties.type).toEqual('maxlength');
   });
 
   it('should be invalid if lastName contains duplicate characters', () => {
-    const User = require('./user');
     let user = new User({ lastName: 'aaa' });
     const err = user.validateSync();
     expect(err.errors.lastName.properties.type).toEqual('hasDuplicateChars');
   });
 
   it('should be invalid if lastName contains symbols or numbers', () => {
-    const User = require('./user');
-    let user = new User({
-      lastName: 'abc-abc'
-    });
+    let user = new User({ lastName: 'abc-abc' });
     let err = user.validateSync();
     expect(err.errors.lastName.properties.type).toEqual('isAlpha');
 
@@ -90,7 +93,6 @@ describe('user model', () => {
   });
 
   it('should be invalid if emailAddress is empty', () => {
-    const User = require('./user');
     let user = new User();
     let err = user.validateSync();
     expect(err.errors.emailAddress.properties.type).toEqual('required');
@@ -101,7 +103,6 @@ describe('user model', () => {
   });
 
   it('should be invalid if emailAddress is not formatted correctly', (done) => {
-    const User = require('./user');
     let user = new User({ emailAddress: 'invalid.email' });
     user.validate().catch(err => {
       expect(err.errors.emailAddress.properties.type).toEqual('isEmail');
@@ -110,7 +111,6 @@ describe('user model', () => {
   });
 
   it('should convert emailAddress to lowercase', () => {
-    const User = require('./user');
     let user = new User({
       firstName: 'Foo',
       lastName: 'Bar',
@@ -122,8 +122,14 @@ describe('user model', () => {
     expect(user.emailAddress).toEqual('foo@bar.com');
   });
 
+  it('should check if emailAddress is unique', () => {
+    let found = User.schema.plugins.filter(plugin => {
+      return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
+    })[0];
+    expect(found).toBeDefined();
+  });
+
   it('should trim whitespace from firstName, lastName, and emailAddress', () => {
-    const User = require('./user');
     let user = new User({
       firstName: ' Foo ',
       lastName: ' Bar   ',
@@ -138,13 +144,11 @@ describe('user model', () => {
   });
 
   it('should generate timestamps automatically', () => {
-    const User = require('./user');
     expect(User.schema.paths.dateCreated).toBeDefined();
     expect(User.schema.paths.dateUpdated).toBeDefined();
   });
 
   it('should set and validate an encrypted password', (done) => {
-    const User = require('./user');
     const user = new User({
       firstName: 'Foo',
       lastName: 'Bar',
@@ -161,7 +165,6 @@ describe('user model', () => {
   });
 
   it('should throw an error if the password is invalid', (done) => {
-    const User = require('./user');
     const user = new User({
       firstName: 'Foo',
       lastName: 'Bar',
