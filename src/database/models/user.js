@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-const { isEmail } = require('validator');
+const { isEmail, isAlpha } = require('validator');
+const hasDuplicateChars = (str) => {
+  let regex = /(.)\1{2,}/;
+  return !regex.test(str);
+};
 
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
@@ -9,14 +13,40 @@ const userSchema = new Schema({
     required: [true, 'Please provide a first name.'],
     trim: true,
     maxlength: [50, 'Your first name cannot be longer than 50 characters.'],
-    minlength: [1, 'Your first name must be at least 1 character long.']
+    minlength: [1, 'Your first name must be at least one (1) character long.'],
+    validate: [
+      {
+        type: 'hasDuplicateChars',
+        validator: hasDuplicateChars,
+        message: 'Your first name cannot contain characters that repeat more than three (3) times.'
+      },
+      {
+        type: 'isAlpha',
+        validator: isAlpha,
+        message: 'Your first name may only contain letters.',
+        isAsync: false
+      }
+    ]
   },
   lastName: {
     type: String,
     required: [true, 'Please provide a last name.'],
     trim: true,
     maxlength: [50, 'Your last name cannot be longer than 50 characters.'],
-    minlength: [1, 'Your last name must be at least 1 character long.']
+    minlength: [1, 'Your last name must be at least one (1) character long.'],
+    validate: [
+      {
+        type: 'hasDuplicateChars',
+        validator: hasDuplicateChars,
+        message: 'Your last name cannot contain characters that repeat more than three (3) times.'
+      },
+      {
+        type: 'isAlpha',
+        validator: isAlpha,
+        message: 'Your last name may only contain letters.',
+        isAsync: false
+      }
+    ]
   },
   emailAddress: {
     type: String,
