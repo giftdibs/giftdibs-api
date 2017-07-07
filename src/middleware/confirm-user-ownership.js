@@ -1,4 +1,4 @@
-module.exports = (req, res, next) => {
+function confirmUserOwnership(req, res, next) {
   // Don't worry about the check if ID is not in the req parameters.
   if (req.params.id === undefined) {
     next();
@@ -15,4 +15,6 @@ module.exports = (req, res, next) => {
   const err = new Error('Forbidden.');
   err.status = 403;
   next(err);
-};
+}
+
+module.exports = confirmUserOwnership;

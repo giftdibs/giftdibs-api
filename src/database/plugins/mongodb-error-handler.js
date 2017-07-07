@@ -6,19 +6,21 @@ const errorHandler = (err, doc, next) => {
     return;
   }
 
-  const validationError = new mongoose.Error.ValidationError();
-  const path = err.message.split('index: ')[1].split('_')[0];
-  const value = err.message.match(/\{\s:\s"?([^"\s]+)/)[1];
+  try {
+    const validationError = new mongoose.Error.ValidationError();
+    const path = err.message.split('index: ')[1].split('_')[0];
+    const value = err.message.match(/\{\s:\s"?([^"\s]+)/)[1];
 
-  validationError.errors[path] = validationError.errors[path] || {};
-  validationError.errors[path].kind = 'unique';
-  validationError.errors[path].value = value;
-  validationError.errors[path].path = path;
-  validationError.errors[path].message = '{0} is expected to be unique.'.replace('{0}', path);
-  validationError.errors[path].reason = err.message;
-  validationError.errors[path].name = err.name;
+    validationError.errors[path] = validationError.errors[path] || {};
+    validationError.errors[path].kind = 'unique';
+    validationError.errors[path].value = value;
+    validationError.errors[path].path = path;
+    validationError.errors[path].message = 'The field, {0}, is expected to be unique.'.replace('{0}', path);
 
-  next(validationError);
+    next(validationError);
+  } catch (typeError) {
+    next(err);
+  }
 };
 
 function MongoDbErrorHandlerPlugin(schema) {

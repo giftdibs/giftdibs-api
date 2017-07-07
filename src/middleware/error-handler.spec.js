@@ -17,6 +17,22 @@ describe('error handler middleware', () => {
     middleware(err, null, res, () => {});
   });
 
+  it('should send multiple errors', () => {
+    const middleware = require('./error-handler');
+    const err = new Error('invalid');
+    err.errors = [];
+    const res = {
+      status: (code) => {
+        return {
+          json: (result) => {
+            expect(result.errors).toEqual([]);
+          }
+        };
+      }
+    };
+    middleware(err, null, res, () => {});
+  });
+
   it('should default the error status to 404', () => {
     const middleware = require('./error-handler');
     const err = new Error('invalid');

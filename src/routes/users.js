@@ -52,7 +52,7 @@ const updateUser = [
 
     User
       .update({ _id: req.params.id }, changes, { runValidators: true })
-      .then(result => res.json({ message: 'User updated.' }))
+      .then(() => res.json({ message: 'User updated.' }))
       .catch(next);
   }
 ];
@@ -76,4 +76,12 @@ router.route('/users/:id')
   .patch(updateUser)
   .delete(deleteUser);
 
-module.exports = router;
+module.exports = {
+  middleware: {
+    getUser,
+    getUsers,
+    updateUser,
+    deleteUser
+  },
+  router
+};
