@@ -16,12 +16,51 @@ const register = [
     user.setPassword(req.body.password)
       .then(() => user.save())
       .then(doc => res.json({ id: doc._id }))
-      .catch(next);
+      .catch(err => {
+        if (err.name === 'ValidationError') {
+          err.code = 102;
+          err.message = 'Registration validation failed.';
+        }
+
+        next(err);
+      });
   }
 ];
 
 const login = [
-  passport.authenticate('local', { session: false }),
+  function checkEmptyCredentials(req, res, next) {
+    if (req.body.emailAddress && req.body.password) {
+      next();
+      return;
+    }
+
+    const error = new Error('Please provide an email address and password.');
+    error.status = 400;
+    error.code = 100;
+    next(error);
+  },
+  function authenticate(req, res, next) {
+    passport.authenticate('local', (err, user, info) => {
+      if (err) {
+        next(err);
+        return;
+      }
+
+      if (!user) {
+        const error = new Error(info.message);
+        error.status = 404;
+        error.code = 101;
+        next(error);
+        return;
+      }
+
+      // Add the found user record to the request to 
+      // allow other middlewares to access it.
+      req.user = user;
+
+      next();
+    })(req, res, next);
+  },
   jwtResponse
 ];
 

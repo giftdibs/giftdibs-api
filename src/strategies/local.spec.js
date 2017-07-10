@@ -52,7 +52,7 @@ describe('local passport strategy', () => {
         verify('', '', (err, user, info) => {
           expect(err).toEqual(null);
           expect(user).toEqual(false);
-          expect(info.message).toEqual('Invalid email address.');
+          expect(info.message).toEqual('A user with that email address was not found.');
           done();
         });
       }
@@ -71,7 +71,7 @@ describe('local passport strategy', () => {
         verify('', '', (err, user, info) => {
           expect(err).toEqual(null);
           expect(user).toEqual(false);
-          expect(info.message).toEqual('Invalid password.');
+          expect(info.message).toEqual('The email address and password you entered did not match an account in our records.');
           done();
         });
       }

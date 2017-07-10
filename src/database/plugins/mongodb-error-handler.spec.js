@@ -1,39 +1,60 @@
 const mock = require('mock-require');
 
 describe('MongoDbErrorHandlerPlugin', () => {
+  let mockSchema;
+  let mongoError;
+  let plugin;
+
+  beforeEach(() => {
+    plugin = mock.reRequire('./mongodb-error-handler');
+
+    mongoError = new Error();
+    mongoError.message = 'E11000 duplicate key error collection: api.User index: emailAddress_1 dup key: { : "foo@bar.com" } emailAddress_1 dup key: { : "foo@bar.com" }';
+    mongoError.name = 'MongoError';
+    mongoError.code = 11000;
+
+    mockSchema = {
+      paths: {
+        emailAddress: {
+          options: {
+            unique: [true, 'Some error message.']
+          }
+        }
+      }
+    };
+  });
+
+  afterEach(() => {
+    mock.stopAll();
+  });
+
   it('should convert mongodb errors to mongoose validation errors', () => {
-    const plugin = mock.reRequire('./mongodb-error-handler');
-    let error = new Error(
-      'E11000 duplicate key error collection: api.User index: emailAddress_1 dup key: { : "foo@bar.com" } emailAddress_1 dup key: { : "foo@bar.com" }'
-    );
-    error.name = 'MongoError';
-    error.code = 11000;
-    plugin.errorHandler(error, {}, (err) => {
+    let _callback;
+    mockSchema.post = (hook, cb) => {
+      _callback = cb;
+    };
+    plugin.MongoDbErrorHandlerPlugin(mockSchema);
+    _callback.call({ schema: mockSchema }, mongoError, {}, (err) => {
       expect(err.errors.emailAddress.kind).toEqual('unique');
     });
   });
 
   it('should pass the original error to the callback if type errors are encountered', () => {
-    const plugin = mock.reRequire('./mongodb-error-handler');
-    let error = new Error();
-    error.name = 'MongoError';
-    error.code = 11000;
-    plugin.errorHandler(error, {}, (err) => {
+    mongoError.message = '';
+    let _callback;
+    mockSchema.post = (hook, cb) => {
+      _callback = cb;
+    };
+    plugin.MongoDbErrorHandlerPlugin(mockSchema);
+    _callback.call({ schema: mockSchema }, mongoError, {}, (err) => {
       expect(err.name).toEqual('MongoError');
     });
   });
 
   it('should cover all update hooks', () => {
     let hooks = [];
-    const plugin = mock.reRequire('./mongodb-error-handler');
-    const mockSchema = {
-      post: (hook) => {
-        hooks.push(hook);
-      }
-    };
-    const contains = (arr, str) => {
-      return (arr.indexOf(str) > -1);
-    };
+    mockSchema.post = (hook) => hooks.push(hook);
+    const contains = (arr, str) => arr.indexOf(str) > -1;
     plugin.MongoDbErrorHandlerPlugin(mockSchema);
     expect(contains(hooks, 'save')).toEqual(true);
     expect(contains(hooks, 'update')).toEqual(true);
@@ -43,11 +64,29 @@ describe('MongoDbErrorHandlerPlugin', () => {
   });
 
   it('should not change other errors', () => {
-    const plugin = mock.reRequire('./mongodb-error-handler');
     let error = new Error();
     error.status = 500;
-    plugin.errorHandler(error, {}, (err) => {
+    let _callback;
+    mockSchema.post = (hook, cb) => {
+      _callback = cb;
+    };
+    plugin.MongoDbErrorHandlerPlugin(mockSchema);
+    _callback.call({ schema: mockSchema }, error, {}, (err) => {
+      expect(err.name).toEqual('Error');
       expect(err.status).toBe(500);
+    });
+  });
+
+  it('should use a default message if none provided on the schema', () => {
+    let _callback;
+    mockSchema.paths.emailAddress.options.unique = true;
+    mockSchema.post = (hook, cb) => {
+      _callback = cb;
+    };
+    plugin.MongoDbErrorHandlerPlugin(mockSchema);
+    _callback.call({ schema: mockSchema }, mongoError, {}, (err) => {
+      const isDefaultMessage = (err.errors.emailAddress.message.indexOf('is expected to be unique') > -1);
+      expect(isDefaultMessage).toEqual(true);
     });
   });
 });

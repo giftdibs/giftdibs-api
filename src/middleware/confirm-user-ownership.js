@@ -14,6 +14,7 @@ function confirmUserOwnership(req, res, next) {
 
   const err = new Error('Forbidden.');
   err.status = 403;
+  err.code = 103;
   next(err);
 }
 

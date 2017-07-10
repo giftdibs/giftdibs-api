@@ -1,7 +1,12 @@
-const passport = require('passport');
 const mock = require('mock-require');
 
 describe('/users', () => {
+  let passport;
+
+  beforeEach(() => {
+    passport = mock.reRequire('passport');
+  });
+
   afterEach(() => {
     mock.stopAll();
   });
@@ -17,7 +22,11 @@ describe('/users', () => {
     mock('../database/models/user', {
       find: () => {
         return {
-          lean: () => Promise.resolve([])
+          select: () => {
+            return {
+              lean: () => Promise.resolve([])
+            };
+          }
         };
       }
     });
@@ -31,11 +40,39 @@ describe('/users', () => {
     }, () => {});
   });
 
+  it('should GET an array of all documents with certain fields', (done) => {
+    let _fields;
+    mock('../database/models/user', {
+      find: () => {
+        return {
+          select: (fields) => {
+            _fields = fields;
+            return {
+              lean: () => Promise.resolve([])
+            };
+          }
+        };
+      }
+    });
+    const users = mock.reRequire('./users');
+    const getUsers = users.middleware.getUsers;
+    getUsers[0]({}, {
+      json: (docs) => {
+        expect(_fields).toEqual('firstName lastName');
+        done();
+      }
+    }, () => {});
+  });
+
   it('should handle a mongoose error with GET /users', (done) => {
     mock('../database/models/user', {
       find: () => {
         return {
-          lean: () => Promise.reject(new Error())
+          select: () => {
+            return {
+              lean: () => Promise.reject(new Error())
+            };
+          }
         };
       }
     });
@@ -53,7 +90,11 @@ describe('/users', () => {
         return {
           limit: () => {
             return {
-              lean: () => Promise.resolve([{}])
+              select: () => {
+                return {
+                  lean: () => Promise.resolve([{}])
+                };
+              }
             };
           }
         };
@@ -72,13 +113,48 @@ describe('/users', () => {
     }, () => {});
   });
 
+  it('should GET a single document with certain fields', (done) => {
+    let _fields;
+    mock('../database/models/user', {
+      find: () => {
+        return {
+          limit: () => {
+            return {
+              select: (fields) => {
+                _fields = fields;
+                return {
+                  lean: () => Promise.resolve([{}])
+                };
+              }
+            };
+          }
+        };
+      }
+    });
+    const users = mock.reRequire('./users');
+    const getUser = users.middleware.getUser;
+    const req = {
+      params: { id: 0 }
+    };
+    getUser[0](req, {
+      json: (doc) => {
+        expect(_fields).toEqual('firstName lastName');
+        done();
+      }
+    }, () => {});
+  });
+
   it('should pass a 404 if the user cannot be found', (done) => {
     mock('../database/models/user', {
       find: () => {
         return {
           limit: () => {
             return {
-              lean: () => Promise.resolve([])
+              select: () => {
+                return {
+                  lean: () => Promise.resolve([])
+                };
+              }
             };
           }
         };
@@ -101,7 +177,11 @@ describe('/users', () => {
         return {
           limit: () => {
             return {
-              lean: () => Promise.reject(new Error())
+              select: () => {
+                return {
+                  lean: () => Promise.reject(new Error())
+                };
+              }
             };
           }
         };
@@ -183,6 +263,27 @@ describe('/users', () => {
     };
     updateUser[1](req, {}, (err) => {
       expect(err).toBeDefined();
+      done();
+    });
+  });
+
+  it('should handle a schema validation error with PATCH /users/:id', (done) => {
+    mock('../database/models/user', {
+      update: () => {
+        const error = new Error();
+        error.name = 'ValidationError';
+        return Promise.reject(error);
+      }
+    });
+    const users = mock.reRequire('./users');
+    const updateUser = users.middleware.updateUser;
+    const req = {
+      params: { id: 0 },
+      body: {}
+    };
+    updateUser[1](req, {}, (err) => {
+      expect(err).toBeDefined();
+      expect(err.code).toEqual(201);
       done();
     });
   });

@@ -87,9 +87,7 @@ userSchema.methods.validatePassword = function (password) {
         if (valid) {
           resolve();
         } else {
-          const err = new Error('Password invalid.');
-          err.status = 401;
-          reject(err);
+          reject(new Error('Password invalid.'));
         }
       });
   });
