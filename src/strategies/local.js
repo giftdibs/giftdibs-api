@@ -13,7 +13,9 @@ const verify = (emailAddress, password, done) => {
       const user = results[0];
 
       if (!user) {
-        done(null, false, { message: 'Invalid email address.' });
+        done(null, false, {
+          message: 'A user with that email address was not found.'
+        });
         return;
       }
 
@@ -26,7 +28,9 @@ const verify = (emailAddress, password, done) => {
             .then(() => done(null, user));
         })
         .catch(() => {
-          done(null, false, { message: 'Invalid password.' })
+          done(null, false, {
+            message: 'The email address and password you entered did not match an account in our records.'
+          })
         });
     })
     .catch(err => done(err));

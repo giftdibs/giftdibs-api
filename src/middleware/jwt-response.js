@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const jwtResponse = (req, res, next) => {
   if (req.user === undefined) {
-    const err = new Error('[jwt-response] User not found.');
+    const err = new Error('A token cannot be created without an authenticated user.');
     err.status = 500;
     next(err);
     return;

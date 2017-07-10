@@ -172,11 +172,12 @@ describe('user model', () => {
       password: '12345',
       dateLastLoggedIn: new Date()
     });
-    user.setPassword('12345').then(() => {
-      user.validatePassword('abc').catch(err => {
-        expect(err.status).toEqual(401);
+
+    user.setPassword('12345')
+      .then(() => user.validatePassword('abc'))
+      .catch(err => {
+        expect(err).toBeDefined();
         done();
       });
-    });
   });
 });

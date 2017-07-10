@@ -1,21 +1,30 @@
 const mongoose = require('mongoose');
 
-const errorHandler = (err, doc, next) => {
+function errorHandler(err, doc, next) {
   if (err.name !== 'MongoError' || err.code !== 11000) {
     next(err);
     return;
   }
 
+  const schema = this.schema;
+
   try {
     const validationError = new mongoose.Error.ValidationError();
-    const path = err.message.split('index: ')[1].split('_')[0];
+    const pathKey = err.message.split('index: ')[1].split('_')[0];
     const value = err.message.match(/\{\s:\s"?([^"\s]+)/)[1];
 
-    validationError.errors[path] = validationError.errors[path] || {};
-    validationError.errors[path].kind = 'unique';
-    validationError.errors[path].value = value;
-    validationError.errors[path].path = path;
-    validationError.errors[path].message = 'The field, {0}, is expected to be unique.'.replace('{0}', path);
+    let errorMessage;
+    if (schema.paths[pathKey].options.unique[1]) {
+      errorMessage = schema.paths[pathKey].options.unique[1];
+    } else {
+      errorMessage = 'The field, {0}, is expected to be unique.'.replace('{0}', pathKey);
+    }
+
+    validationError.errors[pathKey] = validationError.errors[pathKey] || {};
+    validationError.errors[pathKey].kind = 'unique';
+    validationError.errors[pathKey].value = value;
+    validationError.errors[pathKey].path = pathKey;
+    validationError.errors[pathKey].message = errorMessage;
 
     next(validationError);
   } catch (typeError) {
@@ -24,6 +33,7 @@ const errorHandler = (err, doc, next) => {
 };
 
 function MongoDbErrorHandlerPlugin(schema) {
+  errorHandler.bind({ schema });
   schema.post('save', errorHandler);
   schema.post('update', errorHandler);
   schema.post('findOneAndUpdate', errorHandler);
@@ -32,6 +42,5 @@ function MongoDbErrorHandlerPlugin(schema) {
 }
 
 module.exports = {
-  errorHandler,
   MongoDbErrorHandlerPlugin
 }
