@@ -2,6 +2,7 @@ require('./environment')();
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const db = require('./database');
 db.connect();
@@ -10,6 +11,7 @@ const app = express();
 app.set('port', process.env.PORT);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(cors());
 
 const passport = require('passport');
 passport.use(require('./strategies/jwt'));
