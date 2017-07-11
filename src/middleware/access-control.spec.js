@@ -9,7 +9,7 @@ describe('access control middleware', () => {
     expect(res.setHeader).toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
     expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/x-www-form-urlencoded');
     expect(res.setHeader).toHaveBeenCalledWith('Access-Control-Allow-Methods', 'POST,GET,PATCH,DELETE,OPTIONS');
-    expect(res.setHeader).toHaveBeenCalledWith('Access-Control-Allow-Headers', 'X-Requested-With, Content-type,Accept,X-Access-Token,X-Key');
+    expect(res.setHeader).toHaveBeenCalledWith('Access-Control-Allow-Headers', 'X-Requested-With,Content-type,Accept,X-Access-Token,X-Key');
   });
 
   it('should execute the callback', () => {
