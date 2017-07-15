@@ -11,15 +11,18 @@ const app = express();
 app.set('port', process.env.PORT);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:4200',
+  methods: 'GET,POST,PATCH,DELETE,OPTIONS'
+}));
 
 const passport = require('passport');
 passport.use(require('./strategies/jwt'));
 passport.use(require('./strategies/local'));
 app.use(passport.initialize());
 
-app.use(require('./middleware/access-control'));
 app.use('/v1', require('./routes'));
+
 app.use(require('./middleware/404'));
 app.use(require('./middleware/format-schema-validation-error'));
 app.use(require('./middleware/format-schema-cast-error'));

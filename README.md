@@ -1,5 +1,14 @@
 # GiftDibs API
 
+## HTTP Status Codes
+
+- `200` The request is okay.
+- `400` The request is not formatted correctly.
+- `401` The request is not authenticated.
+- `403` The request does not have permission to perform the desired action.
+- `404` The endpoint does not exist.
+- `500` The server encountered an error.
+
 ## Error Codes
 
 ### General

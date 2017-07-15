@@ -13,6 +13,7 @@ describe('format schema validation error', () => {
       expect(err.errors.emailAddress).toBeUndefined();
       expect(err.errors[0].message).toEqual('Some message.');
       expect(err.errors[0].field).toEqual('emailAddress');
+      expect(err.status).toEqual(400);
     });
   });
 

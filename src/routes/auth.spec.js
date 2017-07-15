@@ -102,7 +102,7 @@ describe('/auth', () => {
 
     authenticate(req, {}, (err) => {
       expect(err).toBeDefined();
-      expect(err.status).toEqual(404);
+      expect(err.status).toEqual(400);
       expect(err.code).toEqual(101);
       done();
     });
