@@ -1,7 +1,11 @@
 const mock = require('mock-require');
+// const cors = require('cors');
 
 describe('app', () => {
+  // let spies = {};
   beforeEach(() => {
+    // spies.cors = cors;
+    // spyOn(spies, 'cors').and.callFake(() => {});
     mock('./environment', () => {});
     mock('express', () => {
       return {
@@ -33,8 +37,16 @@ describe('app', () => {
   });
 
   it('should export an ExpressJS app object', () => {
-    const app = require('./app');
+    const app = mock.reRequire('./app');
     expect(app).toBeDefined();
     expect(typeof app.port).toEqual('function');
+  });
+
+  it('should configure cors', () => {
+    mock('cors', (config) => {
+      expect(config.origin).toEqual('http://localhost:4200');
+      expect(config.methods).toEqual('GET,POST,PATCH,DELETE,OPTIONS');
+    });
+    mock.reRequire('./app');
   });
 });
