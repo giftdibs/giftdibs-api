@@ -13,6 +13,8 @@ describe('confirm user ownership middleware', () => {
     };
     const next = (err) => {
       expect(err).toBeDefined();
+      expect(err.status).toEqual(403);
+      expect(err.code).toEqual(103);
     };
     middleware(req, null, next);
   });

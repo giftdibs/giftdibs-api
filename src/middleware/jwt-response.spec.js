@@ -49,6 +49,7 @@ describe('jwt response middleware', () => {
     const req = {};
     const next = (err) => {
       expect(err).toBeDefined();
+      expect(err.status).toEqual(400);
     };
     middleware(req, null, next);
   });

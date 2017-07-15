@@ -5,7 +5,8 @@ const confirmUserOwnership = require('../middleware/confirm-user-ownership');
 
 const selectFields = [
   'firstName',
-  'lastName'
+  'lastName',
+  'emailAddress'
 ].join(' ');
 
 const getUser = [
@@ -21,7 +22,7 @@ const getUser = [
         if (!user) {
           const err = new Error('User not found.');
           err.code = 200;
-          err.status = 404;
+          err.status = 400;
           return Promise.reject(err);
         }
 
@@ -53,13 +54,31 @@ const updateUser = [
     ];
 
     updateFields.forEach(field => {
-      if (req.body[field]) {
+      if (req.body[field] !== undefined) {
         changes[field] = req.body[field];
       }
     });
 
     User
-      .update({ _id: req.params.id }, changes, { runValidators: true })
+      .find({ _id: req.params.id })
+      .limit(1)
+      .select(updateFields.join(' '))
+      .then(docs => {
+        const user = docs[0];
+
+        if (!user) {
+          const err = new Error('User not found.');
+          err.code = 200;
+          err.status = 400;
+          return Promise.reject(err);
+        }
+
+        for (const key in changes) {
+          user.set(key, changes[key]);
+        }
+
+        return user.save();
+      })
       .then(() => res.json({ message: 'User updated.' }))
       .catch(err => {
         if (err.name === 'ValidationError') {

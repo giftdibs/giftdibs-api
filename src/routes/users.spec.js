@@ -58,7 +58,7 @@ describe('/users', () => {
     const getUsers = users.middleware.getUsers;
     getUsers[0]({}, {
       json: (docs) => {
-        expect(_fields).toEqual('firstName lastName');
+        expect(_fields).toEqual('firstName lastName emailAddress');
         done();
       }
     }, () => {});
@@ -138,13 +138,13 @@ describe('/users', () => {
     };
     getUser[0](req, {
       json: (doc) => {
-        expect(_fields).toEqual('firstName lastName');
+        expect(_fields).toEqual('firstName lastName emailAddress');
         done();
       }
     }, () => {});
   });
 
-  it('should pass a 404 if the user cannot be found', (done) => {
+  it('should return a status 400 if the user cannot be found', (done) => {
     mock('../database/models/user', {
       find: () => {
         return {
@@ -166,7 +166,8 @@ describe('/users', () => {
       params: { id: 0 }
     };
     getUser[0](req, {}, (err) => {
-      expect(err.status).toEqual(404);
+      expect(err.code).toEqual(200);
+      expect(err.status).toEqual(400);
       done();
     });
   });
@@ -199,10 +200,23 @@ describe('/users', () => {
   });
 
   it('should PATCH a document', (done) => {
-    mock('../database/models/user', {
-      update: (query, changes) => {
-        expect(changes.firstName).toEqual('NewName');
+    let _user = {
+      set(key, value) {
+        this[key] = value;
+      },
+      save() {
         return Promise.resolve();
+      }
+    };
+    mock('../database/models/user', {
+      find: () => {
+        return {
+          limit: () => {
+            return {
+              select: () => Promise.resolve([_user])
+            };
+          }
+        };
       }
     });
     const users = mock.reRequire('./users');
@@ -216,6 +230,7 @@ describe('/users', () => {
     const res = {
       json: (result) => {
         expect(result.message).toBeDefined();
+        expect(_user.firstName).toEqual('NewName');
         done();
       }
     };
@@ -223,10 +238,24 @@ describe('/users', () => {
   });
 
   it('should only PATCH certain fields', (done) => {
-    mock('../database/models/user', {
-      update: (query, changes) => {
-        expect(changes.invalidField).toBeUndefined();
+    let _user = {
+      set(key, value) {
+        this[key] = value;
+      },
+      save() {
         return Promise.resolve();
+      }
+    };
+    spyOn(_user, 'set').and.callThrough();
+    mock('../database/models/user', {
+      find: () => {
+        return {
+          limit: () => {
+            return {
+              select: () => Promise.resolve([_user])
+            };
+          }
+        };
       }
     });
     const users = mock.reRequire('./users');
@@ -240,6 +269,7 @@ describe('/users', () => {
     const res = {
       json: (result) => {
         expect(result.message).toBeDefined();
+        expect(_user.set).not.toHaveBeenCalled();
         done();
       }
     };
@@ -253,8 +283,17 @@ describe('/users', () => {
 
   it('should handle a mongoose error with PATCH /users/:id', (done) => {
     mock('../database/models/user', {
-      update: () => Promise.reject(new Error())
+      find: () => {
+        return {
+          limit: () => {
+            return {
+              select: () => Promise.reject(new Error())
+            };
+          }
+        };
+      }
     });
+
     const users = mock.reRequire('./users');
     const updateUser = users.middleware.updateUser;
     const req = {
@@ -269,21 +308,61 @@ describe('/users', () => {
 
   it('should handle a schema validation error with PATCH /users/:id', (done) => {
     mock('../database/models/user', {
-      update: () => {
-        const error = new Error();
-        error.name = 'ValidationError';
-        return Promise.reject(error);
+      find: () => {
+        return {
+          limit: () => {
+            return {
+              select: () => {
+                const error = new Error();
+                error.name = 'ValidationError';
+                return Promise.reject(error);
+              }
+            };
+          }
+        };
       }
     });
+
     const users = mock.reRequire('./users');
     const updateUser = users.middleware.updateUser;
     const req = {
       params: { id: 0 },
       body: {}
     };
+
     updateUser[1](req, {}, (err) => {
       expect(err).toBeDefined();
       expect(err.code).toEqual(201);
+      done();
+    });
+  });
+
+  it('should handle a user not found error with PATCH /users/:id', (done) => {
+    mock('../database/models/user', {
+      find: () => {
+        return {
+          limit: () => {
+            return {
+              select: () => {
+                return Promise.resolve([]);
+              }
+            };
+          }
+        };
+      }
+    });
+
+    const users = mock.reRequire('./users');
+    const updateUser = users.middleware.updateUser;
+    const req = {
+      params: { id: 0 },
+      body: {}
+    };
+
+    updateUser[1](req, {}, (err) => {
+      expect(err).toBeDefined();
+      expect(err.code).toEqual(200);
+      expect(err.status).toEqual(400);
       done();
     });
   });

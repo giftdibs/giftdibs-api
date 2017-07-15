@@ -37,10 +37,11 @@ describe('error handler middleware', () => {
     const middleware = require('./error-handler');
     const err = new Error('invalid');
     const res = {
-      status: (code) => {
+      status: (statusCode) => {
         return {
           json: (result) => {
-            expect(code).toEqual(404);
+            expect(result.code).toEqual(0);
+            expect(statusCode).toEqual(404);
           }
         };
       }

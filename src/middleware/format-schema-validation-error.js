@@ -14,6 +14,7 @@ const formatSchemaValidationError = (err, req, res, next) => {
   }
 
   err.errors = errors;
+  err.status = 400;
 
   next(err);
 };

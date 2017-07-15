@@ -48,7 +48,7 @@ const login = [
 
       if (!user) {
         const error = new Error(info.message);
-        error.status = 404;
+        error.status = 400;
         error.code = 101;
         next(error);
         return;
