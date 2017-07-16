@@ -95,6 +95,30 @@ userSchema.methods.validatePassword = function (password) {
 
 userSchema.methods.setPassword = function (password) {
   const saltRounds = 10;
+  const PASSWORD_MIN_LENGTH = 7;
+  const PASSWORD_MAX_LENGTH = 50;
+
+  let error = new Error();
+  error.name = 'ValidationError';
+  error.status = 400;
+  error.errors = {
+    password: {
+      path: 'password'
+    }
+  };
+
+  password = password.trim();
+
+  if (!password) {
+    error.errors.password.message = 'Please provide a password.';
+    return Promise.reject(error);
+  }
+
+  if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
+    error.errors.password.message = `Your password must be between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters long.`;
+    return Promise.reject(error);
+  }
+
   return bcrypt
     .hash(password, saltRounds)
     .then(hash => {
