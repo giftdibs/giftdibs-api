@@ -153,14 +153,56 @@ describe('user model', () => {
       firstName: 'Foo',
       lastName: 'Bar',
       emailAddress: 'foo@bar.com',
-      password: '12345',
+      password: '1234567',
       dateLastLoggedIn: new Date()
     });
-    user.setPassword('12345').then(() => {
-      user.validatePassword('12345').then(() => {
-        expect(user.password).not.toEqual('12345');
+    user.setPassword('1234567').then(() => {
+      user.validatePassword('1234567').then(() => {
+        expect(user.password).not.toEqual('1234567');
         done();
       });
+    });
+  });
+
+  it('should fail if the password is empty', (done) => {
+    const user = new User({
+      firstName: 'Foo',
+      lastName: 'Bar',
+      emailAddress: 'foo@bar.com',
+      password: '       ',
+      dateLastLoggedIn: new Date()
+    });
+    user.setPassword('       ').catch((err) => {
+      expect(err).toBeDefined();
+      done();
+    });
+  });
+
+  it('should fail if the password is too short', (done) => {
+    const user = new User({
+      firstName: 'Foo',
+      lastName: 'Bar',
+      emailAddress: 'foo@bar.com',
+      password: 'foo',
+      dateLastLoggedIn: new Date()
+    });
+    user.setPassword('abc').catch((err) => {
+      expect(err.errors.password.message).toEqual('Your password must be between 7 and 50 characters long.');
+      done();
+    });
+  });
+
+  it('should fail if the password is too long', (done) => {
+    const user = new User({
+      firstName: 'Foo',
+      lastName: 'Bar',
+      emailAddress: 'foo@bar.com',
+      password: 'foo',
+      dateLastLoggedIn: new Date()
+    });
+    user.setPassword('1234512345123451234512345123451234512345123451234512345').catch((err) => {
+      expect(err.errors.password.message).toEqual('Your password must be between 7 and 50 characters long.');
+      done();
     });
   });
 
@@ -169,14 +211,14 @@ describe('user model', () => {
       firstName: 'Foo',
       lastName: 'Bar',
       emailAddress: 'foo@bar.com',
-      password: '12345',
+      password: 'foobar',
       dateLastLoggedIn: new Date()
     });
 
-    user.setPassword('12345')
+    user.setPassword('1234567')
       .then(() => user.validatePassword('abc'))
       .catch(err => {
-        expect(err).toBeDefined();
+        expect(err.message).toEqual('Password invalid.');
         done();
       });
   });
