@@ -89,7 +89,7 @@ const forgotten = [
         return user.save();
       })
       .then(() => {
-        // Send an email, here.
+        // (Send an email, here.)
 
         return res.json({
           message: 'Email sent. Please check your spam folder if it does not appear in your inbox within 15 minutes.'
@@ -100,7 +100,7 @@ const forgotten = [
 ];
 
 const resetPassword = [
-  function verifyPassword(req, res, next) {
+  function validatePassword(req, res, next) {
     if (!req.body.password || !req.body.passwordAgain) {
       const error = new Error('Please provide a new password.');
       error.status = 400;
@@ -116,7 +116,21 @@ const resetPassword = [
 
     next();
   },
+  function validateResetPasswordJwt(req, res, next) {
+    if (req.headers.authorization) {
+      passport.authenticate('jwt', { session: false })(req, res, next);
+      return;
+    }
+
+    next();
+  },
   function validateResetPasswordToken(req, res, next) {
+    // User passed the JWT authentication, skip this step.
+    if (req.user) {
+      next();
+      return;
+    }
+
     if (!req.body.resetPasswordToken) {
       const error = new Error('The reset password token is invalid.');
       error.status = 400;
@@ -141,12 +155,19 @@ const resetPassword = [
           return Promise.reject(error);
         }
 
-        return user.setPassword(req.body.password)
-          .then(() => {
-            user.resetPasswordToken = undefined;
-            user.resetPasswordExpires = undefined;
-            return user.save();
-          });
+        req.user = user;
+        next();
+      })
+      .catch(next);
+  },
+  function setPassword(req, res, next) {
+    const user = req.user;
+    return user
+      .setPassword(req.body.password)
+      .then(() => {
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        return user.save();
       })
       .then(() => res.json({ message: 'Your password was successfully reset.' }))
       .catch(err => {
