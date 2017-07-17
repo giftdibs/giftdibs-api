@@ -22,6 +22,10 @@
 - `101` A user was not found matching the login credentials provided.
 - `102` The registration request failed database schema validation.
 - `103` The request user does not have permission to modify the resource.
+- `104` The email address entered during a password reset request was not found.
+- `105` The password and password again did not match, during a password reset request.
+- `106` The reset password token is invalid.
+- `107` The password was not valid during a reset password request.
 
 ### `/users`
 
