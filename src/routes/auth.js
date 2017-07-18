@@ -83,13 +83,13 @@ const forgotten = [
         user.resetPasswordToken = randomstring.generate();
         user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
 
-        // Remove this after implementing email service.
-        console.log('token:', user.resetPasswordToken);
+        // TODO: Remove this after implementing email service.
+        console.log('reset password token:', user.resetPasswordToken);
 
         return user.save();
       })
       .then(() => {
-        // (Send an email, here.)
+        // TODO: Send an email, here.
 
         return res.json({
           message: 'Email sent. Please check your spam folder if it does not appear in your inbox within 15 minutes.'
