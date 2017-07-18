@@ -40,6 +40,7 @@ const login = [
     error.code = 100;
     next(error);
   },
+
   function authenticate(req, res, next) {
     passport.authenticate('local', (err, user, info) => {
       if (err) {
@@ -62,6 +63,7 @@ const login = [
       next();
     })(req, res, next);
   },
+
   jwtResponse
 ];
 
@@ -104,18 +106,22 @@ const resetPassword = [
     if (!req.body.password || !req.body.passwordAgain) {
       const error = new Error('Please provide a new password.');
       error.status = 400;
-      error.code = 105;
+      error.code = 107;
       next(error);
       return;
     }
 
     if (req.body.password !== req.body.passwordAgain) {
-      next(new Error('The passwords you typed do not match.'));
+      const error = new Error('The passwords you typed do not match.');
+      error.status = 400;
+      error.code = 105;
+      next(error);
       return;
     }
 
     next();
   },
+
   function validateResetPasswordJwt(req, res, next) {
     if (req.headers.authorization) {
       passport.authenticate('jwt', { session: false })(req, res, next);
@@ -124,6 +130,7 @@ const resetPassword = [
 
     next();
   },
+
   function validateResetPasswordToken(req, res, next) {
     // User passed the JWT authentication, skip this step.
     if (req.user) {
@@ -160,6 +167,7 @@ const resetPassword = [
       })
       .catch(next);
   },
+
   function setPassword(req, res, next) {
     const user = req.user;
     return user
