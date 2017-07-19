@@ -26,6 +26,7 @@
 - `105` The password and password again did not match, during a password reset request.
 - `106` The reset password token is invalid.
 - `107` The password was not valid during a reset password request.
+- `108` Misc.
 
 ### `/users`
 

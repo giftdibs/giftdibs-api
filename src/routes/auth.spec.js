@@ -130,7 +130,7 @@ describe('/auth', () => {
         done();
       }
     };
-    register[0](req, res, () => {});
+    register[1](req, res, () => {});
   });
 
   it('should fail registration if schema validation fails', (done) => {
@@ -154,7 +154,7 @@ describe('/auth', () => {
       }
     };
     const res = {};
-    register[0](req, res, (err) => {
+    register[1](req, res, (err) => {
       expect(err).toBeDefined();
       expect(err.code).toEqual(102);
       done();
@@ -178,8 +178,38 @@ describe('/auth', () => {
       }
     };
     const res = {};
-    register[0](req, res, (err) => {
+    register[1](req, res, (err) => {
       expect(err).toBeDefined();
+      done();
+    });
+  });
+
+  it('should fail registration if gdNickname is included in the request', (done) => {
+    // Spam bot control.
+    const auth = mock.reRequire('./auth');
+    const register = auth.middleware.register;
+    const req = {
+      body: {
+        gdNickname: 'dick'
+      }
+    };
+    register[0](req, {}, (err) => {
+      expect(err).toBeDefined();
+      expect(err.code).toEqual(108);
+      expect(err.status).toEqual(400);
+      done();
+    });
+  });
+
+  it('should continue registration if gdNickname is undefined', (done) => {
+    // Spam bot control.
+    const auth = mock.reRequire('./auth');
+    const register = auth.middleware.register;
+    const req = {
+      body: {}
+    };
+    register[0](req, {}, (err) => {
+      expect(err).toBeUndefined();
       done();
     });
   });
