@@ -70,7 +70,9 @@ const userSchema = new Schema({
   dateLastLoggedIn: {
     type: Date,
     required: true
-  }
+  },
+  resetPasswordToken: String,
+  resetPasswordExpires: Date
 }, {
   collection: 'User',
   timestamps: {
