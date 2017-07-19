@@ -7,6 +7,17 @@ const jwtResponse = require('../middleware/jwt-response');
 
 const register = [
   (req, res, next) => {
+    if (req.body.gdNickname) {
+      const err = new Error('You are a spam bot. Goodbye!');
+      err.status = 400;
+      err.code = 108;
+      next(err);
+      return;
+    }
+
+    next();
+  },
+  (req, res, next) => {
     let user = new User({
       emailAddress: req.body.emailAddress,
       firstName: req.body.firstName,
