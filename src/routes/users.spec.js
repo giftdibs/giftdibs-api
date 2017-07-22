@@ -2,8 +2,28 @@ const mock = require('mock-require');
 
 describe('/users', () => {
   let passport;
+  let _req;
 
   beforeEach(() => {
+    _req = {
+      user: {
+        _id: {
+          equals: () => {
+            return false;
+          }
+        },
+        set(key, value) {
+          this[key] = value;
+        },
+        save() {
+          return Promise.resolve();
+        }
+      },
+      params: {
+        id: 0
+      },
+      body: {}
+    };
     passport = mock.reRequire('passport');
   });
 
@@ -32,7 +52,7 @@ describe('/users', () => {
     });
     const users = mock.reRequire('./users');
     const getUsers = users.middleware.getUsers;
-    getUsers[0]({}, {
+    getUsers[0](_req, {
       json: (docs) => {
         expect(Array.isArray(docs)).toEqual(true);
         done();
@@ -56,9 +76,9 @@ describe('/users', () => {
     });
     const users = mock.reRequire('./users');
     const getUsers = users.middleware.getUsers;
-    getUsers[0]({}, {
+    getUsers[0](_req, {
       json: (docs) => {
-        expect(_fields).toEqual('firstName lastName emailAddress');
+        expect(_fields).toEqual('firstName lastName emailAddressVerified');
         done();
       }
     }, () => {});
@@ -78,7 +98,7 @@ describe('/users', () => {
     });
     const users = mock.reRequire('./users');
     const getUsers = users.middleware.getUsers;
-    getUsers[0]({}, {}, (err) => {
+    getUsers[0](_req, {}, (err) => {
       expect(err).toBeDefined();
       done();
     });
@@ -102,10 +122,7 @@ describe('/users', () => {
     });
     const users = mock.reRequire('./users');
     const getUser = users.middleware.getUser;
-    const req = {
-      params: { id: 0 }
-    };
-    getUser[0](req, {
+    getUser[0](_req, {
       json: (doc) => {
         expect(doc).toBeDefined();
         done();
@@ -133,12 +150,38 @@ describe('/users', () => {
     });
     const users = mock.reRequire('./users');
     const getUser = users.middleware.getUser;
-    const req = {
-      params: { id: 0 }
-    };
-    getUser[0](req, {
+    getUser[0](_req, {
       json: (doc) => {
-        expect(_fields).toEqual('firstName lastName emailAddress');
+        expect(_fields).toEqual('firstName lastName emailAddressVerified');
+        done();
+      }
+    }, () => {});
+  });
+
+  it('should return different fields if the user owns the resource', (done) => {
+    let _fields;
+    mock('../database/models/user', {
+      find: () => {
+        return {
+          limit: () => {
+            return {
+              select: (fields) => {
+                _fields = fields;
+                return {
+                  lean: () => Promise.resolve([{}])
+                };
+              }
+            };
+          }
+        };
+      }
+    });
+    const users = mock.reRequire('./users');
+    const getUser = users.middleware.getUser;
+    _req.user._id.equals = () => true;
+    getUser[0](_req, {
+      json: (doc) => {
+        expect(_fields).toEqual('firstName lastName emailAddress emailAddressVerified');
         done();
       }
     }, () => {});
@@ -162,10 +205,7 @@ describe('/users', () => {
     });
     const users = mock.reRequire('./users');
     const getUser = users.middleware.getUser;
-    const req = {
-      params: { id: 0 }
-    };
-    getUser[0](req, {}, (err) => {
+    getUser[0](_req, {}, (err) => {
       expect(err.code).toEqual(200);
       expect(err.status).toEqual(400);
       done();
@@ -190,90 +230,39 @@ describe('/users', () => {
     });
     const users = mock.reRequire('./users');
     const getUser = users.middleware.getUser;
-    const req = {
-      params: { id: 0 }
-    };
-    getUser[0](req, {}, (err) => {
+    getUser[0](_req, {}, (err) => {
       expect(err).toBeDefined();
       done();
     });
   });
 
   it('should PATCH a document', (done) => {
-    let _user = {
-      set(key, value) {
-        this[key] = value;
-      },
-      save() {
-        return Promise.resolve();
-      }
-    };
-    mock('../database/models/user', {
-      find: () => {
-        return {
-          limit: () => {
-            return {
-              select: () => Promise.resolve([_user])
-            };
-          }
-        };
-      }
-    });
     const users = mock.reRequire('./users');
     const updateUser = users.middleware.updateUser;
-    const req = {
-      params: { id: 0 },
-      body: {
-        firstName: 'NewName'
-      }
-    };
+    _req.body = { firstName: 'NewName' };
     const res = {
       json: (result) => {
         expect(result.message).toBeDefined();
-        expect(_user.firstName).toEqual('NewName');
+        expect(_req.user.firstName).toEqual('NewName');
         done();
       }
     };
-    updateUser[1](req, res, () => {});
+    updateUser[1](_req, res, () => {});
   });
 
   it('should only PATCH certain fields', (done) => {
-    let _user = {
-      set(key, value) {
-        this[key] = value;
-      },
-      save() {
-        return Promise.resolve();
-      }
-    };
-    spyOn(_user, 'set').and.callThrough();
-    mock('../database/models/user', {
-      find: () => {
-        return {
-          limit: () => {
-            return {
-              select: () => Promise.resolve([_user])
-            };
-          }
-        };
-      }
-    });
+    spyOn(_req.user, 'set').and.callThrough();
     const users = mock.reRequire('./users');
     const updateUser = users.middleware.updateUser;
-    const req = {
-      params: { id: 0 },
-      body: {
-        invalidField: 'foobar'
-      }
-    };
+    _req.body = { invalidField: 'foobar' };
     const res = {
       json: (result) => {
         expect(result.message).toBeDefined();
-        expect(_user.set).not.toHaveBeenCalled();
+        expect(_req.user.set).not.toHaveBeenCalled();
         done();
       }
     };
-    updateUser[1](req, res, () => {});
+    updateUser[1](_req, res, () => {});
   });
 
   it('should only PATCH a document if it is owned by the session user', () => {
@@ -281,88 +270,45 @@ describe('/users', () => {
     expect(users.middleware.updateUser[0].name).toEqual('confirmUserOwnership');
   });
 
-  it('should handle a mongoose error with PATCH /users/:id', (done) => {
-    mock('../database/models/user', {
-      find: () => {
-        return {
-          limit: () => {
-            return {
-              select: () => Promise.reject(new Error())
-            };
-          }
-        };
-      }
-    });
-
+  it('should issue a new email verification token if the email address changes', (done) => {
     const users = mock.reRequire('./users');
     const updateUser = users.middleware.updateUser;
-    const req = {
-      params: { id: 0 },
-      body: {}
+    _req.user.emailAddress = 'my@email.com';
+    _req.user.resetEmailAddressVerification = () => {};
+    _req.body = { emailAddress: 'new@email.com' };
+    const res = {
+      json: (result) => {
+        expect(_req.user.emailAddress).toEqual('new@email.com');
+        expect(_req.user.resetEmailAddressVerification).toHaveBeenCalled();
+        done();
+      }
     };
-    updateUser[1](req, {}, (err) => {
+    spyOn(_req.user, 'resetEmailAddressVerification').and.callThrough();
+    updateUser[1](_req, res, () => {});
+  });
+
+  it('should handle a mongoose error with PATCH /users/:id', (done) => {
+    const users = mock.reRequire('./users');
+    const updateUser = users.middleware.updateUser;
+    updateUser[1](_req, {}, (err) => {
       expect(err).toBeDefined();
       done();
     });
   });
 
   it('should handle a schema validation error with PATCH /users/:id', (done) => {
-    mock('../database/models/user', {
-      find: () => {
-        return {
-          limit: () => {
-            return {
-              select: () => {
-                const error = new Error();
-                error.name = 'ValidationError';
-                return Promise.reject(error);
-              }
-            };
-          }
-        };
-      }
-    });
-
     const users = mock.reRequire('./users');
     const updateUser = users.middleware.updateUser;
-    const req = {
-      params: { id: 0 },
-      body: {}
+
+    _req.user.save = () => {
+      const error = new Error();
+      error.name = 'ValidationError';
+      return Promise.reject(error);
     };
 
-    updateUser[1](req, {}, (err) => {
+    updateUser[1](_req, {}, (err) => {
       expect(err).toBeDefined();
       expect(err.code).toEqual(201);
-      done();
-    });
-  });
-
-  it('should handle a user not found error with PATCH /users/:id', (done) => {
-    mock('../database/models/user', {
-      find: () => {
-        return {
-          limit: () => {
-            return {
-              select: () => {
-                return Promise.resolve([]);
-              }
-            };
-          }
-        };
-      }
-    });
-
-    const users = mock.reRequire('./users');
-    const updateUser = users.middleware.updateUser;
-    const req = {
-      params: { id: 0 },
-      body: {}
-    };
-
-    updateUser[1](req, {}, (err) => {
-      expect(err).toBeDefined();
-      expect(err.code).toEqual(200);
-      expect(err.status).toEqual(400);
       done();
     });
   });
@@ -373,16 +319,13 @@ describe('/users', () => {
     });
     const users = mock.reRequire('./users');
     const deleteUser = users.middleware.deleteUser;
-    const req = {
-      params: { id: 0 }
-    };
     const res = {
       json: (result) => {
         expect(result.message).toBeDefined();
         done();
       }
     };
-    deleteUser[1](req, res, () => {});
+    deleteUser[1](_req, res, () => {});
   });
 
   it('should only DELETE a document if it is owned by the session user', () => {
@@ -396,10 +339,7 @@ describe('/users', () => {
     });
     const users = mock.reRequire('./users');
     const deleteUser = users.middleware.deleteUser;
-    const req = {
-      params: { id: 0 }
-    };
-    deleteUser[1](req, {}, (err) => {
+    deleteUser[1](_req, {}, (err) => {
       expect(err).toBeDefined();
       done();
     });

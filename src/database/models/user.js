@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const randomstring = require('randomstring');
 const { isEmail, isAlpha } = require('validator');
 const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
 
@@ -63,16 +64,21 @@ const userSchema = new Schema({
       isAsync: false
     }
   },
+  emailAddressVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailAddressVerificationToken: String,
   password: {
     type: String,
     required: [true, 'Please provide a valid password.']
   },
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
   dateLastLoggedIn: {
     type: Date,
     required: true
-  },
-  resetPasswordToken: String,
-  resetPasswordExpires: Date
+  }
 }, {
   collection: 'User',
   timestamps: {
@@ -126,6 +132,35 @@ userSchema.methods.setPassword = function (password) {
     .then(hash => {
       this.password = hash;
     });
+};
+
+userSchema.methods.setResetPasswordToken = function () {
+  this.resetPasswordToken = randomstring.generate();
+  this.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+  // TODO: Remove this after implementing email service.
+  console.log('reset password token:', this.resetPasswordToken);
+};
+
+userSchema.methods.unsetResetPasswordToken = function () {
+  this.resetPasswordToken = undefined;
+  this.resetPasswordExpires = undefined;
+};
+
+userSchema.methods.resetEmailAddressVerification = function () {
+  this.emailAddressVerified = false;
+  this.emailAddressVerificationToken = randomstring.generate();
+  // TODO: Send email with token.
+  console.log('email verification token:', this.emailAddressVerificationToken);
+};
+
+userSchema.methods.verifyEmailAddress = function (token) {
+  if (this.emailAddressVerificationToken === token) {
+    this.emailAddressVerified = true;
+    this.emailAddressVerificationToken = undefined;
+    return true;
+  }
+
+  return false;
 };
 
 userSchema.plugin(MongoDbErrorHandlerPlugin);

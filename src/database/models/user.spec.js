@@ -222,4 +222,79 @@ describe('user model', () => {
         done();
       });
   });
+
+  it('should set the reset password token and expiration', () => {
+    const user = new User({
+      firstName: 'Foo',
+      lastName: 'Bar',
+      emailAddress: 'foo@bar.com',
+      password: 'foobar',
+      dateLastLoggedIn: new Date()
+    });
+
+    user.setResetPasswordToken();
+    expect(user.resetPasswordToken).toBeDefined();
+    expect(user.resetPasswordExpires).toBeDefined();
+  });
+
+  it('should unset the reset password token and expiration', () => {
+    const user = new User({
+      firstName: 'Foo',
+      lastName: 'Bar',
+      emailAddress: 'foo@bar.com',
+      password: 'foobar',
+      dateLastLoggedIn: new Date(),
+      resetPasswordToken: 'abc123',
+      resetPasswordExpires: new Date()
+    });
+
+    user.unsetResetPasswordToken();
+    expect(user.resetPasswordToken).toBeUndefined();
+    expect(user.resetPasswordExpires).toBeUndefined();
+  });
+
+  it('should reset the email verification', () => {
+    const user = new User({
+      firstName: 'Foo',
+      lastName: 'Bar',
+      emailAddress: 'foo@bar.com',
+      password: 'foobar',
+      dateLastLoggedIn: new Date()
+    });
+
+    user.resetEmailAddressVerification();
+    expect(user.emailAddressVerified).toEqual(false);
+    expect(user.emailAddressVerificationToken).toBeDefined();
+  });
+
+  it('should verify email', () => {
+    const user = new User({
+      firstName: 'Foo',
+      lastName: 'Bar',
+      emailAddress: 'foo@bar.com',
+      password: 'foobar',
+      dateLastLoggedIn: new Date(),
+      emailAddressVerificationToken: 'abc123'
+    });
+
+    const result = user.verifyEmailAddress('abc123');
+    expect(user.emailAddressVerified).toEqual(true);
+    expect(user.emailAddressVerificationToken).toBeUndefined();
+    expect(result).toEqual(true);
+  });
+
+  it('should return false for mismatched email verification tokens', () => {
+    const user = new User({
+      firstName: 'Foo',
+      lastName: 'Bar',
+      emailAddress: 'foo@bar.com',
+      password: 'foobar',
+      dateLastLoggedIn: new Date(),
+      emailAddressVerificationToken: 'abc123'
+    });
+
+    const result = user.verifyEmailAddress('foobar');
+    expect(user.emailAddressVerificationToken).toEqual('abc123');
+    expect(result).toEqual(false);
+  });
 });

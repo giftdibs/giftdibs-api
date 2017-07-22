@@ -27,6 +27,7 @@
 - `106` The reset password token is invalid.
 - `107` The password was not valid during a reset password request.
 - `108` Misc.
+- `109` The email address verification token was invalid.
 
 ### `/users`
 
