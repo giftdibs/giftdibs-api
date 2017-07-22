@@ -153,7 +153,6 @@ userSchema.methods.resetEmailAddressVerification = function () {
   console.log('email verification token:', this.emailAddressVerificationToken);
 };
 
-// Maybe this should be a global schema method? Or, should we require login?
 userSchema.methods.verifyEmailAddress = function (token) {
   if (this.emailAddressVerificationToken === token) {
     this.emailAddressVerified = true;
