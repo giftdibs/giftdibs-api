@@ -111,6 +111,7 @@ describe('/auth', () => {
     mock('../database/models/user', function User() {
       return {
         setPassword: () => Promise.resolve(),
+        resetEmailAddressVerification: () => {},
         save: () => Promise.resolve({ _id: 0 })
       };
     });
@@ -216,8 +217,10 @@ describe('/auth', () => {
 
   it('should create a reset password token', (done) => {
     const _user = {
-      save: () => Promise.resolve()
+      save: () => Promise.resolve(),
+      setResetPasswordToken: () => {}
     };
+    spyOn(_user, 'setResetPasswordToken').and.callThrough();
     mock('../database/models/user', {
       find: () => {
         return {
@@ -234,8 +237,7 @@ describe('/auth', () => {
     };
     const res = {
       json: () => {
-        expect(typeof _user.resetPasswordToken).toEqual('string');
-        expect(typeof _user.resetPasswordExpires).toEqual('number');
+        expect(_user.setResetPasswordToken).toHaveBeenCalled();
         done();
       }
     };
@@ -272,19 +274,18 @@ describe('/auth', () => {
         password: ''
       },
       user: {
-        resetPasswordToken: 'foo',
-        resetPasswordExpires: 123,
         setPassword: () => Promise.resolve(),
-        save: () => Promise.resolve()
+        save: () => Promise.resolve(),
+        unsetResetPasswordToken: () => {}
       }
     };
     const res = {
       json: () => {
-        expect(req.user.resetPasswordToken).toBeUndefined();
-        expect(req.user.resetPasswordExpires).toBeUndefined();
+        expect(req.user.unsetResetPasswordToken).toHaveBeenCalled();
         done();
       }
     };
+    spyOn(req.user, 'unsetResetPasswordToken').and.callThrough();
     resetPassword[3](req, res, () => {});
   });
 
@@ -489,6 +490,91 @@ describe('/auth', () => {
     };
     resetPassword[3](req, {}, (err) => {
       expect(err).toBeDefined();
+      done();
+    });
+  });
+
+  it('should require a jwt before getting reset email verification token', () => {
+    const auth = mock.reRequire('./auth');
+    const resendEmailAddressVerification = auth.middleware.resendEmailAddressVerification;
+    expect(resendEmailAddressVerification[0].name).toEqual('authenticateJwt');
+    spyOn(passport, 'authenticate').and.returnValue(() => {});
+    resendEmailAddressVerification[0]({}, {}, () => {});
+    expect(passport.authenticate).toHaveBeenCalled();
+  });
+
+  it('should reset email verification token', (done) => {
+    const auth = mock.reRequire('./auth');
+    const resendEmailAddressVerification = auth.middleware.resendEmailAddressVerification;
+    const req = {
+      user: {
+        resetEmailAddressVerification: () => {},
+        save: () => Promise.resolve()
+      }
+    };
+    const res = {
+      json: () => {
+        expect(req.user.resetEmailAddressVerification).toHaveBeenCalled();
+        done();
+      }
+    };
+    spyOn(req.user, 'resetEmailAddressVerification').and.callThrough();
+    resendEmailAddressVerification[1](req, res, () => {});
+  });
+
+  it('should require a jwt before verifying email address', () => {
+    const auth = mock.reRequire('./auth');
+    const verifyEmailAddress = auth.middleware.verifyEmailAddress;
+    expect(verifyEmailAddress[0].name).toEqual('authenticateJwt');
+    spyOn(passport, 'authenticate').and.returnValue(() => {});
+    const req = {
+      body: {
+        emailAddressVerificationToken: 'abc123'
+      }
+    };
+    verifyEmailAddress[0](req, {}, () => {});
+    expect(passport.authenticate).toHaveBeenCalled();
+  });
+
+  it('should verify an email address', (done) => {
+    const auth = mock.reRequire('./auth');
+    const verifyEmailAddress = auth.middleware.verifyEmailAddress;
+    const req = {
+      user: {
+        verifyEmailAddress: () => true,
+        save: () => Promise.resolve()
+      },
+      body: {
+        emailAddressVerificationToken: 'abc123'
+      }
+    };
+    const res = {
+      json: () => {
+        expect(req.user.verifyEmailAddress).toHaveBeenCalled();
+        done();
+      }
+    };
+    spyOn(req.user, 'verifyEmailAddress').and.callThrough();
+    verifyEmailAddress[1](req, res, () => {});
+  });
+
+  it('should handle unverified email address', (done) => {
+    const auth = mock.reRequire('./auth');
+    const verifyEmailAddress = auth.middleware.verifyEmailAddress;
+    const req = {
+      user: {
+        verifyEmailAddress: () => false,
+        save: () => Promise.resolve()
+      },
+      body: {
+        emailAddressVerificationToken: 'abc123'
+      }
+    };
+    const res = {};
+    spyOn(req.user, 'verifyEmailAddress').and.callThrough();
+    verifyEmailAddress[1](req, res, (err) => {
+      expect(err.status).toEqual(400);
+      expect(err.code).toEqual(109);
       done();
     });
   });

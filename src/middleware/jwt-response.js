@@ -12,7 +12,13 @@ const jwtResponse = (req, res, next) => {
   const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
   res.json({
     token,
-    user: req.user
+    user: {
+      _id: req.user._id,
+      firstName: req.user.firstName,
+      lastName: req.user.lastName,
+      emailAddress: req.user.emailAddress,
+      emailAddressVerified: req.user.emailAddressVerified
+    }
   });
 };
 

@@ -1,6 +1,5 @@
 const express = require('express');
 const passport = require('passport');
-const randomstring = require('randomstring');
 
 const User = require('../database/models/user');
 const jwtResponse = require('../middleware/jwt-response');
@@ -26,8 +25,18 @@ const register = [
     });
 
     user.setPassword(req.body.password)
-      .then(() => user.save())
-      .then(doc => res.json({ id: doc._id }))
+      .then(() => {
+        user.resetEmailAddressVerification();
+        return user.save();
+      })
+      .then(doc => {
+        // TODO: Send verification email.
+        // TODO: Send welcome email.
+        res.json({
+          id: doc._id,
+          message: 'Registration successful! Please log in below.'
+        });
+      })
       .catch(err => {
         if (err.name === 'ValidationError') {
           err.code = 102;
@@ -93,11 +102,7 @@ const forgotten = [
           return Promise.reject(err);
         }
 
-        user.resetPasswordToken = randomstring.generate();
-        user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
-
-        // TODO: Remove this after implementing email service.
-        console.log('reset password token:', user.resetPasswordToken);
+        user.setResetPasswordToken();
 
         return user.save();
       })
@@ -184,8 +189,7 @@ const resetPassword = [
     return user
       .setPassword(req.body.password)
       .then(() => {
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpires = undefined;
+        user.unsetResetPasswordToken();
         return user.save();
       })
       .then(() => res.json({ message: 'Your password was successfully reset.' }))
@@ -200,18 +204,66 @@ const resetPassword = [
   }
 ];
 
+const resendEmailAddressVerification = [
+  function authenticateJwt(req, res, next) {
+    passport.authenticate('jwt', { session: false })(req, res, next);
+  },
+  (req, res, next) => {
+    req.user.resetEmailAddressVerification();
+    // TODO: Send email here...
+    req.user
+      .save()
+      .then(() => {
+        res.json({
+          message: `Verification email sent to ${req.user.emailAddress}. If the email does not appear within 15 minutes, check your spam folder.`
+        });
+      })
+      .catch(next);
+  }
+];
+
+const verifyEmailAddress = [
+  function authenticateJwt(req, res, next) {
+    passport.authenticate('jwt', { session: false })(req, res, next);
+  },
+  (req, res, next) => {
+    const isVerified = req.user.verifyEmailAddress(req.body.emailAddressVerificationToken);
+
+    if (isVerified) {
+      req.user
+        .save()
+        .then(() => {
+          res.json({
+            message: 'Email address verified!'
+          });
+        })
+        .catch(next);
+      return;
+    }
+
+    const err = new Error('The email verification token is invalid or has expired.');
+    err.status = 400;
+    err.code = 109;
+    next(err);
+  }
+];
+
 const router = express.Router();
 router.post('/auth/register', register);
 router.post('/auth/login', login);
 router.post('/auth/forgotten', forgotten);
 router.post('/auth/reset-password', resetPassword);
+router.post('/auth/resend-email-verification', resendEmailAddressVerification);
+router.post('/auth/verify-email', verifyEmailAddress);
 
 module.exports = {
   middleware: {
     register,
     login,
     forgotten,
-    resetPassword
+    resetPassword,
+    resendEmailAddressVerification,
+    verifyEmailAddress
   },
   router
 };

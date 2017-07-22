@@ -3,14 +3,30 @@ const passport = require('passport');
 const User = require('../database/models/user');
 const confirmUserOwnership = require('../middleware/confirm-user-ownership');
 
-const selectFields = [
-  'firstName',
-  'lastName',
-  'emailAddress'
-].join(' ');
+function getSelectFields(req) {
+  let selectFields;
+  if (req.user._id.equals(req.params.id)) {
+    selectFields = [
+      'firstName',
+      'lastName',
+      'emailAddress',
+      'emailAddressVerified'
+    ].join(' ');
+  } else {
+    selectFields = [
+      'firstName',
+      'lastName',
+      'emailAddressVerified'
+    ].join(' ');
+  }
+
+  return selectFields;
+}
 
 const getUser = [
   (req, res, next) => {
+    const selectFields = getSelectFields(req);
+
     User
       .find({ _id: req.params.id })
       .limit(1)
@@ -34,6 +50,8 @@ const getUser = [
 
 const getUsers = [
   (req, res, next) => {
+    const selectFields = getSelectFields(req);
+
     User
       .find({})
       .select(selectFields)
@@ -59,26 +77,17 @@ const updateUser = [
       }
     });
 
-    User
-      .find({ _id: req.params.id })
-      .limit(1)
-      .select(updateFields.join(' '))
-      .then(docs => {
-        const user = docs[0];
+    // If the email address is being changed, need to re-verify.
+    if (changes.emailAddress && (req.user.emailAddress !== req.body.emailAddress)) {
+      req.user.resetEmailAddressVerification();
+    }
 
-        if (!user) {
-          const err = new Error('User not found.');
-          err.code = 200;
-          err.status = 400;
-          return Promise.reject(err);
-        }
+    for (const key in changes) {
+      req.user.set(key, changes[key]);
+    }
 
-        for (const key in changes) {
-          user.set(key, changes[key]);
-        }
-
-        return user.save();
-      })
+    req.user
+      .save()
       .then(() => res.json({ message: 'User updated.' }))
       .catch(err => {
         if (err.name === 'ValidationError') {
