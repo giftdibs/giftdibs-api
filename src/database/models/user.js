@@ -75,6 +75,7 @@ const userSchema = new Schema({
   },
   resetPasswordToken: String,
   resetPasswordExpires: Date,
+  facebookId: String,
   dateLastLoggedIn: {
     type: Date,
     required: true

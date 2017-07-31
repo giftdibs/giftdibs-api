@@ -24,7 +24,8 @@ const register = [
       dateLastLoggedIn: new Date()
     });
 
-    user.setPassword(req.body.password)
+    user
+      .setPassword(req.body.password)
       .then(() => {
         user.resetEmailAddressVerification();
         return user.save();

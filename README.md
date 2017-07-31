@@ -28,6 +28,12 @@
 - `107` The password was not valid during a reset password request.
 - `108` Misc.
 - `109` The email address verification token was invalid.
+# `110` The Facebook access token was not valid.
+- `111` A user was not found with the profile provided.
+- `112` The access token to register with Facebook was invalid.
+- `113` The access token to register with Facebook was expired.
+- `114` Facebook registration validation failed.
+- `115` Updating a user with Facebook profile information failed schema validation.
 
 ### `/users`
 

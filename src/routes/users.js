@@ -5,8 +5,9 @@ const confirmUserOwnership = require('../middleware/confirm-user-ownership');
 
 function getSelectFields(req) {
   let selectFields;
-  if (req.user._id.equals(req.params.id)) {
+  if (req.user._id.equals(req.params.userId)) {
     selectFields = [
+      'facebookId',
       'firstName',
       'lastName',
       'emailAddress',
@@ -28,7 +29,7 @@ const getUser = [
     const selectFields = getSelectFields(req);
 
     User
-      .find({ _id: req.params.id })
+      .find({ _id: req.params.userId })
       .limit(1)
       .select(selectFields)
       .lean()
@@ -68,11 +69,16 @@ const updateUser = [
     const updateFields = [
       'firstName',
       'lastName',
-      'emailAddress'
+      'emailAddress',
+      'facebookId'
     ];
 
     updateFields.forEach(field => {
       if (req.body[field] !== undefined) {
+        if (req.body[field] === null) {
+          req.body[field] = undefined;
+        }
+
         changes[field] = req.body[field];
       }
     });
@@ -104,7 +110,7 @@ const deleteUser = [
   confirmUserOwnership,
   (req, res, next) => {
     User
-      .remove({ _id: req.params.id })
+      .remove({ _id: req.params.userId })
       .then(() => res.json({ message: 'success' }))
       .catch(next);
   }
@@ -114,7 +120,7 @@ const router = express.Router();
 router.use(passport.authenticate('jwt', { session: false }));
 router.route('/users')
   .get(getUsers);
-router.route('/users/:id')
+router.route('/users/:userId')
   .get(getUser)
   .patch(updateUser)
   .delete(deleteUser);
