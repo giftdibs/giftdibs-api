@@ -1,5 +1,7 @@
 const express = require('express');
 const passport = require('passport');
+
+const facebook = require('../lib/facebook');
 const User = require('../database/models/user');
 const confirmUserOwnership = require('../middleware/confirm-user-ownership');
 
@@ -65,35 +67,56 @@ const getUsers = [
 const updateUser = [
   confirmUserOwnership,
   (req, res, next) => {
-    let changes = {};
-    const updateFields = [
-      'firstName',
-      'lastName',
-      'emailAddress',
-      'facebookId'
-    ];
-
-    updateFields.forEach(field => {
-      if (req.body[field] !== undefined) {
-        if (req.body[field] === null) {
-          req.body[field] = undefined;
+    Promise.resolve(req.user)
+      .then((user) => {
+        // Update user with Facebook profile.
+        if (req.body.facebookUserAccessToken) {
+          return facebook
+            .verifyUserAccessToken(req.body.facebookUserAccessToken)
+            .then(() => facebook.getProfile(req.body.facebookUserAccessToken))
+            .then((profile) => {
+              user.firstName = profile.first_name;
+              user.lastName = profile.last_name;
+              user.emailAddress = profile.email;
+              user.facebookId = profile.id;
+              user.emailAddressVerified = true;
+              return user;
+            });
         }
 
-        changes[field] = req.body[field];
-      }
-    });
+        return user;
+      })
+      .then((user) => {
+        let changes = {};
+        const updateFields = [
+          'firstName',
+          'lastName',
+          'emailAddress',
+          'facebookId'
+        ];
 
-    // If the email address is being changed, need to re-verify.
-    if (changes.emailAddress && (req.user.emailAddress !== req.body.emailAddress)) {
-      req.user.resetEmailAddressVerification();
-    }
+        updateFields.forEach(field => {
+          if (req.body[field] !== undefined) {
+            if (req.body[field] === null) {
+              req.body[field] = undefined;
+            }
 
-    for (const key in changes) {
-      req.user.set(key, changes[key]);
-    }
+            changes[field] = req.body[field];
+          }
+        });
 
-    req.user
-      .save()
+        // If the email address is being changed, need to re-verify.
+        if (changes.emailAddress && (user.emailAddress !== req.body.emailAddress)) {
+          user.resetEmailAddressVerification();
+        }
+
+        for (const key in changes) {
+          user.set(key, changes[key]);
+        }
+
+        return user;
+      })
+      .then((user) => user.save())
       .then(() => res.json({ message: 'User updated.' }))
       .catch(err => {
         if (err.name === 'ValidationError') {
