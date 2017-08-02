@@ -96,7 +96,10 @@ userSchema.methods.validatePassword = function (password) {
         if (valid) {
           resolve();
         } else {
-          reject(new Error('Password invalid.'));
+          const error = new Error('Password invalid.');
+          error.status = 400;
+          error.code = 101;
+          reject(error);
         }
       });
   });

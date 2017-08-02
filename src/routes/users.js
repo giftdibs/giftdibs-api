@@ -67,7 +67,8 @@ const getUsers = [
 const updateUser = [
   confirmUserOwnership,
   (req, res, next) => {
-    Promise.resolve(req.user)
+    Promise
+      .resolve(req.user)
       .then((user) => {
         // Update user with Facebook profile.
         if (req.body.facebookUserAccessToken) {
