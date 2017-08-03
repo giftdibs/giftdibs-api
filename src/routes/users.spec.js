@@ -181,7 +181,7 @@ describe('/users', () => {
     _req.user._id.equals = () => true;
     getUser[0](_req, {
       json: (doc) => {
-        expect(_fields).toEqual('firstName lastName emailAddress emailAddressVerified');
+        expect(_fields).toEqual('facebookId firstName lastName emailAddress emailAddressVerified');
         done();
       }
     }, () => {});

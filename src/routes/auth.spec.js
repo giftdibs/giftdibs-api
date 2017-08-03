@@ -241,7 +241,7 @@ describe('/auth', () => {
         done();
       }
     };
-    forgotten[0](req, res, () => {});
+    forgotten[1](req, res, () => {});
   });
 
   it('should handle errors finding a user for a reset password token', (done) => {
@@ -259,7 +259,7 @@ describe('/auth', () => {
         emailAddress: ''
       }
     };
-    forgotten[0](req, {}, (err) => {
+    forgotten[1](req, {}, (err) => {
       expect(err.code).toEqual(104);
       expect(err.status).toEqual(400);
       done();
@@ -317,7 +317,10 @@ describe('/auth', () => {
     const auth = mock.reRequire('./auth');
     const resetPassword = auth.middleware.resetPassword;
     const req = {
-      user: {}
+      user: {
+        validatePassword: () => Promise.resolve()
+      },
+      body: {}
     };
     resetPassword[2](req, {}, (err) => {
       expect(err).toBeUndefined();
@@ -364,6 +367,7 @@ describe('/auth', () => {
     const resetPassword = auth.middleware.resetPassword;
     const req = {
       body: {
+        resetPasswordToken: 'abc123',
         password: 'foo',
         passwordAgain: 'foo'
       }
@@ -390,6 +394,7 @@ describe('/auth', () => {
     const resetPassword = auth.middleware.resetPassword;
     const req = {
       body: {
+        resetPasswordToken: 'abc123',
         password: 'foo',
         passwordAgain: 'bar'
       }
