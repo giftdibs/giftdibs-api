@@ -4,8 +4,12 @@ const passport = require('passport');
 const User = require('../database/models/user');
 const jwtResponse = require('../middleware/jwt-response');
 
+function authenticateJwt(req, res, next) {
+  passport.authenticate('jwt', { session: false })(req, res, next);
+}
+
 const register = [
-  (req, res, next) => {
+  function checkSpamBot(req, res, next) {
     if (req.body.gdNickname) {
       const err = new Error('You are a spam bot. Goodbye!');
       err.status = 400;
@@ -16,7 +20,8 @@ const register = [
 
     next();
   },
-  (req, res, next) => {
+
+  function registerUser(req, res, next) {
     let user = new User({
       emailAddress: req.body.emailAddress,
       firstName: req.body.firstName,
@@ -24,7 +29,8 @@ const register = [
       dateLastLoggedIn: new Date()
     });
 
-    user.setPassword(req.body.password)
+    user
+      .setPassword(req.body.password)
       .then(() => {
         user.resetEmailAddressVerification();
         return user.save();
@@ -88,22 +94,33 @@ const login = [
 ];
 
 const forgotten = [
-  (req, res, next) => {
+  function checkEmptyEmailAddress(req, res, next) {
+    if (req.body.emailAddress) {
+      next();
+      return;
+    }
+
+    const error = new Error('Please provide an email address.');
+    error.status = 400;
+    error.code = 104;
+    next(error);
+  },
+
+  function requestResetPasswordToken(req, res, next) {
     User
       .find({ emailAddress: req.body.emailAddress })
       .limit(1)
-      .then(docs => {
+      .then((docs) => {
         const user = docs[0];
 
         if (!user) {
-          const err = new Error(`The email address, "${req.body.emailAddress}", was not found in our records.`);
+          const err = new Error(`The email address "${req.body.emailAddress}" was not found in our records.`);
           err.code = 104;
           err.status = 400;
           return Promise.reject(err);
         }
 
         user.setResetPasswordToken();
-
         return user.save();
       })
       .then(() => {
@@ -119,6 +136,14 @@ const forgotten = [
 
 const resetPassword = [
   function validatePassword(req, res, next) {
+    if (!req.body.resetPasswordToken && !req.body.currentPassword) {
+      const error = new Error('Please provide your current password.');
+      error.status = 400;
+      error.code = 107;
+      next(error);
+      return;
+    }
+
     if (!req.body.password || !req.body.passwordAgain) {
       const error = new Error('Please provide a new password.');
       error.status = 400;
@@ -148,13 +173,17 @@ const resetPassword = [
   },
 
   function validateResetPasswordToken(req, res, next) {
-    // User passed the JWT authentication, skip this step.
-    if (req.user) {
-      next();
-      return;
-    }
-
     if (!req.body.resetPasswordToken) {
+      // User passed the JWT authentication, check for current password.
+      if (req.user) {
+        req.user
+          .validatePassword(req.body.currentPassword)
+          .then(() => next())
+          .catch(next);
+
+        return;
+      }
+
       const error = new Error('The reset password token is invalid.');
       error.status = 400;
       error.code = 106;
@@ -184,8 +213,9 @@ const resetPassword = [
       .catch(next);
   },
 
-  function setPassword(req, res, next) {
+  function resetPassword(req, res, next) {
     const user = req.user;
+
     return user
       .setPassword(req.body.password)
       .then(() => {
@@ -205,15 +235,14 @@ const resetPassword = [
 ];
 
 const resendEmailAddressVerification = [
-  function authenticateJwt(req, res, next) {
-    passport.authenticate('jwt', { session: false })(req, res, next);
-  },
-  (req, res, next) => {
+  authenticateJwt,
+
+  function requestEmailAddressVerificationToken(req, res, next) {
     req.user.resetEmailAddressVerification();
-    // TODO: Send email here...
     req.user
       .save()
       .then(() => {
+        // TODO: Send email here...
         res.json({
           message: `Verification email sent to ${req.user.emailAddress}. If the email does not appear within 15 minutes, check your spam folder.`
         });
@@ -223,10 +252,9 @@ const resendEmailAddressVerification = [
 ];
 
 const verifyEmailAddress = [
-  function authenticateJwt(req, res, next) {
-    passport.authenticate('jwt', { session: false })(req, res, next);
-  },
-  (req, res, next) => {
+  authenticateJwt,
+
+  function checkEmailAddressVerificationToken(req, res, next) {
     const isVerified = req.user.verifyEmailAddress(req.body.emailAddressVerificationToken);
 
     if (isVerified) {

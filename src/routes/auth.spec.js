@@ -12,7 +12,7 @@ describe('/auth', () => {
     mock.stopAll();
   });
 
-  it('should login a user and return a jwt', (done) => {
+  it('login - should login a user and return a jwt', (done) => {
     spyOn(passport, 'authenticate').and.callThrough();
     const auth = mock.reRequire('./auth');
 
@@ -26,12 +26,12 @@ describe('/auth', () => {
     expect(auth.middleware.login[2].name).toEqual('jwtResponse');
 
     auth.middleware.login[1]({}, {}, () => {
-      expect(passport.authenticate).toHaveBeenCalled();
+      expect(passport.authenticate).toHaveBeenCalledWith('local', jasmine.any(Function));
       done();
     });
   });
 
-  it('should fail login if credentials are empty', (done) => {
+  it('login - should fail login if credentials are empty', (done) => {
     const auth = mock.reRequire('./auth');
     auth.middleware.login[0]({ body: {} }, {}, (err) => {
       expect(err.status).toEqual(400);
@@ -48,7 +48,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should login and add the user to the request object', (done) => {
+  it('login - should login and add the user to the request object', (done) => {
     spyOn(passport, 'authenticate').and.callFake((hook, callback) => {
       const err = null;
       const user = {};
@@ -67,7 +67,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should handle passport failures', (done) => {
+  it('login - should handle passport failures', (done) => {
     spyOn(passport, 'authenticate').and.callFake((hook, callback) => {
       const err = new Error();
       const user = {};
@@ -86,7 +86,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should handle user not found errors', (done) => {
+  it('login - should handle user not found errors', (done) => {
     spyOn(passport, 'authenticate').and.callFake((hook, callback) => {
       const err = null;
       const user = false;
@@ -107,7 +107,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should register a user', (done) => {
+  it('register - should register a user', (done) => {
     mock('../database/models/user', function User() {
       return {
         setPassword: () => Promise.resolve(),
@@ -134,7 +134,7 @@ describe('/auth', () => {
     register[1](req, res, () => {});
   });
 
-  it('should fail registration if schema validation fails', (done) => {
+  it('register - should fail registration if schema validation fails', (done) => {
     mock('../database/models/user', function User() {
       return {
         setPassword: () => {
@@ -162,7 +162,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should fail registration if mongoose fails', (done) => {
+  it('register - should fail registration if mongoose fails', (done) => {
     mock('../database/models/user', function User() {
       return {
         setPassword: () => Promise.reject(new Error())
@@ -185,7 +185,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should fail registration if gdNickname is included in the request', (done) => {
+  it('register - should fail registration if gdNickname is included in the request', (done) => {
     // Spam bot control.
     const auth = mock.reRequire('./auth');
     const register = auth.middleware.register;
@@ -202,7 +202,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should continue registration if gdNickname is undefined', (done) => {
+  it('register - should continue registration if gdNickname is undefined', (done) => {
     // Spam bot control.
     const auth = mock.reRequire('./auth');
     const register = auth.middleware.register;
@@ -215,7 +215,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should create a reset password token', (done) => {
+  it('forgotten - should create a reset password token', (done) => {
     const _user = {
       save: () => Promise.resolve(),
       setResetPasswordToken: () => {}
@@ -237,14 +237,40 @@ describe('/auth', () => {
     };
     const res = {
       json: () => {
-        expect(_user.setResetPasswordToken).toHaveBeenCalled();
+        expect(_user.setResetPasswordToken).toHaveBeenCalledWith();
         done();
       }
     };
-    forgotten[0](req, res, () => {});
+    forgotten[1](req, res, () => {});
   });
 
-  it('should handle errors finding a user for a reset password token', (done) => {
+  it('forgotten - should fail if email is empty', () => {
+    const auth = mock.reRequire('./auth');
+    const forgotten = auth.middleware.forgotten;
+    const req = {
+      body: {}
+    };
+    forgotten[0](req, {}, (err) => {
+      expect(err.message).toBeDefined();
+      expect(err.status).toEqual(400);
+      expect(err.code).toEqual(104);
+    });
+  });
+
+  it('forgotten - should continue if email is not empty', () => {
+    const auth = mock.reRequire('./auth');
+    const forgotten = auth.middleware.forgotten;
+    const req = {
+      body: {
+        emailAddress: 'foo@bar.com'
+      }
+    };
+    forgotten[0](req, {}, (err) => {
+      expect(err).not.toBeDefined();
+    });
+  });
+
+  it('forgotten - should handle errors finding a user for a reset password token', (done) => {
     mock('../database/models/user', {
       find: () => {
         return {
@@ -259,14 +285,14 @@ describe('/auth', () => {
         emailAddress: ''
       }
     };
-    forgotten[0](req, {}, (err) => {
+    forgotten[1](req, {}, (err) => {
       expect(err.code).toEqual(104);
       expect(err.status).toEqual(400);
       done();
     });
   });
 
-  it('should reset a password', (done) => {
+  it('reset-password - should reset a password', (done) => {
     const auth = mock.reRequire('./auth');
     const resetPassword = auth.middleware.resetPassword;
     const req = {
@@ -281,7 +307,7 @@ describe('/auth', () => {
     };
     const res = {
       json: () => {
-        expect(req.user.unsetResetPasswordToken).toHaveBeenCalled();
+        expect(req.user.unsetResetPasswordToken).toHaveBeenCalledWith();
         done();
       }
     };
@@ -289,7 +315,7 @@ describe('/auth', () => {
     resetPassword[3](req, res, () => {});
   });
 
-  it('should validate a token before resetting the password', (done) => {
+  it('reset-password - should validate a token before resetting the password', (done) => {
     mock('../database/models/user', {
       find: () => {
         return {
@@ -313,11 +339,14 @@ describe('/auth', () => {
     });
   });
 
-  it('should skip validation of token if user already set in the session', (done) => {
+  it('reset-password - should skip validation of token if user already set in the session', (done) => {
     const auth = mock.reRequire('./auth');
     const resetPassword = auth.middleware.resetPassword;
     const req = {
-      user: {}
+      user: {
+        validatePassword: () => Promise.resolve()
+      },
+      body: {}
     };
     resetPassword[2](req, {}, (err) => {
       expect(err).toBeUndefined();
@@ -326,7 +355,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should validate a jwt before resetting the password', (done) => {
+  it('reset-password - should validate a jwt before resetting the password', (done) => {
     spyOn(passport, 'authenticate').and.callFake((hook, options) => {
       return (req, res, next) => {
         next();
@@ -345,7 +374,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should skip validate a jwt before resetting the password if headers not set', (done) => {
+  it('reset-password - should skip validate a jwt before resetting the password if headers not set', (done) => {
     const auth = mock.reRequire('./auth');
     const resetPassword = auth.middleware.resetPassword;
     const req = {
@@ -359,11 +388,12 @@ describe('/auth', () => {
     });
   });
 
-  it('should check if the password is empty, or does not match, before a reset password request', () => {
+  it('reset-password - should check if the password is empty, or does not match, before a reset password request', () => {
     const auth = mock.reRequire('./auth');
     const resetPassword = auth.middleware.resetPassword;
     const req = {
       body: {
+        resetPasswordToken: 'abc123',
         password: 'foo',
         passwordAgain: 'foo'
       }
@@ -373,7 +403,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should fail reset password if password is empty', () => {
+  it('reset-password - should fail reset password if password is empty', () => {
     const auth = mock.reRequire('./auth');
     const resetPassword = auth.middleware.resetPassword;
     const req = {
@@ -385,11 +415,12 @@ describe('/auth', () => {
     });
   });
 
-  it('should fail reset password if passwords do not match', () => {
+  it('reset-password - should fail reset password if passwords do not match', () => {
     const auth = mock.reRequire('./auth');
     const resetPassword = auth.middleware.resetPassword;
     const req = {
       body: {
+        resetPasswordToken: 'abc123',
         password: 'foo',
         passwordAgain: 'bar'
       }
@@ -400,7 +431,23 @@ describe('/auth', () => {
     });
   });
 
-  it('should fail reset password if the jwt is invalid', (done) => {
+  it('reset-password - should fail if password fields are empty', () => {
+    const auth = mock.reRequire('./auth');
+    const resetPassword = auth.middleware.resetPassword;
+    const req = {
+      body: {
+        resetPasswordToken: 'abc123',
+        password: '',
+        passwordAgain: ''
+      }
+    };
+    resetPassword[0](req, {}, (err) => {
+      expect(err.status).toEqual(400);
+      expect(err.code).toEqual(107);
+    });
+  });
+
+  it('reset-password - should fail reset password if the jwt is invalid', (done) => {
     spyOn(passport, 'authenticate').and.callFake((hook, options) => {
       return (req, res, next) => {
         next(new Error());
@@ -419,7 +466,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should fail reset password if the token is not sent with the request', (done) => {
+  it('reset-password - should fail reset password if the token is not sent with the request', (done) => {
     const auth = mock.reRequire('./auth');
     const resetPassword = auth.middleware.resetPassword;
     const req = {
@@ -432,7 +479,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should fail reset password if the token is not found on a user record', (done) => {
+  it('reset-password - should fail reset password if the token is not found on a user record', (done) => {
     mock('../database/models/user', {
       find: () => {
         return {
@@ -455,7 +502,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should fail reset password if the new password fails validation', (done) => {
+  it('reset-password - should fail reset password if the new password fails validation', (done) => {
     const auth = mock.reRequire('./auth');
     const resetPassword = auth.middleware.resetPassword;
     const req = {
@@ -477,7 +524,7 @@ describe('/auth', () => {
     });
   });
 
-  it('should fail reset password if any other errors are thrown', (done) => {
+  it('reset-password - should fail reset password if any other errors are thrown', (done) => {
     const auth = mock.reRequire('./auth');
     const resetPassword = auth.middleware.resetPassword;
     const req = {
@@ -494,16 +541,16 @@ describe('/auth', () => {
     });
   });
 
-  it('should require a jwt before getting reset email verification token', () => {
+  it('resend-email-address-verification - should require a jwt before getting reset email verification token', () => {
     const auth = mock.reRequire('./auth');
     const resendEmailAddressVerification = auth.middleware.resendEmailAddressVerification;
     expect(resendEmailAddressVerification[0].name).toEqual('authenticateJwt');
     spyOn(passport, 'authenticate').and.returnValue(() => {});
     resendEmailAddressVerification[0]({}, {}, () => {});
-    expect(passport.authenticate).toHaveBeenCalled();
+    expect(passport.authenticate).toHaveBeenCalledWith('jwt', { session: false });
   });
 
-  it('should reset email verification token', (done) => {
+  it('resend-email-address-verification - should reset email verification token', (done) => {
     const auth = mock.reRequire('./auth');
     const resendEmailAddressVerification = auth.middleware.resendEmailAddressVerification;
     const req = {
@@ -514,7 +561,7 @@ describe('/auth', () => {
     };
     const res = {
       json: () => {
-        expect(req.user.resetEmailAddressVerification).toHaveBeenCalled();
+        expect(req.user.resetEmailAddressVerification).toHaveBeenCalledWith();
         done();
       }
     };
@@ -522,7 +569,7 @@ describe('/auth', () => {
     resendEmailAddressVerification[1](req, res, () => {});
   });
 
-  it('should require a jwt before verifying email address', () => {
+  it('verify-email - should require a jwt before verifying email address', () => {
     const auth = mock.reRequire('./auth');
     const verifyEmailAddress = auth.middleware.verifyEmailAddress;
     expect(verifyEmailAddress[0].name).toEqual('authenticateJwt');
@@ -533,10 +580,10 @@ describe('/auth', () => {
       }
     };
     verifyEmailAddress[0](req, {}, () => {});
-    expect(passport.authenticate).toHaveBeenCalled();
+    expect(passport.authenticate).toHaveBeenCalledWith('jwt', { session: false });
   });
 
-  it('should verify an email address', (done) => {
+  it('verify-email - should verify an email address', (done) => {
     const auth = mock.reRequire('./auth');
     const verifyEmailAddress = auth.middleware.verifyEmailAddress;
     const req = {
@@ -550,7 +597,7 @@ describe('/auth', () => {
     };
     const res = {
       json: () => {
-        expect(req.user.verifyEmailAddress).toHaveBeenCalled();
+        expect(req.user.verifyEmailAddress).toHaveBeenCalledWith('abc123');
         done();
       }
     };
@@ -558,7 +605,7 @@ describe('/auth', () => {
     verifyEmailAddress[1](req, res, () => {});
   });
 
-  it('should handle unverified email address', (done) => {
+  it('verify-email - should handle unverified email address', (done) => {
     const auth = mock.reRequire('./auth');
     const verifyEmailAddress = auth.middleware.verifyEmailAddress;
     const req = {

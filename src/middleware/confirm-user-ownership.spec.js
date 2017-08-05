@@ -8,7 +8,7 @@ describe('confirm user ownership middleware', () => {
         }
       },
       params: {
-        id: 0
+        userId: 0
       }
     };
     const next = (err) => {
@@ -23,7 +23,7 @@ describe('confirm user ownership middleware', () => {
     const middleware = require('./confirm-user-ownership');
     const req = {
       params: {
-        id: 0
+        userId: 0
       }
     };
     const next = (err) => {
@@ -41,7 +41,7 @@ describe('confirm user ownership middleware', () => {
         }
       },
       params: {
-        id: 0
+        userId: 0
       }
     };
     const next = (err) => {

@@ -31,13 +31,14 @@ describe('database service', () => {
   });
 
   it('should log a message if the database successfully connects', (done) => {
+    process.env.DATABASE_URI = 'uri';
     spyOn(logger, 'info').and.returnValue();
     mock('mongoose', {
       connect: () => Promise.resolve()
     });
     const db = mock.reRequire('./index');
     db.connect().then(() => {
-      expect(logger.info).toHaveBeenCalled();
+      expect(logger.info).toHaveBeenCalledWith('Database connected at uri');
       done();
     });
   });
@@ -45,11 +46,11 @@ describe('database service', () => {
   it('should log an error if the database fails to connect', (done) => {
     spyOn(logger, 'error').and.returnValue();
     mock('mongoose', {
-      connect: () => Promise.reject(new Error())
+      connect: () => Promise.reject(new Error('Invalid.'))
     });
     const db = mock.reRequire('./index');
     db.connect().then(() => {
-      expect(logger.error).toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalledWith('Database connection error: Invalid.');
       done();
     });
   });

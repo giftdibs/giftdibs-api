@@ -26,8 +26,9 @@
 - `105` The password and password again did not match, during a password reset request.
 - `106` The reset password token is invalid.
 - `107` The password was not valid during a reset password request.
-- `108` Misc.
+- `108` An invalid nickname was provided.
 - `109` The email address verification token was invalid.
+- `110` Registering a user with Facebook profile information failed schema validation.
 
 ### `/users`
 

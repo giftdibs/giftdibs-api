@@ -181,7 +181,7 @@ describe('/users', () => {
     _req.user._id.equals = () => true;
     getUser[0](_req, {
       json: (doc) => {
-        expect(_fields).toEqual('firstName lastName emailAddress emailAddressVerified');
+        expect(_fields).toEqual('facebookId firstName lastName emailAddress emailAddressVerified');
         done();
       }
     }, () => {});
@@ -240,14 +240,10 @@ describe('/users', () => {
     const users = mock.reRequire('./users');
     const updateUser = users.middleware.updateUser;
     _req.body = { firstName: 'NewName' };
-    const res = {
-      json: (result) => {
-        expect(result.message).toBeDefined();
-        expect(_req.user.firstName).toEqual('NewName');
-        done();
-      }
-    };
-    updateUser[1](_req, res, () => {});
+    updateUser[2](_req, {}, () => {
+      expect(_req.user.firstName).toEqual('NewName');
+      done();
+    });
   });
 
   it('should only PATCH certain fields', (done) => {
@@ -255,14 +251,73 @@ describe('/users', () => {
     const users = mock.reRequire('./users');
     const updateUser = users.middleware.updateUser;
     _req.body = { invalidField: 'foobar' };
-    const res = {
-      json: (result) => {
-        expect(result.message).toBeDefined();
-        expect(_req.user.set).not.toHaveBeenCalled();
-        done();
-      }
+    updateUser[2](_req, {}, () => {
+      expect(_req.user.set).not.toHaveBeenCalled();
+      done();
+    });
+  });
+
+  it('should clear a field during PATCH if set to null', (done) => {
+    spyOn(_req.user, 'set').and.callThrough();
+    const users = mock.reRequire('./users');
+    const updateUser = users.middleware.updateUser;
+    _req.body = { firstName: null };
+    updateUser[2](_req, {}, () => {
+      expect(_req.user.set).toHaveBeenCalledWith('firstName', undefined);
+      done();
+    });
+  });
+
+  it('should skip PATCH of form data if facebook access token is set', (done) => {
+    spyOn(_req.user, 'set').and.callThrough();
+    const users = mock.reRequire('./users');
+    const updateUser = users.middleware.updateUser;
+    _req.body = {
+      facebookUserAccessToken: 'abc123',
+      firstName: 'NewName'
     };
-    updateUser[1](_req, res, () => {});
+    updateUser[2](_req, {}, () => {
+      expect(_req.user.set).not.toHaveBeenCalled();
+      expect(_req.user.firstName).toBeUndefined();
+      done();
+    });
+  });
+
+  it('should PATCH a user with facebook profile if facebook access token is set', (done) => {
+    mock('../lib/facebook', {
+      verifyUserAccessToken: () => Promise.resolve(),
+      getProfile: () => Promise.resolve({
+        first_name: 'Foo',
+        last_name: 'Bar',
+        email: 'foo@bar.com',
+        id: '0'
+      })
+    });
+    const users = mock.reRequire('./users');
+    const updateUser = users.middleware.updateUser;
+    _req.body = {
+      facebookUserAccessToken: 'abc123'
+    };
+    updateUser[1](_req, {}, () => {
+      expect(_req.user.firstName).toEqual('Foo');
+      expect(_req.user.lastName).toEqual('Bar');
+      expect(_req.user.emailAddress).toEqual('foo@bar.com');
+      expect(_req.user.facebookId).toEqual('0');
+      expect(_req.user.emailAddressVerified).toEqual(true);
+      done();
+    });
+  });
+
+  it('should skip PATCH with facebook profile if facebook access token is not set', (done) => {
+    const facebook = mock.reRequire('../lib/facebook');
+    spyOn(facebook, 'verifyUserAccessToken').and.returnValue(Promise.resolve());
+    const users = mock.reRequire('./users');
+    const updateUser = users.middleware.updateUser;
+    _req.body = {};
+    updateUser[1](_req, {}, () => {
+      expect(facebook.verifyUserAccessToken).not.toHaveBeenCalled();
+      done();
+    });
   });
 
   it('should only PATCH a document if it is owned by the session user', () => {
@@ -276,21 +331,18 @@ describe('/users', () => {
     _req.user.emailAddress = 'my@email.com';
     _req.user.resetEmailAddressVerification = () => {};
     _req.body = { emailAddress: 'new@email.com' };
-    const res = {
-      json: (result) => {
-        expect(_req.user.emailAddress).toEqual('new@email.com');
-        expect(_req.user.resetEmailAddressVerification).toHaveBeenCalled();
-        done();
-      }
-    };
     spyOn(_req.user, 'resetEmailAddressVerification').and.callThrough();
-    updateUser[1](_req, res, () => {});
+    updateUser[2](_req, {}, () => {
+      expect(_req.user.emailAddress).toEqual('new@email.com');
+      expect(_req.user.resetEmailAddressVerification).toHaveBeenCalledWith();
+      done();
+    });
   });
 
   it('should handle a mongoose error with PATCH /users/:id', (done) => {
     const users = mock.reRequire('./users');
     const updateUser = users.middleware.updateUser;
-    updateUser[1](_req, {}, (err) => {
+    updateUser[3](_req, {}, (err) => {
       expect(err).toBeDefined();
       done();
     });
@@ -306,9 +358,10 @@ describe('/users', () => {
       return Promise.reject(error);
     };
 
-    updateUser[1](_req, {}, (err) => {
+    updateUser[3](_req, {}, (err) => {
       expect(err).toBeDefined();
       expect(err.code).toEqual(201);
+      expect(err.status).toEqual(400);
       done();
     });
   });
