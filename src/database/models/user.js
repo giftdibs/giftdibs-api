@@ -142,7 +142,7 @@ userSchema.methods.setResetPasswordToken = function () {
   this.resetPasswordToken = randomstring.generate();
   this.resetPasswordExpires = Date.now() + 3600000; // 1 hour
   // TODO: Remove this after implementing email service.
-  console.log('reset password token:', this.resetPasswordToken);
+  console.log(`Reset password here: http://localhost:4200/reset-password/${this.resetPasswordToken}`);
 };
 
 userSchema.methods.unsetResetPasswordToken = function () {
@@ -154,7 +154,7 @@ userSchema.methods.resetEmailAddressVerification = function () {
   this.emailAddressVerified = false;
   this.emailAddressVerificationToken = randomstring.generate();
   // TODO: Send email with token.
-  console.log('email verification token:', this.emailAddressVerificationToken);
+  console.log(`Verify email here: http://localhost:4200/verify-email/${this.emailAddressVerificationToken}`);
 };
 
 userSchema.methods.verifyEmailAddress = function (token) {
