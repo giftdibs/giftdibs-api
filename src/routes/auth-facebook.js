@@ -42,17 +42,20 @@ function updateOrCreateUserWithFacebookProfile(user, facebookProfile) {
 const loginFacebook = [
   (req, res, next) => {
     facebook
-      .verifyUserAccessToken(req.body.accessToken)
-      .then(() => findUserByFacebookId(req.body.facebookId))
+      .verifyUserAccessToken(req.body.facebookUserAccessToken)
+      .then((fbResponse) => findUserByFacebookId(fbResponse.data.user_id))
       .then((user) => {
         if (user) {
           return user;
         }
 
         // Attempt to find or register a user with the Facebook profile information.
-        return facebook.getProfile(req.body.accessToken)
-          .then((profile) => findUserByEmailAddress(profile.email)
-            .then((user) => updateOrCreateUserWithFacebookProfile(user, profile)));
+        return facebook
+          .getProfile(req.body.facebookUserAccessToken)
+          .then((profile) => {
+            return findUserByEmailAddress(profile.email)
+              .then((user) => updateOrCreateUserWithFacebookProfile(user, profile));
+          });
       })
       .then((user) => {
         // TODO: Send welcome email if registering.
@@ -66,6 +69,7 @@ const loginFacebook = [
       .catch(err => {
         if (err.name === 'ValidationError') {
           err.code = 110;
+          err.status = 400;
           err.message = 'Registration validation failed.';
         }
 

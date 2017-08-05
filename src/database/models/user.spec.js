@@ -8,6 +8,7 @@ describe('user model', () => {
 
   beforeEach(() => {
     User = mock.reRequire('./user');
+    spyOn(console, 'log').and.returnValue();
   });
 
   afterEach(() => {

@@ -28,15 +28,6 @@ const verifyUserAccessToken = (userAccessToken) => {
         json: true
       });
     });
-  // .then((response) => {
-  //   console.log('facebook verify token response:', response);
-  //   if (response.data.user_id !== facebookId) {
-  //     const err = new Error('Forbidden.');
-  //     err.status = 403;
-  //     err.code = 110;
-  //     return Promise.reject(err);
-  //   }
-  // });
 };
 
 const getProfile = (userAccessToken) => {

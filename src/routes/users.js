@@ -66,62 +66,75 @@ const getUsers = [
 
 const updateUser = [
   confirmUserOwnership,
-  (req, res, next) => {
-    Promise
-      .resolve(req.user)
-      .then((user) => {
-        // Update user with Facebook profile.
-        if (req.body.facebookUserAccessToken) {
-          return facebook
-            .verifyUserAccessToken(req.body.facebookUserAccessToken)
-            .then(() => facebook.getProfile(req.body.facebookUserAccessToken))
-            .then((profile) => {
-              user.firstName = profile.first_name;
-              user.lastName = profile.last_name;
-              user.emailAddress = profile.email;
-              user.facebookId = profile.id;
-              user.emailAddressVerified = true;
-              return user;
-            });
+
+  function updateWithFacebookProfile(req, res, next) {
+    if (!req.body.facebookUserAccessToken) {
+      next();
+      return;
+    }
+
+    facebook
+      .verifyUserAccessToken(req.body.facebookUserAccessToken)
+      .then(() => facebook.getProfile(req.body.facebookUserAccessToken))
+      .then((profile) => {
+        const user = req.user;
+        user.firstName = profile.first_name;
+        user.lastName = profile.last_name;
+        user.emailAddress = profile.email;
+        user.facebookId = profile.id;
+        user.emailAddressVerified = true;
+        next();
+      });
+  },
+
+  function updateWithFormData(req, res, next) {
+    if (req.body.facebookUserAccessToken) {
+      next();
+      return;
+    }
+
+    const user = req.user;
+    const updateFields = [
+      'firstName',
+      'lastName',
+      'emailAddress',
+      'facebookId'
+    ];
+
+    let changes = {};
+
+    updateFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        if (req.body[field] === null) {
+          req.body[field] = undefined;
         }
 
-        return user;
+        changes[field] = req.body[field];
+      }
+    });
+
+    // If the email address is being changed, need to re-verify.
+    if (changes.emailAddress && (user.emailAddress !== req.body.emailAddress)) {
+      user.resetEmailAddressVerification();
+    }
+
+    for (const key in changes) {
+      user.set(key, changes[key]);
+    }
+
+    next();
+  },
+
+  function saveUser(req, res, next) {
+    req.user
+      .save()
+      .then(() => {
+        res.json({ message: 'User updated.' });
       })
-      .then((user) => {
-        let changes = {};
-        const updateFields = [
-          'firstName',
-          'lastName',
-          'emailAddress',
-          'facebookId'
-        ];
-
-        updateFields.forEach(field => {
-          if (req.body[field] !== undefined) {
-            if (req.body[field] === null) {
-              req.body[field] = undefined;
-            }
-
-            changes[field] = req.body[field];
-          }
-        });
-
-        // If the email address is being changed, need to re-verify.
-        if (changes.emailAddress && (user.emailAddress !== req.body.emailAddress)) {
-          user.resetEmailAddressVerification();
-        }
-
-        for (const key in changes) {
-          user.set(key, changes[key]);
-        }
-
-        return user;
-      })
-      .then((user) => user.save())
-      .then(() => res.json({ message: 'User updated.' }))
       .catch(err => {
         if (err.name === 'ValidationError') {
           err.code = 201;
+          err.status = 400;
           err.message = 'User update validation failed.';
         }
 

@@ -6,7 +6,7 @@ describe('environment', () => {
     spyOn(dotenv, 'config').and.returnValue({});
     const environment = require('./environment');
     environment();
-    expect(dotenv.config).toHaveBeenCalled();
+    expect(dotenv.config).toHaveBeenCalledWith({ path: 'config.env' });
   });
 
   it('should set env variables from a provided *.env file', () => {
@@ -23,6 +23,6 @@ describe('environment', () => {
     });
     const environment = require('./environment');
     environment();
-    expect(logger.info).toHaveBeenCalled();
+    expect(logger.info).toHaveBeenCalledWith('Environment configuration could not be parsed from config.env.');
   });
 });
