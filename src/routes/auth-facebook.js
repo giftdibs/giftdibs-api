@@ -3,7 +3,7 @@ const randomstring = require('randomstring');
 
 const facebook = require('../lib/facebook');
 const User = require('../database/models/user');
-const jwtResponse = require('../middleware/jwt-response');
+const authResponse = require('../middleware/auth-response');
 
 function findUserByFacebookId(facebookId) {
   return User
@@ -64,7 +64,7 @@ const loginFacebook = [
       })
       .then((user) => {
         req.user = user;
-        next();
+        authResponse({ message: `Welcome, ${req.user.firstName}!` })(req, res, next);
       })
       .catch(err => {
         if (err.name === 'ValidationError') {
@@ -75,8 +75,7 @@ const loginFacebook = [
 
         next(err);
       });
-  },
-  jwtResponse
+  }
 ];
 
 const router = express.Router();

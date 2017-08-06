@@ -5,7 +5,7 @@ describe('/auth', () => {
 
   beforeEach(() => {
     passport = mock.reRequire('passport');
-    mock('../middleware/jwt-response', function jwtResponse() {});
+    // mock('../middleware/auth-response', function authResponse() {});
   });
 
   afterEach(() => {
@@ -13,22 +13,29 @@ describe('/auth', () => {
   });
 
   it('login - should login a user and return a jwt', (done) => {
-    spyOn(passport, 'authenticate').and.callThrough();
+    spyOn(passport, 'authenticate').and.callFake((hook, callback) => {
+      const err = null;
+      const user = {};
+      const info = {};
+      callback(err, user, info);
+      return (req, res, next) => {};
+    });
+
     const auth = mock.reRequire('./auth');
-
-    let spy = {
-      jwtResponse: auth.middleware.login[2]
-    };
-    spyOn(spy, 'jwtResponse').and.callFake(() => {});
-
     expect(auth.middleware.login[0].name).toEqual('checkEmptyCredentials');
     expect(auth.middleware.login[1].name).toEqual('authenticate');
-    expect(auth.middleware.login[2].name).toEqual('jwtResponse');
 
-    auth.middleware.login[1]({}, {}, () => {
-      expect(passport.authenticate).toHaveBeenCalledWith('local', jasmine.any(Function));
-      done();
-    });
+    const res = {
+      json: (data) => {
+        expect(passport.authenticate).toHaveBeenCalledWith('local', jasmine.any(Function));
+        expect(data.authResponse).toBeDefined();
+        expect(data.authResponse.token).toBeDefined();
+        expect(data.authResponse.user).toBeDefined();
+        done();
+      }
+    };
+
+    auth.middleware.login[1]({}, res, () => {});
   });
 
   it('login - should fail login if credentials are empty', (done) => {
@@ -61,10 +68,12 @@ describe('/auth', () => {
     const req = { body: {} };
     const authenticate = auth.middleware.login[1];
 
-    authenticate(req, {}, () => {
-      expect(req.user).toBeDefined();
-      done();
-    });
+    authenticate(req, {
+      json: (data) => {
+        expect(req.user).toBeDefined();
+        done();
+      }
+    }, () => {});
   });
 
   it('login - should handle passport failures', (done) => {
@@ -356,10 +365,8 @@ describe('/auth', () => {
   });
 
   it('reset-password - should validate a jwt before resetting the password', (done) => {
-    spyOn(passport, 'authenticate').and.callFake((hook, options) => {
-      return (req, res, next) => {
-        next();
-      };
+    mock('../middleware/authenticate-jwt', (req, res, next) => {
+      next();
     });
     const auth = mock.reRequire('./auth');
     const resetPassword = auth.middleware.resetPassword;
@@ -545,9 +552,6 @@ describe('/auth', () => {
     const auth = mock.reRequire('./auth');
     const resendEmailAddressVerification = auth.middleware.resendEmailAddressVerification;
     expect(resendEmailAddressVerification[0].name).toEqual('authenticateJwt');
-    spyOn(passport, 'authenticate').and.returnValue(() => {});
-    resendEmailAddressVerification[0]({}, {}, () => {});
-    expect(passport.authenticate).toHaveBeenCalledWith('jwt', { session: false });
   });
 
   it('resend-email-address-verification - should reset email verification token', (done) => {
@@ -573,14 +577,6 @@ describe('/auth', () => {
     const auth = mock.reRequire('./auth');
     const verifyEmailAddress = auth.middleware.verifyEmailAddress;
     expect(verifyEmailAddress[0].name).toEqual('authenticateJwt');
-    spyOn(passport, 'authenticate').and.returnValue(() => {});
-    const req = {
-      body: {
-        emailAddressVerificationToken: 'abc123'
-      }
-    };
-    verifyEmailAddress[0](req, {}, () => {});
-    expect(passport.authenticate).toHaveBeenCalledWith('jwt', { session: false });
   });
 
   it('verify-email - should verify an email address', (done) => {

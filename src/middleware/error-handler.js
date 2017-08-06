@@ -1,6 +1,6 @@
 module.exports = (err, req, res, next) => {
   const statusCode = err.status || 404;
-  let result = {
+  const result = {
     message: err.message,
     code: err.code || 0
   };

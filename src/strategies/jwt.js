@@ -17,7 +17,7 @@ const verify = (req, payload, done) => {
       const user = results[0];
 
       if (!user) {
-        done(undefined, false, { message: 'Invalid token.' });
+        done(undefined, false, { message: 'A user was not found that matched that access token.' });
         return;
       }
 

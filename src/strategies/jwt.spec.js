@@ -80,7 +80,7 @@ describe('jwt passport strategy', () => {
           expect(_findQuery._id).toEqual(0);
           expect(err).toBeUndefined();
           expect(user).toEqual(false);
-          expect(info.message).toEqual('Invalid token.');
+          expect(info.message).toEqual('A user was not found that matched that access token.');
           done();
         });
       }

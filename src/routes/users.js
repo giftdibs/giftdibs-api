@@ -1,9 +1,10 @@
 const express = require('express');
-const passport = require('passport');
 
 const facebook = require('../lib/facebook');
 const User = require('../database/models/user');
+const authenticateJwt = require('../middleware/authenticate-jwt');
 const confirmUserOwnership = require('../middleware/confirm-user-ownership');
+const authResponse = require('../middleware/auth-response');
 
 function getSelectFields(req) {
   let selectFields;
@@ -45,7 +46,7 @@ const getUser = [
           return Promise.reject(err);
         }
 
-        res.json(user);
+        authResponse(user)(req, res, next);
       })
       .catch(next);
   }
@@ -59,7 +60,7 @@ const getUsers = [
       .find({})
       .select(selectFields)
       .lean()
-      .then(docs => res.json(docs))
+      .then(docs => authResponse(docs)(req, res, next))
       .catch(next);
   }
 ]
@@ -129,7 +130,7 @@ const updateUser = [
     req.user
       .save()
       .then(() => {
-        res.json({ message: 'User updated.' });
+        authResponse({ message: 'User updated.' })(req, res, next);
       })
       .catch(err => {
         if (err.name === 'ValidationError') {
@@ -148,13 +149,13 @@ const deleteUser = [
   (req, res, next) => {
     User
       .remove({ _id: req.params.userId })
-      .then(() => res.json({ message: 'success' }))
+      .then(() => res.json({ message: 'Your account was successfully deleted. Goodbye!' }))
       .catch(next);
   }
 ];
 
 const router = express.Router();
-router.use(passport.authenticate('jwt', { session: false }));
+router.use(authenticateJwt);
 router.route('/users')
   .get(getUsers);
 router.route('/users/:userId')
