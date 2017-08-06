@@ -35,6 +35,7 @@ describe('/auth-facebook', () => {
       docs.push(new MockUser());
       return Promise.resolve(docs);
     };
+    mock('../middleware/auth-response', () => {});
     mock('../database/models/user', MockUser);
     spyOn(facebook, 'verifyUserAccessToken').and.returnValue(Promise.resolve({
       data: {
@@ -45,12 +46,6 @@ describe('/auth-facebook', () => {
 
   afterEach(() => {
     mock.stopAll();
-  });
-
-  it('should provide the response with a jwt', () => {
-    const route = mock.reRequire('./auth-facebook');
-    const loginFacebook = route.middleware.loginFacebook;
-    expect(loginFacebook[1].name).toEqual('jwtResponse');
   });
 
   it('should log a user in using a facebook user access token', () => {
@@ -65,10 +60,15 @@ describe('/auth-facebook', () => {
         facebookUserAccessToken: 'abc123'
       }
     };
-    loginFacebook[0](req, {}, () => {
-      expect(req.user).toBeDefined();
-      expect(req.user.dateLastLoggedIn).toBeDefined();
-    });
+    const res = {
+      json: (data) => {
+        expect(req.user).toBeDefined();
+        expect(req.user.dateLastLoggedIn).toBeDefined();
+        expect(data.authResponse).toBeDefined();
+        expect(data.authResponse.token).toBeDefined();
+      }
+    };
+    loginFacebook[0](req, res, () => {});
   });
 
   it('should log a user in using a facebook email address (and token)', () => {
@@ -91,10 +91,13 @@ describe('/auth-facebook', () => {
         facebookUserAccessToken: 'abc123'
       }
     };
-    loginFacebook[0](req, {}, () => {
-      expect(req.user).toBeDefined();
-      expect(req.user.dateLastLoggedIn).toBeDefined();
-    });
+    const res = {
+      json: (data) => {
+        expect(req.user).toBeDefined();
+        expect(req.user.dateLastLoggedIn).toBeDefined();
+      }
+    };
+    loginFacebook[0](req, res, () => {});
   });
 
   it('should register a new user with facebook profile', () => {
@@ -116,11 +119,14 @@ describe('/auth-facebook', () => {
         facebookUserAccessToken: 'abc123'
       }
     };
-    loginFacebook[0](req, {}, () => {
-      expect(req.user).toBeDefined();
-      expect(req.user.dateLastLoggedIn).toBeDefined();
-      expect(req.user.emailAddressVerified).toEqual(true);
-    });
+    const res = {
+      json: (data) => {
+        expect(req.user).toBeDefined();
+        expect(req.user.dateLastLoggedIn).toBeDefined();
+        expect(req.user.emailAddressVerified).toEqual(true);
+      }
+    };
+    loginFacebook[0](req, res, () => {});
   });
 
   it('should handle validation errors from facebook profile', () => {

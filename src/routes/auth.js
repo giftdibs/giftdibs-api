@@ -2,11 +2,8 @@ const express = require('express');
 const passport = require('passport');
 
 const User = require('../database/models/user');
-const jwtResponse = require('../middleware/jwt-response');
-
-function authenticateJwt(req, res, next) {
-  passport.authenticate('jwt', { session: false })(req, res, next);
-}
+const authResponse = require('../middleware/auth-response');
+const authenticateJwt = require('../middleware/authenticate-jwt');
 
 const register = [
   function checkSpamBot(req, res, next) {
@@ -86,11 +83,9 @@ const login = [
       // allow other middlewares to access it.
       req.user = user;
 
-      next();
+      authResponse({ message: `Welcome, ${req.user.firstName}!` })(req, res, next);
     })(req, res, next);
-  },
-
-  jwtResponse
+  }
 ];
 
 const forgotten = [
@@ -165,7 +160,7 @@ const resetPassword = [
 
   function validateResetPasswordJwt(req, res, next) {
     if (req.headers.authorization) {
-      passport.authenticate('jwt', { session: false })(req, res, next);
+      authenticateJwt(req, res, next);
       return;
     }
 
@@ -222,7 +217,7 @@ const resetPassword = [
         user.unsetResetPasswordToken();
         return user.save();
       })
-      .then(() => res.json({ message: 'Your password was successfully reset.' }))
+      .then(() => authResponse({ message: 'Your password was successfully reset.' })(req, res, next))
       .catch(err => {
         if (err.name === 'ValidationError') {
           err.code = 107;
@@ -243,9 +238,9 @@ const resendEmailAddressVerification = [
       .save()
       .then(() => {
         // TODO: Send email here...
-        res.json({
+        authResponse({
           message: `Verification email sent to ${req.user.emailAddress}. If the email does not appear within 15 minutes, check your spam folder.`
-        });
+        })(req, res, next)
       })
       .catch(next);
   }
@@ -260,11 +255,7 @@ const verifyEmailAddress = [
     if (isVerified) {
       req.user
         .save()
-        .then(() => {
-          res.json({
-            message: 'Email address verified!'
-          });
-        })
+        .then(() => authResponse({ message: 'Email address verified!' })(req, res, next))
         .catch(next);
       return;
     }

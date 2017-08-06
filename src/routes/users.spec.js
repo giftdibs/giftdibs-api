@@ -1,7 +1,6 @@
 const mock = require('mock-require');
 
 describe('/users', () => {
-  let passport;
   let _req;
 
   beforeEach(() => {
@@ -24,7 +23,6 @@ describe('/users', () => {
       },
       body: {}
     };
-    passport = mock.reRequire('passport');
   });
 
   afterEach(() => {
@@ -32,10 +30,8 @@ describe('/users', () => {
   });
 
   it('should require a jwt for all routes', () => {
-    spyOn(passport, 'authenticate').and.callThrough();
     const users = mock.reRequire('./users');
-    expect(users.router.stack[0].name).toEqual('authenticate');
-    expect(passport.authenticate).toHaveBeenCalledWith('jwt', { session: false });
+    expect(users.router.stack[0].name).toEqual('authenticateJwt');
   });
 
   it('should GET an array of all documents', (done) => {

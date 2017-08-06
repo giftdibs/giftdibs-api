@@ -29,6 +29,7 @@
 - `108` An invalid nickname was provided.
 - `109` The email address verification token was invalid.
 - `110` Registering a user with Facebook profile information failed schema validation.
+- `111` Invalid JWT access token.
 
 ### `/users`
 
