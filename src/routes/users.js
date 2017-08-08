@@ -2,6 +2,7 @@ const express = require('express');
 
 const facebook = require('../lib/facebook');
 const User = require('../database/models/user');
+const WishList = require('../database/models/wish-list');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 const confirmUserOwnership = require('../middleware/confirm-user-ownership');
 const authResponse = require('../middleware/auth-response');
@@ -154,6 +155,16 @@ const deleteUser = [
   }
 ];
 
+const getWishListsByUserId = [
+  (req, res, next) => {
+    WishList
+      .find({ _user: req.params.userId })
+      .lean()
+      .then(docs => authResponse(docs)(req, res, next))
+      .catch(next);
+  }
+];
+
 const router = express.Router();
 router.use(authenticateJwt);
 router.route('/users')
@@ -162,11 +173,14 @@ router.route('/users/:userId')
   .get(getUser)
   .patch(updateUser)
   .delete(deleteUser);
+router.route('/users/:userId/wish-lists')
+  .get(getWishListsByUserId);
 
 module.exports = {
   middleware: {
     getUser,
     getUsers,
+    getWishListsByUserId,
     updateUser,
     deleteUser
   },
