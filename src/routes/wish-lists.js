@@ -5,6 +5,16 @@ const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 const confirmUserOwnership = require('../middleware/confirm-user-ownership');
 
+function handleError(err, next) {
+  if (err.name === 'ValidationError') {
+    err.code = 301;
+    err.status = 400;
+    err.message = 'Wish list update validation failed.';
+  }
+
+  next(err);
+}
+
 const createWishList = [
   (req, res, next) => {
     const wishList = new WishList({
@@ -20,15 +30,7 @@ const createWishList = [
           message: 'Wish list successfully created.'
         })(req, res, next);
       })
-      .catch(err => {
-        if (err.name === 'ValidationError') {
-          err.code = 301;
-          err.status = 400;
-          err.message = 'Wish list validation failed.';
-        }
-
-        next(err);
-      });
+      .catch((err) => handleError(err, next));
   }
 ];
 
@@ -37,6 +39,7 @@ const getWishList = [
     WishList
       .find({ _id: req.params.wishListId })
       .limit(1)
+      .populate('_user', 'firstName lastName')
       .lean()
       .then(docs => {
         const wishList = docs[0];
@@ -58,7 +61,7 @@ const getWishLists = [
   (req, res, next) => {
     WishList
       .find({})
-      .populate('_user')
+      .populate('_user', 'firstName lastName')
       .lean()
       .then(docs => authResponse(docs)(req, res, next))
       .catch(next);
@@ -103,15 +106,7 @@ const updateWishList = [
       .then(() => {
         authResponse({ message: 'Wish list updated.' })(req, res, next);
       })
-      .catch((err) => {
-        if (err.name === 'ValidationError') {
-          err.code = 301;
-          err.status = 400;
-          err.message = 'Wish list update validation failed.';
-        }
-
-        next(err);
-      });
+      .catch((err) => handleError(err, next));
   }
 ];
 
@@ -140,7 +135,8 @@ module.exports = {
     getWishList,
     getWishLists,
     updateWishList,
-    deleteWishList
+    deleteWishList,
+    createWishList
   },
   router
 };

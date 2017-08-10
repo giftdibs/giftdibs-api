@@ -19,7 +19,7 @@ describe('/users', () => {
         }
       },
       params: {
-        id: 0
+        userId: 0
       },
       body: {}
     };
@@ -392,5 +392,23 @@ describe('/users', () => {
       expect(err).toBeDefined();
       done();
     });
+  });
+
+  it('should GET an array of all wish lists belonging to a user', (done) => {
+    mock('../database/models/wish-list', {
+      find: () => {
+        return {
+          lean: () => Promise.resolve([])
+        };
+      }
+    });
+    const users = mock.reRequire('./users');
+    const getWishListsByUserId = users.middleware.getWishListsByUserId;
+    getWishListsByUserId[0](_req, {
+      json: (docs) => {
+        expect(docs.length).toBeDefined();
+        done();
+      }
+    }, () => {});
   });
 });
