@@ -35,3 +35,8 @@
 
 - `200` A user was not found with the specified ID.
 - `201` The user update request failed database schema validation.
+
+### `/wish-lists`
+
+- `300` A wish list was not found with the specified ID.
+- `301` Wish list failed validation.
