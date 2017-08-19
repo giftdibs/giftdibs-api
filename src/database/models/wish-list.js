@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
+const giftSchema = require('./gift');
 const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
+const { updateDocument } = require('../utils/update-document');
 
 const Schema = mongoose.Schema;
 const wishListSchema = new Schema({
@@ -8,6 +10,7 @@ const wishListSchema = new Schema({
     ref: 'User',
     required: [true, 'A user ID must be provided.']
   },
+  gifts: [giftSchema],
   name: {
     type: String,
     required: [true, 'Please provide a wish list name.'],
@@ -21,6 +24,10 @@ const wishListSchema = new Schema({
     updatedAt: 'dateUpdated'
   }
 });
+
+wishListSchema.methods.updateFields = function (fields, values) {
+  updateDocument(this, fields, values);
+};
 
 wishListSchema.plugin(MongoDbErrorHandlerPlugin);
 

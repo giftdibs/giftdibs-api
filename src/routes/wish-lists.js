@@ -3,7 +3,8 @@ const express = require('express');
 const WishList = require('../database/models/wish-list');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
-const confirmUserOwnership = require('../middleware/confirm-user-ownership');
+const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
+const { WishListNotFoundError } = require('../shared/errors');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
@@ -45,10 +46,7 @@ const getWishList = [
         const wishList = docs[0];
 
         if (!wishList) {
-          const err = new Error('Wish list not found.');
-          err.code = 300;
-          err.status = 400;
-          return Promise.reject(err);
+          return Promise.reject(new WishListNotFoundError());
         }
 
         authResponse(wishList)(req, res, next);
@@ -58,6 +56,18 @@ const getWishList = [
 ];
 
 const getWishLists = [
+  function getAllByUserId(req, res, next) {
+    if (!req.query.userId) {
+      next();
+      return;
+    }
+
+    WishList
+      .find({ _user: req.query.userId })
+      .lean()
+      .then(docs => authResponse(docs)(req, res, next))
+      .catch(next);
+  },
   (req, res, next) => {
     WishList
       .find({})
@@ -69,37 +79,20 @@ const getWishLists = [
 ];
 
 const updateWishList = [
-  confirmUserOwnership,
+  confirmUserOwnsWishList,
 
   function updateWithFormData(req, res, next) {
-    const updateFields = [
-      'name'
-    ];
-
-    let changes = {};
-    updateFields.forEach(field => {
-      if (req.body[field] !== undefined) {
-        if (req.body[field] === null) {
-          req.body[field] = undefined;
-        }
-
-        changes[field] = req.body[field];
-      }
-    });
-
-    Promise
-      .resolve()
-      .then(() => {
-        return WishList
-          .find({ _id: req.params.wishListId })
-          .limit(1);
-      })
+    WishList
+      .find({ _id: req.params.wishListId })
+      .limit(1)
       .then((docs) => {
         const wishList = docs[0];
 
-        for (const key in changes) {
-          wishList.set(key, changes[key]);
+        if (!wishList) {
+          return Promise.reject(new WishListNotFoundError());
         }
+
+        wishList.updateFields(['name'], req.body);
 
         return wishList.save();
       })
@@ -111,7 +104,7 @@ const updateWishList = [
 ];
 
 const deleteWishList = [
-  confirmUserOwnership,
+  confirmUserOwnsWishList,
   (req, res, next) => {
     WishList
       .remove({ _id: req.params.wishListId })
