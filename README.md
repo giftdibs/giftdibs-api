@@ -40,3 +40,4 @@
 
 - `300` A wish list was not found with the specified ID.
 - `301` Wish list failed validation.
+- `302` Gift not found.
