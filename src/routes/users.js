@@ -5,6 +5,7 @@ const User = require('../database/models/user');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 const confirmUserOwnership = require('../middleware/confirm-user-ownership');
 const authResponse = require('../middleware/auth-response');
+const { UserNotFoundError } = require('../shared/errors');
 
 function getSelectFields(req) {
   let selectFields;
@@ -40,10 +41,7 @@ const getUser = [
         const user = docs[0];
 
         if (!user) {
-          const err = new Error('User not found.');
-          err.code = 200;
-          err.status = 400;
-          return Promise.reject(err);
+          return Promise.reject(new UserNotFoundError());
         }
 
         authResponse(user)(req, res, next);
@@ -95,19 +93,13 @@ const updateUser = [
     }
 
     const user = req.user;
-    const fields = [
-      'firstName',
-      'lastName',
-      'emailAddress',
-      'facebookId'
-    ];
 
     // If the email address is being changed, need to re-verify.
     if (req.body.emailAddress && (user.emailAddress !== req.body.emailAddress)) {
       user.resetEmailAddressVerification();
     }
 
-    user.updateFields(fields, req.body);
+    user.update(req.body);
 
     next();
   },
@@ -140,16 +132,6 @@ const deleteUser = [
   }
 ];
 
-// const getWishListsByUserId = [
-//   (req, res, next) => {
-//     WishList
-//       .find({ _user: req.params.userId })
-//       .lean()
-//       .then(docs => authResponse(docs)(req, res, next))
-//       .catch(next);
-//   }
-// ];
-
 const router = express.Router();
 router.use(authenticateJwt);
 router.route('/users')
@@ -158,14 +140,11 @@ router.route('/users/:userId')
   .get(getUser)
   .patch(updateUser)
   .delete(deleteUser);
-// router.route('/users/:userId/wish-lists')
-//   .get(getWishListsByUserId);
 
 module.exports = {
   middleware: {
     getUser,
     getUsers,
-    // getWishListsByUserId,
     updateUser,
     deleteUser
   },

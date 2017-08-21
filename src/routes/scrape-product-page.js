@@ -2,7 +2,7 @@ const express = require('express');
 
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
-const urlScraper = require('../lib/url-scraper');
+const urlScraper = require('../utils/url-scraper');
 
 const scrapeProductPage = [
   (req, res, next) => {

@@ -68,7 +68,8 @@ const getWishLists = [
       .then(docs => authResponse(docs)(req, res, next))
       .catch(next);
   },
-  (req, res, next) => {
+
+  function getAll(req, res, next) {
     WishList
       .find({})
       .populate('_user', 'firstName lastName')
@@ -92,7 +93,7 @@ const updateWishList = [
           return Promise.reject(new WishListNotFoundError());
         }
 
-        wishList.updateFields(['name'], req.body);
+        wishList.update(req.body);
 
         return wishList.save();
       })

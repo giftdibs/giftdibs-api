@@ -25,7 +25,8 @@ const wishListSchema = new Schema({
   }
 });
 
-wishListSchema.methods.updateFields = function (fields, values) {
+wishListSchema.methods.update = function (values) {
+  const fields = ['name'];
   updateDocument(this, fields, values);
 };
 

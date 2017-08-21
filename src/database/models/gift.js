@@ -26,7 +26,8 @@ const giftSchema = new Schema({
   }
 });
 
-giftSchema.methods.updateFields = function (fields, values) {
+giftSchema.methods.updateFields = function (values) {
+  const fields = ['name', 'externalUrl', 'budget'];
   updateDocument(this, fields, values);
 };
 

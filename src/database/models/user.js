@@ -168,7 +168,13 @@ userSchema.methods.verifyEmailAddress = function (token) {
   return false;
 };
 
-userSchema.methods.updateFields = function (fields, values) {
+userSchema.methods.update = function (values) {
+  const fields = [
+    'firstName',
+    'lastName',
+    'emailAddress',
+    'facebookId'
+  ];
   updateDocument(this, fields, values);
 };
 

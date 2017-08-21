@@ -109,7 +109,7 @@ const updateGift = [
           return Promise.reject(new GiftNotFoundError());
         }
 
-        gift.updateFields(['name', 'externalUrl', 'budget'], req.body);
+        gift.update(req.body);
 
         return wishList.save();
       })

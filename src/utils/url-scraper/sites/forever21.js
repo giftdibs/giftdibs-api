@@ -7,7 +7,7 @@ const getConfig = (url) => {
     nameSelector: '#h1Title',
     priceSelector: '#ItemPrice',
     thumbnailSelector: '#pic_container .product_image',
-    ignoredResources: [
+    ignoreResources: [
       'bounceexchange.com',
       'www.res-x.com',
       'js-agent.newrelic.com',

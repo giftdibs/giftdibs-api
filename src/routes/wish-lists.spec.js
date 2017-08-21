@@ -36,13 +36,31 @@ describe('/wish-lists', () => {
     });
     const wishLists = mock.reRequire('./wish-lists');
     const getWishLists = wishLists.middleware.getWishLists;
-    getWishLists[0](_req, {
+    getWishLists[1](_req, {
       json: (docs) => {
         expect(Array.isArray(docs)).toEqual(true);
         done();
       }
     }, () => {});
   });
+
+  // it('should GET an array of all wish lists belonging to a user', (done) => {
+  //   mock('../database/models/wish-list', {
+  //     find: () => {
+  //       return {
+  //         lean: () => Promise.resolve([])
+  //       };
+  //     }
+  //   });
+  //   const users = mock.reRequire('./users');
+  //   const getWishListsByUserId = users.middleware.getWishListsByUserId;
+  //   getWishListsByUserId[0](_req, {
+  //     json: (docs) => {
+  //       expect(docs.length).toBeDefined();
+  //       done();
+  //     }
+  //   }, () => {});
+  // });
 
   it('should only populate certain fields with GET /wish-lists/', (done) => {
     let _fields;
@@ -60,7 +78,7 @@ describe('/wish-lists', () => {
     });
     const wishLists = mock.reRequire('./wish-lists');
     const getWishLists = wishLists.middleware.getWishLists;
-    getWishLists[0](_req, {
+    getWishLists[1](_req, {
       json: (docs) => {
         expect(Array.isArray(docs)).toEqual(true);
         expect(_fields).toEqual('firstName lastName');
@@ -83,7 +101,7 @@ describe('/wish-lists', () => {
     });
     const wishLists = mock.reRequire('./wish-lists');
     const getWishLists = wishLists.middleware.getWishLists;
-    getWishLists[0](_req, {}, (err) => {
+    getWishLists[1](_req, {}, (err) => {
       expect(err).toBeDefined();
       done();
     });
@@ -163,6 +181,7 @@ describe('/wish-lists', () => {
     const wishLists = mock.reRequire('./wish-lists');
     const getWishList = wishLists.middleware.getWishList;
     getWishList[0](_req, {}, (err) => {
+      expect(err.name).toEqual('WishListNotFoundError');
       expect(err.code).toEqual(300);
       expect(err.status).toEqual(400);
       done();
@@ -198,8 +217,10 @@ describe('/wish-lists', () => {
       save: () => Promise.resolve(),
       set(key, value) {
         this[key] = value;
-      }
+      },
+      update() {}
     };
+    spyOn(_wishList, 'update');
     mock('../database/models/wish-list', {
       find: () => {
         return {
@@ -212,69 +233,15 @@ describe('/wish-lists', () => {
     _req.body = { name: 'NewName' };
     updateWishList[1](_req, {
       json: () => {
-        expect(_wishList.name).toEqual('NewName');
+        expect(_wishList.update).toHaveBeenCalledWith(_req.body);
         done();
       }
     }, () => {});
-  });
-
-  it('should only PATCH certain fields', (done) => {
-    const _wishList = {
-      save: () => Promise.resolve(),
-      set(key, value) {
-        this[key] = value;
-      }
-    };
-    mock('../database/models/wish-list', {
-      find: () => {
-        return {
-          limit: () => Promise.resolve([_wishList])
-        };
-      }
-    });
-    spyOn(_wishList, 'set');
-    const wishLists = mock.reRequire('./wish-lists');
-    const updateWishList = wishLists.middleware.updateWishList;
-    _req.body = { invalidField: 'foobar' };
-    updateWishList[1](_req, {
-      json: () => {
-        expect(_wishList.invalidField).toBeUndefined();
-        expect(_wishList.set).not.toHaveBeenCalled();
-        done();
-      }
-    }, () => {});
-  });
-
-  it('should clear a field during PATCH if set to null', (done) => {
-    const _wishList = {
-      save: () => Promise.resolve(),
-      set(key, value) {
-        this[key] = value;
-      }
-    };
-    spyOn(_wishList, 'set').and.callThrough();
-    mock('../database/models/wish-list', {
-      find: () => {
-        return {
-          limit: () => Promise.resolve([_wishList])
-        };
-      }
-    });
-    const wishLists = mock.reRequire('./wish-lists');
-    const updateWishList = wishLists.middleware.updateWishList;
-    _req.body = { name: null };
-    updateWishList[1](_req, {
-      json: () => {
-        expect(_wishList.set).toHaveBeenCalledWith('name', undefined);
-        expect(_wishList.name).toBeUndefined();
-        done();
-      }
-    }, (err) => { console.log(err); });
   });
 
   it('should only PATCH a document if it is owned by the session user', () => {
     const wishLists = mock.reRequire('./wish-lists');
-    expect(wishLists.middleware.updateWishList[0].name).toEqual('confirmUserOwnership');
+    expect(wishLists.middleware.updateWishList[0].name).toEqual('confirmUserOwnsWishList');
   });
 
   it('should handle a schema validation error with PATCH /wish-lists/:wishListId', (done) => {
@@ -286,7 +253,8 @@ describe('/wish-lists', () => {
       },
       set(key, value) {
         this[key] = value;
-      }
+      },
+      update() {}
     };
     mock('../database/models/wish-list', {
       find: () => {
@@ -348,7 +316,7 @@ describe('/wish-lists', () => {
 
   it('should only DELETE a document if it is owned by the session user', () => {
     const wishLists = mock.reRequire('./wish-lists');
-    expect(wishLists.middleware.deleteWishList[0].name).toEqual('confirmUserOwnership');
+    expect(wishLists.middleware.deleteWishList[0].name).toEqual('confirmUserOwnsWishList');
   });
 
   it('should create new wish lists', (done) => {
