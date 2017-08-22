@@ -9,14 +9,19 @@ const scrapeProductPage = [
     const isUrl = (/^https?:\/\//.test(req.query.url));
 
     if (isUrl) {
-      return urlScraper
-        .getPageContents(req.query.url)
+      urlScraper
+        .getProductDetails(req.query.url)
         .then((product) => {
           authResponse({
             product
           })(req, res, next);
         })
         .catch(next);
+    } else {
+      const err = new Error('Please provide a valid URL.');
+      err.status = 400;
+      err.code = 500;
+      next(err);
     }
   }
 ];

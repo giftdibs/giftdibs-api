@@ -1,21 +1,51 @@
-// it('should only PATCH certain fields', (done) => {
-//   spyOn(_req.user, 'set').and.callThrough();
-//   const users = mock.reRequire('./users');
-//   const updateUser = users.middleware.updateUser;
-//   _req.body = { invalidField: 'foobar' };
-//   updateUser[2](_req, {}, () => {
-//     expect(_req.user.set).not.toHaveBeenCalled();
-//     done();
-//   });
-// });
+const mock = require('mock-require');
 
-// it('should clear a field during PATCH if set to null', (done) => {
-//   spyOn(_req.user, 'set').and.callThrough();
-//   const users = mock.reRequire('./users');
-//   const updateUser = users.middleware.updateUser;
-//   _req.body = { firstName: null };
-//   updateUser[2](_req, {}, () => {
-//     expect(_req.user.set).toHaveBeenCalledWith('firstName', undefined);
-//     done();
-//   });
-// });
+describe('update document database util', () => {
+  it('should only update certain fields', () => {
+    const { updateDocument } = mock.reRequire('./update-document');
+    const doc = {
+      set() {}
+    };
+    const changes = { foo: 'bar' };
+    const fields = [];
+    spyOn(doc, 'set');
+    updateDocument(doc, fields, changes);
+    expect(doc.set).not.toHaveBeenCalled();
+  });
+
+  it('should update a field', () => {
+    const { updateDocument } = mock.reRequire('./update-document');
+    const doc = {
+      set() {}
+    };
+    const changes = { foo: 'bar' };
+    const fields = ['foo'];
+    spyOn(doc, 'set');
+    updateDocument(doc, fields, changes);
+    expect(doc.set).toHaveBeenCalledWith('foo', 'bar');
+  });
+
+  it('should handle undefined fields', () => {
+    const { updateDocument } = mock.reRequire('./update-document');
+    const doc = {
+      set() {}
+    };
+    const changes = { foo: undefined };
+    const fields = ['foo'];
+    spyOn(doc, 'set');
+    updateDocument(doc, fields, changes);
+    expect(doc.set).not.toHaveBeenCalled();
+  });
+
+  it('should clear a field if set to null', () => {
+    const { updateDocument } = mock.reRequire('./update-document');
+    const doc = {
+      set() {}
+    };
+    const changes = { foo: null };
+    const fields = ['foo'];
+    spyOn(doc, 'set');
+    updateDocument(doc, fields, changes);
+    expect(doc.set).toHaveBeenCalledWith('foo', undefined);
+  });
+});

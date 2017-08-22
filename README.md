@@ -44,3 +44,7 @@
 ### `/wish-lists/:wishListId/gifts`
 
 - `400` Gift not found.
+
+### `/scrape-product-page/:url`
+
+- `500` URL was not found or is invalid.

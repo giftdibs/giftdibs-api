@@ -8,7 +8,7 @@ const cheerioOptions = {
   decodeEntities: false
 };
 
-const getPageContents = (url) => {
+const getProductDetails = (url) => {
   const scraperConfigUtil = require('./config');
   const config = scraperConfigUtil.getConfig(url);
   const browser = new Browser();
@@ -98,5 +98,5 @@ const getPageContents = (url) => {
 };
 
 module.exports = {
-  getPageContents
+  getProductDetails
 };

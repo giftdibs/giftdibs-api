@@ -84,21 +84,15 @@ const updateWishList = [
 
   function updateWithFormData(req, res, next) {
     WishList
-      .find({ _id: req.params.wishListId })
-      .limit(1)
-      .then((docs) => {
-        const wishList = docs[0];
-
-        if (!wishList) {
-          return Promise.reject(new WishListNotFoundError());
-        }
-
+      .getById(req.params.wishListId)
+      .then((wishList) => {
         wishList.update(req.body);
-
         return wishList.save();
       })
       .then(() => {
-        authResponse({ message: 'Wish list updated.' })(req, res, next);
+        authResponse({
+          message: 'Wish list updated.'
+        })(req, res, next);
       })
       .catch((err) => handleError(err, next));
   }

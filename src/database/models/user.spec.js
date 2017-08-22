@@ -5,8 +5,11 @@ mongoose.Promise = Promise;
 
 describe('user model', () => {
   let User;
+  let updateDocumentUtil;
 
   beforeEach(() => {
+    updateDocumentUtil = mock.reRequire('../utils/update-document');
+    spyOn(updateDocumentUtil, 'updateDocument').and.returnValue();
     User = mock.reRequire('./user');
     spyOn(console, 'log').and.returnValue();
   });
@@ -297,5 +300,31 @@ describe('user model', () => {
     const result = user.verifyEmailAddress('foobar');
     expect(user.emailAddressVerificationToken).toEqual('abc123');
     expect(result).toEqual(false);
+  });
+
+  it('should update certain fields', () => {
+    const user = new User({
+      firstName: 'Foo',
+      lastName: 'Bar',
+      emailAddress: 'foo@bar.com',
+      password: 'foobar',
+      dateLastLoggedIn: new Date()
+    });
+    const formData = {
+      firstName: 'Test'
+    };
+
+    user.update(formData);
+
+    expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
+      user,
+      [
+        'firstName',
+        'lastName',
+        'emailAddress',
+        'facebookId'
+      ],
+      formData
+    );
   });
 });

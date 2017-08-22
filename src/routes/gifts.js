@@ -4,7 +4,7 @@ const WishList = require('../database/models/wish-list');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
-const { GiftNotFoundError, WishListNotFoundError } = require('../shared/errors');
+const { GiftNotFoundError } = require('../shared/errors');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
@@ -21,17 +21,7 @@ const addGift = [
 
   (req, res, next) => {
     WishList
-      .find({ _id: req.params.wishListId })
-      .limit(1)
-      .then((docs) => {
-        const wishList = docs[0];
-
-        if (!wishList) {
-          return Promise.reject(new WishListNotFoundError());
-        }
-
-        return wishList;
-      })
+      .getById(req.params.wishListId)
       .then((wishList) => {
         wishList.gifts.push({
           name: req.body.name,
@@ -56,17 +46,7 @@ const deleteGift = [
 
   (req, res, next) => {
     WishList
-      .find({ _id: req.params.wishListId })
-      .limit(1)
-      .then((docs) => {
-        const wishList = docs[0];
-
-        if (!wishList) {
-          return Promise.reject(new WishListNotFoundError());
-        }
-
-        return wishList;
-      })
+      .getById(req.params.wishListId)
       .then((wishList) => {
         const gift = wishList.gifts.id(req.params.giftId);
 
@@ -91,17 +71,7 @@ const updateGift = [
   confirmUserOwnsWishList,
   (req, res, next) => {
     WishList
-      .find({ _id: req.params.wishListId })
-      .limit(1)
-      .then((docs) => {
-        const wishList = docs[0];
-
-        if (!wishList) {
-          return Promise.reject(new WishListNotFoundError());
-        }
-
-        return wishList;
-      })
+      .getById(req.params.wishListId)
       .then((wishList) => {
         const gift = wishList.gifts.id(req.params.giftId);
 
@@ -113,7 +83,7 @@ const updateGift = [
 
         return wishList.save();
       })
-      .then((doc) => {
+      .then(() => {
         authResponse({
           message: 'Gift successfully updated.'
         })(req, res, next);

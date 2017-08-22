@@ -6,6 +6,7 @@ describe('/wish-lists', () => {
   beforeEach(() => {
     _req = {
       user: {},
+      query: {},
       params: {
         wishListId: 0
       },
@@ -44,23 +45,33 @@ describe('/wish-lists', () => {
     }, () => {});
   });
 
-  // it('should GET an array of all wish lists belonging to a user', (done) => {
-  //   mock('../database/models/wish-list', {
-  //     find: () => {
-  //       return {
-  //         lean: () => Promise.resolve([])
-  //       };
-  //     }
-  //   });
-  //   const users = mock.reRequire('./users');
-  //   const getWishListsByUserId = users.middleware.getWishListsByUserId;
-  //   getWishListsByUserId[0](_req, {
-  //     json: (docs) => {
-  //       expect(docs.length).toBeDefined();
-  //       done();
-  //     }
-  //   }, () => {});
-  // });
+  it('should GET an array of all wish lists belonging to a user', (done) => {
+    mock('../database/models/wish-list', {
+      find: () => {
+        return {
+          lean: () => Promise.resolve([])
+        };
+      }
+    });
+    const wishLists = mock.reRequire('./wish-lists');
+    const getWishLists = wishLists.middleware.getWishLists;
+    _req.query.userId = 'abc123';
+    getWishLists[0](_req, {
+      json: (docs) => {
+        expect(Array.isArray(docs)).toEqual(true);
+        done();
+      }
+    }, () => {});
+  });
+
+  it('should GET an array of all wish lists belonging to a user only if user id is in query', (done) => {
+    const wishLists = mock.reRequire('./wish-lists');
+    const getWishLists = wishLists.middleware.getWishLists;
+    getWishLists[0](_req, {}, (err) => {
+      expect(err).toBeUndefined();
+      done();
+    });
+  });
 
   it('should only populate certain fields with GET /wish-lists/', (done) => {
     let _fields;
@@ -222,11 +233,7 @@ describe('/wish-lists', () => {
     };
     spyOn(_wishList, 'update');
     mock('../database/models/wish-list', {
-      find: () => {
-        return {
-          limit: () => Promise.resolve([_wishList])
-        };
-      }
+      getById: () => Promise.resolve(_wishList)
     });
     const wishLists = mock.reRequire('./wish-lists');
     const updateWishList = wishLists.middleware.updateWishList;
@@ -257,11 +264,7 @@ describe('/wish-lists', () => {
       update() {}
     };
     mock('../database/models/wish-list', {
-      find: () => {
-        return {
-          limit: () => Promise.resolve([_wishList])
-        };
-      }
+      getById: () => Promise.resolve(_wishList)
     });
     spyOn(_wishList, 'set');
     const wishLists = mock.reRequire('./wish-lists');
@@ -283,11 +286,7 @@ describe('/wish-lists', () => {
       }
     };
     mock('../database/models/wish-list', {
-      find: () => {
-        return {
-          limit: () => Promise.resolve([_wishList])
-        };
-      }
+      getById: () => Promise.resolve(_wishList)
     });
     spyOn(_wishList, 'set');
     const wishLists = mock.reRequire('./wish-lists');

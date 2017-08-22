@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const giftSchema = require('./gift');
 const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
 const { updateDocument } = require('../utils/update-document');
+const { WishListNotFoundError } = require('../../shared/errors');
 
 const Schema = mongoose.Schema;
 const wishListSchema = new Schema({
@@ -28,6 +29,20 @@ const wishListSchema = new Schema({
 wishListSchema.methods.update = function (values) {
   const fields = ['name'];
   updateDocument(this, fields, values);
+};
+
+wishListSchema.statics.getById = function (wishListId) {
+  return this.find({ _id: wishListId })
+    .limit(1)
+    .then((docs) => {
+      const wishList = docs[0];
+
+      if (!wishList) {
+        return Promise.reject(new WishListNotFoundError());
+      }
+
+      return wishList;
+    });
 };
 
 wishListSchema.plugin(MongoDbErrorHandlerPlugin);
