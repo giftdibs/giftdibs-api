@@ -31,9 +31,9 @@ const addGift = [
 
         return wishList.save();
       })
-      .then((doc) => {
+      .then((wishList) => {
         authResponse({
-          giftId: doc.gifts[doc.gifts.length - 1]._id,
+          giftId: wishList.gifts[wishList.gifts.length - 1]._id,
           message: 'Gift successfully added.'
         })(req, res, next);
       })
@@ -69,6 +69,7 @@ const deleteGift = [
 
 const updateGift = [
   confirmUserOwnsWishList,
+
   (req, res, next) => {
     WishList
       .getById(req.params.wishListId)
@@ -102,6 +103,9 @@ router.route('/wish-lists/:wishListId/gifts/:giftId')
 
 module.exports = {
   middleware: {
+    addGift,
+    deleteGift,
+    updateGift
   },
   router
 };
