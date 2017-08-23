@@ -8,7 +8,7 @@ const cheerioOptions = {
   decodeEntities: false
 };
 
-const getProductDetails = (url) => {
+const getProductDetails = (url, utilOptions = {}) => {
   const scraperConfigUtil = require('./config');
   const config = scraperConfigUtil.getConfig(url);
   const browser = new Browser();
@@ -39,6 +39,7 @@ const getProductDetails = (url) => {
     const onBrowserLoaded = () => {
       const content = browser.html();
       const $ = cheerio.load(content, cheerioOptions);
+
       const name = $(config.nameSelector).text().trim();
 
       let price = $(config.priceSelector)
@@ -64,15 +65,13 @@ const getProductDetails = (url) => {
         url
       };
 
-      console.log('Product info:', productInfo);
-
       resolve(productInfo);
     };
 
     function onVisit() {
       browser.wait();
 
-      const max = 20; // 10 seconds
+      const max = utilOptions.resourcesWaitDuration || 20; // 10 seconds
       let counter = 0;
 
       const interval = setInterval(() => {
