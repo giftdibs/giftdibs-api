@@ -2,31 +2,23 @@ const mock = require('mock-require');
 
 describe('url scraper util', () => {
   let _scraperConfig = {
-    ignoreResources: [],
+    ignoredResources: [],
     nameSelector: '.foo-product-name',
     priceSelector: '.foo-price',
     thumbnailSelector: '.foo-thumbnail'
   };
   let _thumbnailSrc = 'thumbnail.jpg';
-  let _onCallbacks = {};
   let _pipelineHandlerCallback;
   let _fetchResponse = {};
 
   function MockBrowser() {
     return {
-      on(hook, callback) {
-        if (!_onCallbacks[hook]) {
-          _onCallbacks[hook] = [];
-        }
-
-        _onCallbacks[hook].push(callback);
-      },
       pipeline: {
         addHandler(callback) {
           _pipelineHandlerCallback = callback;
         }
       },
-      visit(url, opts, callback) {
+      visit(url, callback) {
         callback();
       },
       wait() {},
@@ -35,7 +27,6 @@ describe('url scraper util', () => {
   }
 
   beforeEach(() => {
-    _onCallbacks = {};
     _fetchResponse = {};
     _pipelineHandlerCallback = () => {};
 
@@ -91,12 +82,25 @@ describe('url scraper util', () => {
 
   it('should scrape a url and return product details', (done) => {
     const { getProductDetails } = mock.reRequire('./index');
-    getProductDetails('http://foo.bar')
-      .then((details) => {
-        expect(details.name).toEqual('Product Name');
-        expect(details.price).toEqual(100);
-        expect(details.thumbnailSrc).toEqual('thumbnail.jpg');
-        expect(details.url).toEqual('http://foo.bar');
+    getProductDetails(['http://foo.bar'])
+      .then((products) => {
+        const product = products[0];
+        expect(product.name).toEqual('Product Name');
+        expect(product.price).toEqual(100);
+        expect(product.thumbnailSrc).toEqual('thumbnail.jpg');
+        expect(product.url).toEqual('http://foo.bar');
+        done();
+      });
+  });
+
+  it('should scrape multiple urls', (done) => {
+    const { getProductDetails } = mock.reRequire('./index');
+    getProductDetails(['http://foo.bar', 'http://bar.baz'])
+      .then((products) => {
+        expect(products[0].name).toEqual('Product Name');
+        expect(products[0].url).toEqual('http://foo.bar');
+        expect(products[1].name).toEqual('Product Name');
+        expect(products[1].url).toEqual('http://bar.baz');
         done();
       });
   });
@@ -107,48 +111,29 @@ describe('url scraper util', () => {
     _scraperConfig.priceSelector = '';
     _scraperConfig.thumbnailSelector = '';
     _thumbnailSrc = '';
-    getProductDetails('http://foo.bar')
-      .then((details) => {
-        expect(details.name).toEqual('');
-        expect(details.price).toEqual(0);
-        expect(details.thumbnailSrc).toEqual('');
-        expect(details.url).toEqual('http://foo.bar');
+    getProductDetails(['http://foo.bar'])
+      .then((products) => {
+        const product = products[0];
+        expect(product.name).toEqual('No product name found');
+        expect(product.price).toEqual(0);
+        expect(product.thumbnailSrc).toEqual('');
+        expect(product.url).toEqual('http://foo.bar');
         done();
       });
   });
 
   it('should ignore specific resources', (done) => {
     const { getProductDetails } = mock.reRequire('./index');
-    _scraperConfig.ignoreResources = [
+    _scraperConfig.ignoredResources = [
       'http://ignore.com',
       'http://google.com'
     ];
-    const result = getProductDetails('http://foo.bar');
+    const result = getProductDetails(['http://foo.bar']);
     _pipelineHandlerCallback({}, { url: 'http://ignore.com' });
+    _pipelineHandlerCallback({}, { url: 'http://valid.com' });
     result.then(() => {
       expect(_fetchResponse.content).toEqual('');
       expect(_fetchResponse.response).toEqual({ status: 200 });
-      done();
-    });
-  });
-
-  it('should wait until all resources have loaded', (done) => {
-    spyOn(console, 'log').and.returnValue();
-    const { getProductDetails } = mock.reRequire('./index');
-    const result = getProductDetails('http://foo.bar', { resourcesWaitDuration: 1 });
-    _pipelineHandlerCallback({}, { url: '' });
-    Object.keys(_onCallbacks).forEach((key) => {
-      _onCallbacks[key].forEach((callback) => {
-        // Add another request to offset the counter.
-        if (key === 'request') {
-          callback();
-        }
-
-        callback();
-      });
-    });
-    result.then((details) => {
-      expect(console.log).toHaveBeenCalledWith('Maximum checks reached!');
       done();
     });
   });

@@ -5,9 +5,9 @@ const getConfig = (url) => {
 
   return {
     nameSelector: '#productTitle',
-    priceSelector: '#buybox .offer-price, #newPrice',
+    priceSelector: '#buybox .offer-price, #newPrice .buyingPrice, #priceblock_ourprice',
     thumbnailSelector: '#landingImage',
-    ignoreResources: [
+    ignoredResources: [
       'images-na.ssl-images-amazon.com',
       'm.media-amazon.com',
       's.amazon-adsystem.com'

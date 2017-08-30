@@ -2,29 +2,80 @@ const cheerio = require('cheerio');
 const Browser = require('zombie');
 const Fetch = require('zombie/lib/fetch');
 
-const cheerioOptions = {
-  lowerCaseTags: false,
-  lowerCaseAttributeNames: false,
-  decodeEntities: false
-};
+const scraperConfigUtil = require('./config');
 
-const getProductDetails = (url, utilOptions = {}) => {
-  const scraperConfigUtil = require('./config');
-  const config = scraperConfigUtil.getConfig(url);
+const dateScrapedRecommended = new Date().getTime() - (24 * 3600); // 24 hours
+let _activeScraper;
+
+function ProductScraper(browser, browserConfig = {}) {
+  this.url = undefined;
+  this.productConfig = undefined;
+
+  this.scrapeUrl = (url) => {
+    this.productConfig = scraperConfigUtil.getConfig(url);
+    this.url = url;
+
+    return new Promise((resolve) => {
+      browser.visit(url, () => {
+        const details = onBrowserLoaded();
+        resolve(details);
+      });
+    });
+  };
+
+  const onBrowserLoaded = () => {
+    const content = browser.html();
+
+    const cheerioConfig = {
+      lowerCaseTags: false,
+      lowerCaseAttributeNames: false,
+      decodeEntities: false
+    };
+
+    const $ = cheerio.load(content, cheerioConfig);
+    const name = $(this.productConfig.nameSelector).text().trim();
+
+    let price = $(this.productConfig.priceSelector)
+      .text()
+      .trim()
+      .replace('$', '')
+      .replace(/ /g, '');
+
+    price = parseFloat(price);
+    price = Math.round(price);
+
+    if (isNaN(price)) {
+      price = 0;
+    }
+
+    let thumbnailSrc = $(this.productConfig.thumbnailSelector).first().attr('src') || '';
+    thumbnailSrc = thumbnailSrc.trim();
+
+    const productInfo = {
+      name: name || 'No product name found',
+      price,
+      thumbnailSrc,
+      url: this.url,
+      dateScraped: new Date()
+    };
+
+    return productInfo;
+  };
+}
+
+const createBrowser = () => {
   const browser = new Browser();
-
   browser.silent = true;
   browser.waitDuration = '30s';
-
-  let numResources = 0;
-  browser.on('request', () => ++numResources);
-  browser.on('response', () => --numResources);
 
   // Ignore certain resource requests.
   browser.pipeline.addHandler((browser, request) => {
     let doAbort = false;
 
-    config.ignoreResources.forEach((domain) => {
+    const ignoredResources = _activeScraper.productConfig.ignoredResources;
+    console.log('checking ignored resources?', ignoredResources);
+
+    ignoredResources.forEach((domain) => {
       if (request.url.includes(domain)) {
         doAbort = true;
       }
@@ -33,69 +84,44 @@ const getProductDetails = (url, utilOptions = {}) => {
     if (doAbort) {
       return new Fetch.Response('', { status: 200 });
     }
+    //  else {
+    //   console.log('loading resource...\n', request.url);
+    // }
   });
 
-  return new Promise((resolve, reject) => {
-    const onBrowserLoaded = () => {
-      const content = browser.html();
-      const $ = cheerio.load(content, cheerioOptions);
+  return browser;
+};
 
-      const name = $(config.nameSelector).text().trim();
+const getProductDetails = (urls, utilOptions = {}) => {
+  const browser = createBrowser();
 
-      let price = $(config.priceSelector)
-        .text()
-        .trim()
-        .replace('$', '')
-        .replace(/ /g, '');
+  return new Promise((resolve) => {
+    let allProductDetails = [];
+    let counter = 0;
 
-      price = parseFloat(price);
-      price = Math.round(price);
+    const init = (url) => {
+      _activeScraper = new ProductScraper(browser);
+      console.log('\n\nget url:', url, '\n-------------------------------');
 
-      if (isNaN(price)) {
-        price = 0;
-      }
+      _activeScraper
+        .scrapeUrl(url)
+        .then((details) => {
+          allProductDetails.push(details);
 
-      let thumbnailSrc = $(config.thumbnailSelector).first().attr('src') || '';
-      thumbnailSrc = thumbnailSrc.trim();
-
-      const productInfo = {
-        name,
-        price,
-        thumbnailSrc,
-        url
-      };
-
-      resolve(productInfo);
+          if (urls[++counter]) {
+            init(urls[counter]);
+          } else {
+            console.log('done scraping urls.');
+            resolve(allProductDetails);
+          }
+        });
     };
 
-    function onVisit() {
-      browser.wait();
-
-      const max = utilOptions.resourcesWaitDuration || 20; // 10 seconds
-      let counter = 0;
-
-      const interval = setInterval(() => {
-        const maximumChecksReached = (++counter > max);
-
-        if (numResources === 0 || maximumChecksReached) {
-          if (maximumChecksReached) {
-            console.log('Maximum checks reached!');
-          }
-
-          clearInterval(interval);
-          onBrowserLoaded();
-        }
-      }, 500);
-    }
-
-    browser.visit(url, {
-      runScripts: true,
-      loadCSS: false,
-      silent: true
-    }, onVisit);
+    init(urls[counter]);
   });
 };
 
 module.exports = {
+  dateScrapedRecommended,
   getProductDetails
 };

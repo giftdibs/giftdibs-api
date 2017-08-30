@@ -6,7 +6,7 @@ describe('url scraper config util', () => {
       config.nameSelector !== undefined &&
       config.priceSelector !== undefined &&
       config.thumbnailSelector !== undefined &&
-      typeof config.ignoreResources.push === 'function'
+      typeof config.ignoredResources.push === 'function'
     );
   };
 
@@ -30,7 +30,7 @@ describe('url scraper config util', () => {
     expect(config.nameSelector).toEqual('title');
     expect(config.priceSelector).toEqual(null);
     expect(config.thumbnailSelector).toEqual(null);
-    expect(config.ignoreResources).toEqual([]);
+    expect(config.ignoredResources).toEqual([]);
   });
 
   it('should merge defaults and product config', () => {
@@ -53,6 +53,6 @@ describe('url scraper config util', () => {
     expect(config.nameSelector).toEqual('custom-name');
     expect(config.priceSelector).toEqual(null);
     expect(config.thumbnailSelector).toEqual(null);
-    expect(config.ignoreResources).toEqual([]);
+    expect(config.ignoredResources).toEqual([]);
   });
 });

@@ -4,7 +4,7 @@ const defaultConfig = {
   nameSelector: 'title',
   priceSelector: null,
   thumbnailSelector: null,
-  ignoreResources: []
+  ignoredResources: []
 };
 
 const getConfig = (url) => {

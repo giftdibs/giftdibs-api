@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const externalUrlSchema = require('./external-url');
 const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
 const { updateDocument } = require('../utils/update-document');
 
@@ -14,11 +15,7 @@ const giftSchema = new Schema({
     type: Number,
     maxlength: [13, 'The gift\'s budget must be less than 1,000,000,000,000.']
   },
-  externalUrl: {
-    type: String,
-    trim: true,
-    maxlength: [500, 'The gift\'s external URL cannot be longer than 500 characters.']
-  }
+  externalUrls: [externalUrlSchema]
 }, {
   timestamps: {
     createdAt: 'dateCreated',
@@ -26,8 +23,8 @@ const giftSchema = new Schema({
   }
 });
 
-giftSchema.methods.updateFields = function (values) {
-  const fields = ['name', 'externalUrl', 'budget'];
+giftSchema.methods.update = function (values) {
+  const fields = ['name', 'budget'];
   updateDocument(this, fields, values);
 };
 

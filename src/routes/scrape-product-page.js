@@ -10,10 +10,10 @@ const scrapeProductPage = [
 
     if (isUrl) {
       urlScraper
-        .getProductDetails(req.query.url)
-        .then((product) => {
+        .getProductDetails([req.query.url])
+        .then((products) => {
           authResponse({
-            product
+            products
           })(req, res, next);
         })
         .catch(next);
