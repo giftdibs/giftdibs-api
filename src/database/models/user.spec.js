@@ -10,8 +10,8 @@ describe('user model', () => {
   beforeEach(() => {
     updateDocumentUtil = mock.reRequire('../utils/update-document');
     spyOn(updateDocumentUtil, 'updateDocument').and.returnValue();
-    User = mock.reRequire('./user');
     spyOn(console, 'log').and.returnValue();
+    User = mock.reRequire('./user');
   });
 
   afterEach(() => {

@@ -22,8 +22,26 @@ function GiftNotFoundError() {
 }
 GiftNotFoundError.prototype = Error.prototype;
 
+function ExternalUrlNotFoundError() {
+  this.name = 'ExternalUrlNotFoundError';
+  this.message = 'External URL not found.';
+  this.code = 500;
+  this.status = 400;
+}
+ExternalUrlNotFoundError.prototype = Error.prototype;
+
+function URLScraperError() {
+  this.name = 'URLScraperError';
+  this.message = 'Please provide a valid URL.';
+  this.code = 600;
+  this.status = 400;
+}
+URLScraperError.prototype = Error.prototype;
+
 module.exports = {
   UserNotFoundError,
   WishListNotFoundError,
-  GiftNotFoundError
+  GiftNotFoundError,
+  ExternalUrlNotFoundError,
+  URLScraperError
 };

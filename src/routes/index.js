@@ -4,5 +4,6 @@ module.exports = [
   require('./users').router,
   require('./wish-lists').router,
   require('./gifts').router,
+  require('./external-urls').router,
   require('./scrape-product-page').router
 ];

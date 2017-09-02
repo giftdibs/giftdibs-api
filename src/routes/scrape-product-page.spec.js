@@ -41,7 +41,7 @@ describe('/scrape-product-page', () => {
     const res = {};
     _req.query.url = undefined;
     scrapeProductPage(_req, res, (err) => {
-      expect(err.code).toEqual(500);
+      expect(err.code).toEqual(600);
       expect(err.status).toEqual(400);
     });
   });

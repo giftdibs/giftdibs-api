@@ -3,6 +3,7 @@ const express = require('express');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 const urlScraper = require('../utils/url-scraper');
+const { URLScraperError } = require('../shared/errors');
 
 const scrapeProductPage = [
   (req, res, next) => {
@@ -10,7 +11,9 @@ const scrapeProductPage = [
 
     if (isUrl) {
       urlScraper
-        .getProductDetails([req.query.url])
+        .getProductDetails([
+          req.query.url
+        ])
         .then((products) => {
           authResponse({
             products
@@ -18,10 +21,7 @@ const scrapeProductPage = [
         })
         .catch(next);
     } else {
-      const err = new Error('Please provide a valid URL.');
-      err.status = 400;
-      err.code = 500;
-      next(err);
+      next(new URLScraperError());
     }
   }
 ];

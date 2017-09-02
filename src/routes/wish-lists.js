@@ -43,7 +43,7 @@ const getWishList = [
       .limit(1)
       .populate('_user', 'firstName lastName')
       .lean()
-      .then(docs => {
+      .then((docs) => {
         const wishList = docs[0];
 
         if (!wishList) {
@@ -65,25 +65,18 @@ const getWishList = [
 ];
 
 const getWishLists = [
-  function getAllByUserId(req, res, next) {
-    if (!req.query.userId) {
-      next();
-      return;
+  function getAll(req, res, next) {
+    let query = {};
+
+    if (req.query.userId) {
+      query._user = req.query.userId;
     }
 
     WishList
-      .find({ _user: req.query.userId })
-      .lean()
-      .then(docs => authResponse(docs)(req, res, next))
-      .catch(next);
-  },
-
-  function getAll(req, res, next) {
-    WishList
-      .find({})
+      .find(query)
       .populate('_user', 'firstName lastName')
       .lean()
-      .then(docs => authResponse(docs)(req, res, next))
+      .then(wishLists => authResponse({ wishLists })(req, res, next))
       .catch(next);
   }
 ];

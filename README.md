@@ -44,7 +44,13 @@
 ### `/wish-lists/:wishListId/gifts`
 
 - `400` Gift not found.
+- `401` Gift failed validation.
+
+### `/wish-lists/:wishListId/gifts/:giftId/external-urls`
+
+- `500` External URL not found.
+- `501` External URL failed validation.
 
 ### `/scrape-product-page/:url`
 
-- `500` URL was not found or is invalid.
+- `600` URL was not found or is invalid.

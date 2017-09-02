@@ -1,20 +1,62 @@
 const express = require('express');
 
 const WishList = require('../database/models/wish-list');
+const Gift = require('../database/models/gift');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
-const { GiftNotFoundError } = require('../shared/errors');
-const urlScraper = require('../utils/url-scraper');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
-    err.code = 301;
+    err.code = 401;
     err.status = 400;
-    err.message = 'Wish list update validation failed.';
+    err.message = 'Gift update validation failed.';
   }
 
   next(err);
+}
+
+// function getGiftById(wishListId, giftId) {
+//   return WishList
+//     .getById(wishListId)
+//     .then((wishList) => {
+//       const gift = wishList.gifts.id(giftId);
+
+//       if (!gift) {
+//         return Promise.reject(new GiftNotFoundError());
+//       }
+
+//       return {
+//         gift, wishList
+//       };
+//     });
+// }
+
+function addUpdateOrRemoveExternalUrls(gift, formData) {
+  if (!Array.isArray(gift.externalUrls) || !Array.isArray(formData.externalUrls)) {
+    return;
+  }
+
+  // Handle any external URLs that need to be removed.
+  gift.externalUrls.forEach((externalUrl) => {
+    const found = formData.externalUrls.filter((data) => {
+      return (externalUrl._id.toString() === data._id);
+    })[0];
+
+    if (!found) {
+      externalUrl.remove();
+    }
+  });
+
+  // Update existing urls.
+  formData.externalUrls.forEach((data) => {
+    let externalUrl = gift.externalUrls.id(data._id);
+    if (externalUrl) {
+      externalUrl.update(data);
+    } else {
+      gift.externalUrls.push(data);
+    }
+  });
 }
 
 const addGift = [
@@ -46,18 +88,11 @@ const deleteGift = [
   confirmUserOwnsWishList,
 
   (req, res, next) => {
-    WishList
-      .getById(req.params.wishListId)
-      .then((wishList) => {
-        const gift = wishList.gifts.id(req.params.giftId);
-
-        if (!gift) {
-          return Promise.reject(new GiftNotFoundError());
-        }
-
-        gift.remove();
-
-        return wishList.save();
+    Gift
+      .getById(req.params.wishListId, req.params.giftId)
+      .then((result) => {
+        result.gift.remove();
+        return result.wishList.save();
       })
       .then((doc) => {
         authResponse({
@@ -72,39 +107,13 @@ const updateGift = [
   confirmUserOwnsWishList,
 
   (req, res, next) => {
-    WishList
-      .getById(req.params.wishListId)
-      .then((wishList) => {
-        const gift = wishList.gifts.id(req.params.giftId);
+    Gift
+      .getById(req.params.wishListId, req.params.giftId)
+      .then((result) => {
+        const gift = result.gift;
+        const wishList = result.wishList;
 
-        if (!gift) {
-          return Promise.reject(new GiftNotFoundError());
-        }
-
-        // Handle any external URLs that need to be removed.
-        gift.externalUrls.forEach((externalUrl) => {
-          let found = false;
-
-          req.body.externalUrls.forEach((formData) => {
-            if (externalUrl._id.equals(formData._id)) {
-              found = true;
-            }
-          });
-
-          if (!found) {
-            externalUrl.remove();
-          }
-        });
-
-        // Update existing urls.
-        req.body.externalUrls.forEach((formData) => {
-          let externalUrlDoc = gift.externalUrls.id(formData._id);
-          if (externalUrlDoc) {
-            externalUrlDoc.update(formData);
-          } else {
-            gift.externalUrls.push(formData);
-          }
-        });
+        addUpdateOrRemoveExternalUrls(gift, req.body);
 
         gift.update(req.body);
 
@@ -119,69 +128,6 @@ const updateGift = [
   }
 ];
 
-const updateExternalUrl = [
-  confirmUserOwnsWishList,
-
-  (req, res, next) => {
-    let _wishList;
-
-    WishList
-      .getById(req.params.wishListId)
-      .then((wishList) => {
-        const gift = wishList.gifts.id(req.params.giftId);
-
-        if (!gift) {
-          return Promise.reject(new GiftNotFoundError());
-        }
-
-        _wishList = wishList;
-        return gift;
-      })
-      .then((gift) => {
-        const found = gift.externalUrls.filter((externalUrl) => {
-          return (externalUrl._id.equals(req.params.externalUrlId));
-        })[0];
-
-        if (!found) {
-          return Promise.reject(new Error('External URL not found!'));
-        }
-
-        return found;
-      })
-      .then((externalUrl) => {
-        if (req.query.scrapeUrl !== undefined) {
-          const isUrlCurrent = (externalUrl.dateScraped && externalUrl.dateScraped.getTime() > urlScraper.dateScrapedRecommended);
-
-          if (isUrlCurrent) {
-            return externalUrl;
-          }
-
-          return urlScraper
-            .getProductDetails([externalUrl.url])
-            .then((productInfoArray) => {
-              const productInfo = productInfoArray[0];
-
-              if (productInfo.price) {
-                externalUrl.price = productInfo.price;
-                externalUrl.dateScraped = new Date();
-              }
-
-              return _wishList
-                .save()
-                .then(() => externalUrl);
-            });
-        }
-      })
-      .then((externalUrl) => {
-        authResponse({
-          externalUrl: externalUrl,
-          message: 'External URL successfully updated.'
-        })(req, res, next);
-      })
-      .catch((err) => handleError(err, next));
-  }
-];
-
 const router = express.Router();
 router.use(authenticateJwt);
 router.route('/wish-lists/:wishListId/gifts')
@@ -189,8 +135,6 @@ router.route('/wish-lists/:wishListId/gifts')
 router.route('/wish-lists/:wishListId/gifts/:giftId')
   .delete(deleteGift)
   .patch(updateGift);
-router.route('/wish-lists/:wishListId/gifts/:giftId/external-urls/:externalUrlId')
-  .patch(updateExternalUrl);
 
 module.exports = {
   middleware: {
