@@ -2,7 +2,7 @@ const express = require('express');
 
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
-const Gift = require('../database/models/gift');
+const WishList = require('../database/models/wish-list');
 const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
 const { ExternalUrlNotFoundError } = require('../shared/errors');
 const urlScraper = require('../utils/url-scraper');
@@ -22,9 +22,8 @@ const updateExternalUrl = [
 
   (req, res, next) => {
     let _wishList;
-
-    Gift
-      .getById(req.params.wishListId, req.params.giftId)
+    WishList
+      .getGiftById(req.params.wishListId, req.params.giftId)
       .then((result) => {
         _wishList = result.wishList;
 

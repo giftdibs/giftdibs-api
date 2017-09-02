@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const giftSchema = require('./gift');
 const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
 const { updateDocument } = require('../utils/update-document');
-const { WishListNotFoundError } = require('../../shared/errors');
+const { WishListNotFoundError, GiftNotFoundError } = require('../../shared/errors');
 
 const Schema = mongoose.Schema;
 const wishListSchema = new Schema({
@@ -42,6 +42,21 @@ wishListSchema.statics.getById = function (wishListId) {
       }
 
       return wishList;
+    });
+};
+
+wishListSchema.statics.getGiftById = function (wishListId, giftId) {
+  return this.getById(wishListId)
+    .then((wishList) => {
+      const gift = wishList.gifts.id(giftId);
+
+      if (!gift) {
+        return Promise.reject(new GiftNotFoundError());
+      }
+
+      return {
+        wishList, gift
+      };
     });
 };
 

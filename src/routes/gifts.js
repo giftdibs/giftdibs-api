@@ -1,7 +1,6 @@
 const express = require('express');
 
 const WishList = require('../database/models/wish-list');
-const Gift = require('../database/models/gift');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
@@ -15,22 +14,6 @@ function handleError(err, next) {
 
   next(err);
 }
-
-// function getGiftById(wishListId, giftId) {
-//   return WishList
-//     .getById(wishListId)
-//     .then((wishList) => {
-//       const gift = wishList.gifts.id(giftId);
-
-//       if (!gift) {
-//         return Promise.reject(new GiftNotFoundError());
-//       }
-
-//       return {
-//         gift, wishList
-//       };
-//     });
-// }
 
 function addUpdateOrRemoveExternalUrls(gift, formData) {
   if (!Array.isArray(gift.externalUrls) || !Array.isArray(formData.externalUrls)) {
@@ -88,8 +71,8 @@ const deleteGift = [
   confirmUserOwnsWishList,
 
   (req, res, next) => {
-    Gift
-      .getById(req.params.wishListId, req.params.giftId)
+    WishList
+      .getGiftById(req.params.wishListId, req.params.giftId)
       .then((result) => {
         result.gift.remove();
         return result.wishList.save();
@@ -107,8 +90,8 @@ const updateGift = [
   confirmUserOwnsWishList,
 
   (req, res, next) => {
-    Gift
-      .getById(req.params.wishListId, req.params.giftId)
+    WishList
+      .getGiftById(req.params.wishListId, req.params.giftId)
       .then((result) => {
         const gift = result.gift;
         const wishList = result.wishList;
