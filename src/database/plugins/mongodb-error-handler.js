@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// Beautifies native MongoDB errors.
 function errorHandler(err, doc, next) {
   if (err.name !== 'MongoError' || err.code !== 11000) {
     next(err);

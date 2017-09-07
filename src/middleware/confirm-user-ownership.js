@@ -1,5 +1,5 @@
 function confirmUserOwnership(req, res, next) {
-  // Don't worry about the check if ID is not in the req parameters.
+  // Don't worry about the check if userId is not in the req parameters.
   if (req.params.userId === undefined) {
     next();
     return;

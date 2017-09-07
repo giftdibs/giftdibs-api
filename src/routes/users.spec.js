@@ -16,7 +16,9 @@ describe('/users', () => {
         },
         save() {
           return Promise.resolve();
-        }
+        },
+        update() {},
+        resetEmailAddressVerification() {}
       },
       params: {
         userId: 0
@@ -202,6 +204,7 @@ describe('/users', () => {
     const users = mock.reRequire('./users');
     const getUser = users.middleware.getUser;
     getUser[0](_req, {}, (err) => {
+      expect(err.name).toEqual('UserNotFoundError');
       expect(err.code).toEqual(200);
       expect(err.status).toEqual(400);
       done();
@@ -236,30 +239,9 @@ describe('/users', () => {
     const users = mock.reRequire('./users');
     const updateUser = users.middleware.updateUser;
     _req.body = { firstName: 'NewName' };
+    spyOn(_req.user, 'update');
     updateUser[2](_req, {}, () => {
-      expect(_req.user.firstName).toEqual('NewName');
-      done();
-    });
-  });
-
-  it('should only PATCH certain fields', (done) => {
-    spyOn(_req.user, 'set').and.callThrough();
-    const users = mock.reRequire('./users');
-    const updateUser = users.middleware.updateUser;
-    _req.body = { invalidField: 'foobar' };
-    updateUser[2](_req, {}, () => {
-      expect(_req.user.set).not.toHaveBeenCalled();
-      done();
-    });
-  });
-
-  it('should clear a field during PATCH if set to null', (done) => {
-    spyOn(_req.user, 'set').and.callThrough();
-    const users = mock.reRequire('./users');
-    const updateUser = users.middleware.updateUser;
-    _req.body = { firstName: null };
-    updateUser[2](_req, {}, () => {
-      expect(_req.user.set).toHaveBeenCalledWith('firstName', undefined);
+      expect(_req.user.update).toHaveBeenCalledWith(_req.body);
       done();
     });
   });
@@ -325,11 +307,9 @@ describe('/users', () => {
     const users = mock.reRequire('./users');
     const updateUser = users.middleware.updateUser;
     _req.user.emailAddress = 'my@email.com';
-    _req.user.resetEmailAddressVerification = () => {};
     _req.body = { emailAddress: 'new@email.com' };
-    spyOn(_req.user, 'resetEmailAddressVerification').and.callThrough();
+    spyOn(_req.user, 'resetEmailAddressVerification');
     updateUser[2](_req, {}, () => {
-      expect(_req.user.emailAddress).toEqual('new@email.com');
       expect(_req.user.resetEmailAddressVerification).toHaveBeenCalledWith();
       done();
     });
@@ -392,23 +372,5 @@ describe('/users', () => {
       expect(err).toBeDefined();
       done();
     });
-  });
-
-  it('should GET an array of all wish lists belonging to a user', (done) => {
-    mock('../database/models/wish-list', {
-      find: () => {
-        return {
-          lean: () => Promise.resolve([])
-        };
-      }
-    });
-    const users = mock.reRequire('./users');
-    const getWishListsByUserId = users.middleware.getWishListsByUserId;
-    getWishListsByUserId[0](_req, {
-      json: (docs) => {
-        expect(docs.length).toBeDefined();
-        done();
-      }
-    }, () => {});
   });
 });

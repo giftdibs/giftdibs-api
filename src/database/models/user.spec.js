@@ -3,12 +3,15 @@ const mock = require('mock-require');
 
 mongoose.Promise = Promise;
 
-describe('user model', () => {
+describe('User schema', () => {
   let User;
+  let updateDocumentUtil;
 
   beforeEach(() => {
-    User = mock.reRequire('./user');
+    updateDocumentUtil = mock.reRequire('../utils/update-document');
+    spyOn(updateDocumentUtil, 'updateDocument').and.returnValue();
     spyOn(console, 'log').and.returnValue();
+    User = mock.reRequire('./user');
   });
 
   afterEach(() => {
@@ -123,7 +126,7 @@ describe('user model', () => {
     expect(user.emailAddress).toEqual('foo@bar.com');
   });
 
-  it('should check if emailAddress is unique', () => {
+  it('should beautify native mongo errors', () => {
     let found = User.schema.plugins.filter(plugin => {
       return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
     })[0];
@@ -297,5 +300,31 @@ describe('user model', () => {
     const result = user.verifyEmailAddress('foobar');
     expect(user.emailAddressVerificationToken).toEqual('abc123');
     expect(result).toEqual(false);
+  });
+
+  it('should update certain fields', () => {
+    const user = new User({
+      firstName: 'Foo',
+      lastName: 'Bar',
+      emailAddress: 'foo@bar.com',
+      password: 'foobar',
+      dateLastLoggedIn: new Date()
+    });
+    const formData = {
+      firstName: 'Test'
+    };
+
+    user.update(formData);
+
+    expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
+      user,
+      [
+        'firstName',
+        'lastName',
+        'emailAddress',
+        'facebookId'
+      ],
+      formData
+    );
   });
 });

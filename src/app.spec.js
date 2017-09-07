@@ -1,11 +1,7 @@
 const mock = require('mock-require');
-// const cors = require('cors');
 
 describe('app', () => {
-  // let spies = {};
   beforeEach(() => {
-    // spies.cors = cors;
-    // spyOn(spies, 'cors').and.callFake(() => {});
     mock('./environment', () => {});
     mock('express', () => {
       return {

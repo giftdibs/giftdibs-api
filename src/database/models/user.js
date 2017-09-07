@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const randomstring = require('randomstring');
 const { isEmail, isAlpha } = require('validator');
 const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
+const { updateDocument } = require('../utils/update-document');
 
 const hasDuplicateChars = (str) => {
   let regex = /(.)\1{2,}/;
@@ -165,6 +166,16 @@ userSchema.methods.verifyEmailAddress = function (token) {
   }
 
   return false;
+};
+
+userSchema.methods.update = function (values) {
+  const fields = [
+    'firstName',
+    'lastName',
+    'emailAddress',
+    'facebookId'
+  ];
+  updateDocument(this, fields, values);
 };
 
 userSchema.plugin(MongoDbErrorHandlerPlugin);

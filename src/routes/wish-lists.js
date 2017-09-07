@@ -3,7 +3,9 @@ const express = require('express');
 const WishList = require('../database/models/wish-list');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
-const confirmUserOwnership = require('../middleware/confirm-user-ownership');
+const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
+const { WishListNotFoundError } = require('../shared/errors');
+const { dateScrapedRecommended } = require('../utils/url-scraper');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
@@ -41,77 +43,65 @@ const getWishList = [
       .limit(1)
       .populate('_user', 'firstName lastName')
       .lean()
-      .then(docs => {
+      .then((docs) => {
         const wishList = docs[0];
 
         if (!wishList) {
-          const err = new Error('Wish list not found.');
-          err.code = 300;
-          err.status = 400;
-          return Promise.reject(err);
+          return Promise.reject(new WishListNotFoundError());
         }
 
-        authResponse(wishList)(req, res, next);
+        return wishList;
+      })
+      .then((wishList) => {
+        authResponse({
+          wishList,
+          externalUrls: {
+            dateScrapedRecommended
+          }
+        })(req, res, next);
       })
       .catch(next);
   }
 ];
 
 const getWishLists = [
-  (req, res, next) => {
+  function getAll(req, res, next) {
+    let query = {};
+
+    if (req.query.userId) {
+      query._user = req.query.userId;
+    }
+
     WishList
-      .find({})
+      .find(query)
       .populate('_user', 'firstName lastName')
       .lean()
-      .then(docs => authResponse(docs)(req, res, next))
+      .then(wishLists => authResponse({ wishLists })(req, res, next))
       .catch(next);
   }
 ];
 
 const updateWishList = [
-  confirmUserOwnership,
+  confirmUserOwnsWishList,
 
   function updateWithFormData(req, res, next) {
-    const updateFields = [
-      'name'
-    ];
-
-    let changes = {};
-    updateFields.forEach(field => {
-      if (req.body[field] !== undefined) {
-        if (req.body[field] === null) {
-          req.body[field] = undefined;
-        }
-
-        changes[field] = req.body[field];
-      }
-    });
-
-    Promise
-      .resolve()
-      .then(() => {
-        return WishList
-          .find({ _id: req.params.wishListId })
-          .limit(1);
-      })
-      .then((docs) => {
-        const wishList = docs[0];
-
-        for (const key in changes) {
-          wishList.set(key, changes[key]);
-        }
-
+    WishList
+      .getById(req.params.wishListId)
+      .then((wishList) => {
+        wishList.update(req.body);
         return wishList.save();
       })
       .then(() => {
-        authResponse({ message: 'Wish list updated.' })(req, res, next);
+        authResponse({
+          message: 'Wish list updated.'
+        })(req, res, next);
       })
       .catch((err) => handleError(err, next));
   }
 ];
 
 const deleteWishList = [
-  confirmUserOwnership,
+  confirmUserOwnsWishList,
   (req, res, next) => {
     WishList
       .remove({ _id: req.params.wishListId })
