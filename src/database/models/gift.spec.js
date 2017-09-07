@@ -47,7 +47,12 @@ describe('Gift schema', () => {
   });
 
   it('should be invalid if name is too long', () => {
-    _giftDefinition.name = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    let name = '';
+    for (let i = 0, len = 251; i < len; ++i) {
+      name += 'a';
+    }
+
+    _giftDefinition.name = name;
     let gift = new Gift(_giftDefinition);
     const err = gift.validateSync();
     expect(err.errors.name.properties.type).toEqual('maxlength');
