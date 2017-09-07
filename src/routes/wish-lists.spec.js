@@ -126,8 +126,6 @@ describe('Wish list router', () => {
 
       getWishList(_req, _res, (err) => {
         expect(err.name).toEqual('WishListNotFoundError');
-        expect(err.code).toEqual(300);
-        expect(err.status).toEqual(400);
         done();
       });
     });

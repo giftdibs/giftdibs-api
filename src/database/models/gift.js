@@ -13,7 +13,8 @@ const giftSchema = new Schema({
   },
   budget: {
     type: Number,
-    maxlength: [13, 'The gift\'s budget must be less than 1,000,000,000,000.']
+    min: [0, 'The gift\'s budget must greater than zero.'],
+    max: [1000000000000, 'The gift\'s budget must be less than 1,000,000,000,000.']
   },
   externalUrls: [externalUrlSchema]
 }, {

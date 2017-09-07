@@ -3,7 +3,7 @@ const mock = require('mock-require');
 
 mongoose.Promise = Promise;
 
-describe('user model', () => {
+describe('User schema', () => {
   let User;
   let updateDocumentUtil;
 
@@ -126,7 +126,7 @@ describe('user model', () => {
     expect(user.emailAddress).toEqual('foo@bar.com');
   });
 
-  it('should check if emailAddress is unique', () => {
+  it('should beautify native mongo errors', () => {
     let found = User.schema.plugins.filter(plugin => {
       return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
     })[0];

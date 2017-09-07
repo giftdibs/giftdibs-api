@@ -71,8 +71,6 @@ describe('confirm user owns wishlist middleware', () => {
     const { confirmUserOwnsWishList } = require('./confirm-user-owns-wish-list');
     const next = (err) => {
       expect(err.name).toEqual('WishListNotFoundError');
-      expect(err.code).toEqual(300);
-      expect(err.status).toEqual(400);
       done();
     };
     confirmUserOwnsWishList(_req, null, next);

@@ -26,21 +26,6 @@ describe('Gifts router', () => {
 
     mock('../database/models/gift', MockGift);
     mock('../database/models/wish-list', MockWishList);
-    // mock('express', {
-    //   Router: function () {
-    //     return {
-    //       use(middleware) { },
-    //       route(path) {
-    //         return {
-    //           get() {},
-    //           post() {},
-    //           delete() {},
-    //           patch() {}
-    //         };
-    //       }
-    //     };
-    //   }
-    // });
   };
 
   const afterEachCallback = () => {
@@ -149,23 +134,6 @@ describe('Gifts router', () => {
     beforeEach(beforeEachCallback);
 
     afterEach(afterEachCallback);
-
-    // it('should handle gift not found', (done) => {
-    //   const routeDefinition = mock.reRequire('./gifts');
-    //   const updateGift = routeDefinition.middleware.updateGift[1];
-
-    //   let _err;
-    //   updateGift(_req, _res, (err) => {
-    //     _err = err;
-    //   });
-
-    //   tick(() => {
-    //     expect(_err.name).toEqual('GiftNotFoundError');
-    //     expect(_err.code).toEqual(400);
-    //     expect(_err.status).toEqual(400);
-    //     done();
-    //   });
-    // });
 
     it('should update a gift', (done) => {
       MockWishList.overrides.constructorDefinition = {

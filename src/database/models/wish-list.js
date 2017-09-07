@@ -32,7 +32,8 @@ wishListSchema.methods.update = function (values) {
 };
 
 wishListSchema.statics.getById = function (wishListId) {
-  return this.find({ _id: wishListId })
+  return this
+    .find({ _id: wishListId })
     .limit(1)
     .then((docs) => {
       const wishList = docs[0];
@@ -46,7 +47,8 @@ wishListSchema.statics.getById = function (wishListId) {
 };
 
 wishListSchema.statics.getGiftById = function (wishListId, giftId) {
-  return this.getById(wishListId)
+  return this
+    .getById(wishListId)
     .then((wishList) => {
       const gift = wishList.gifts.id(giftId);
 
