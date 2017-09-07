@@ -47,7 +47,12 @@ describe('WishList schema', () => {
   });
 
   it('should be invalid if name is too long', () => {
-    _wishListDefinition.name = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    let name = '';
+    for (let i = 0, len = 101; i < len; ++i) {
+      name += 'a';
+    }
+
+    _wishListDefinition.name = name;
     let wishList = new WishList(_wishListDefinition);
     const err = wishList.validateSync();
     expect(err.errors.name.properties.type).toEqual('maxlength');
