@@ -275,32 +275,5 @@ describe('Gifts router', () => {
         done();
       });
     });
-
-    // it('should handle errors', (done) => {
-    //   MockWishList.overrides.constructorDefinition = {
-    //     gifts: [
-    //       new MockGift({
-    //         _id: 'abcdefg'
-    //       })
-    //     ]
-    //   };
-
-    //   _req.params.giftId = '12345';
-    //   _req.body.name = 'Updated name';
-
-    //   const routeDefinition = mock.reRequire('./gifts');
-    //   const updateGift = routeDefinition.middleware.updateGift[1];
-
-    //   updateGift(_req, _res, () => {});
-
-    //   const gift = MockWishList.lastTouched.gifts[0];
-
-    //   spyOn(gift, 'update');
-
-    //   tick(() => {
-    //     expect(gift.update).toHaveBeenCalledWith(_req.body);
-    //     done();
-    //   });
-    // });
   });
 });

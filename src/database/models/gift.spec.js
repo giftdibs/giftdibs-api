@@ -92,7 +92,7 @@ describe('Gift schema', () => {
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       gift,
-      [ 'name', 'budget' ],
+      [ 'budget', 'isReceived', 'name' ],
       formData
     );
   });
