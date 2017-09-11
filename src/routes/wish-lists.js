@@ -89,6 +89,69 @@ const updateWishList = [
       .getById(req.params.wishListId)
       .then((wishList) => {
         wishList.update(req.body);
+
+        /*
+        1. get new index
+        2. get original index
+        3. swap the two items
+        */
+
+        // let newIndex;
+        // let newId;
+        // req.body.gifts.forEach((gift, i) => {
+        //   if (newId) {
+        //     return;
+        //   }
+
+        //   if (wishList.gifts[i]._id.toString() !== gift._id) {
+        //     newIndex = i;
+        //     newId = gift._id.toString();
+        //   }
+        // });
+
+        // let oldId;
+        // let oldIndex;
+        // wishList.gifts.forEach((gift, i) => {
+        //   // Get id of gift being replaced.
+        //   if (i === newIndex) {
+        //     oldId = gift._id.toString();
+        //   }
+
+        //   // Get index of gift being moved.
+        //   if (newId === gift._id.toString()) {
+        //     oldIndex = i;
+        //   }
+        // });
+
+        // console.log('new?', newId, newIndex);
+        // console.log('old?', oldId, oldIndex);
+
+        // // const reorderedGifts = req.body.gifts.filter((gift, i) => {
+        // //   return (wishList.gifts[i]._id.toString() !== gift._id);
+        // // });
+
+        // // const swap = (theArray, indexA, indexB) => {
+        // //   let temp = theArray[indexA];
+        // //   theArray[indexA] = theArray[indexB];
+        // //   theArray[indexB] = temp;
+        // // };
+
+        // // swap(wishList.gifts, newIndex, oldIndex);
+
+        // // console.log('wishList.gifts?', wishList.gifts);
+
+        // const set = {};
+        // set['gifts.' + newId + '.$position'] = oldIndex;
+        // set['gifts.' + oldId + '.$position'] = newIndex;
+
+        // console.log('set?', set);
+
+        // return new Promise((resolve) => {
+        //   WishList.update(wishList._id, { '$set': set }, () => {
+        //     wishList.save().then(resolve);
+        //   });
+        // });
+
         return wishList.save();
       })
       .then(() => {
