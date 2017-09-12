@@ -38,6 +38,7 @@ const createWishList = [
 
 const getWishList = [
   (req, res, next) => {
+    console.log('GET wish list...');
     WishList
       .find({ _id: req.params.wishListId })
       .limit(1)
@@ -53,6 +54,7 @@ const getWishList = [
         return wishList;
       })
       .then((wishList) => {
+        console.log('wish list found :)');
         authResponse({
           wishList,
           externalUrls: {

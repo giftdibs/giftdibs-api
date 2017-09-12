@@ -2,7 +2,7 @@ const express = require('express');
 
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
-const urlScraper = require('../utils/url-scraper');
+// const urlScraper = require('../utils/url-scraper');
 const { URLScraperError } = require('../shared/errors');
 
 const scrapeProductPage = [
@@ -10,16 +10,18 @@ const scrapeProductPage = [
     const isUrl = (/^https?:\/\//.test(req.query.url));
 
     if (isUrl) {
-      urlScraper
-        .getProductDetails([
-          req.query.url
-        ])
-        .then((products) => {
-          authResponse({
-            products
-          })(req, res, next);
-        })
-        .catch(next);
+      const cp = require('child_process');
+      const child = cp.fork('./scripts/scrape-url');
+
+      child.on('message', (message) => {
+        child.kill('SIGINT');
+        authResponse({ products: message })(req, res, next);
+      });
+
+      console.log('sending to child...');
+      process.nextTick(() => {
+        child.send({ url: req.query.url });
+      });
     } else {
       next(new URLScraperError());
     }

@@ -73,7 +73,7 @@ const createBrowser = () => {
     let doAbort = false;
 
     const ignoredResources = _activeScraper.productConfig.ignoredResources;
-    console.log('checking ignored resources?', ignoredResources);
+    // console.log('checking ignored resources?', ignoredResources);
 
     ignoredResources.forEach((domain) => {
       if (request.url.includes(domain)) {
@@ -101,7 +101,7 @@ const getProductDetails = (urls, utilOptions = {}) => {
 
     const init = (url) => {
       _activeScraper = new ProductScraper(browser);
-      console.log('\n\nget url:', url, '\n-------------------------------');
+      // console.log('\n\nget url:', url, '\n-------------------------------');
 
       _activeScraper
         .scrapeUrl(url)
@@ -109,7 +109,9 @@ const getProductDetails = (urls, utilOptions = {}) => {
           allProductDetails.push(details);
 
           if (urls[++counter]) {
-            init(urls[counter]);
+            process.nextTick(() => {
+              init(urls[counter]);
+            });
           } else {
             console.log('done scraping urls.');
             resolve(allProductDetails);
