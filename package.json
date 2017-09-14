@@ -4,7 +4,8 @@
   "description": "giftdibs API service",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon ./index.js",
+    "start": "node ./index.js",
+    "watch": "nodemon ./index.js",
     "test": "npm run lint && npm run coverage",
     "lint": "node ./node_modules/.bin/eslint src",
     "coverage": "istanbul cover jasmine JASMINE_CONFIG_PATH=jasmine.json"
@@ -25,11 +26,9 @@
   "dependencies": {
     "bcrypt": "1.0.2",
     "body-parser": "1.17.2",
-    "cheerio": "1.0.0-rc.2",
     "cors": "2.8.4",
     "dotenv": "4.0.0",
     "express": "4.15.3",
-    "glob": "7.1.2",
     "jsonwebtoken": "7.4.2",
     "mongoose": "4.11.5",
     "passport": "0.3.2",
@@ -38,8 +37,7 @@
     "randomstring": "1.1.5",
     "request-promise": "4.2.1",
     "validator": "8.0.0",
-    "winston": "2.3.1",
-    "zombie": "5.0.7"
+    "winston": "2.3.1"
   },
   "devDependencies": {
     "eslint": "4.4.0",

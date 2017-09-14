@@ -5,7 +5,6 @@ const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
 const { WishListNotFoundError } = require('../shared/errors');
-const { dateScrapedRecommended } = require('../utils/url-scraper');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
@@ -54,10 +53,7 @@ const getWishList = [
       })
       .then((wishList) => {
         authResponse({
-          wishList,
-          externalUrls: {
-            dateScrapedRecommended
-          }
+          wishList
         })(req, res, next);
       })
       .catch(next);
