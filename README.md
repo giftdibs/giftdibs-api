@@ -48,9 +48,4 @@
 
 ### `/wish-lists/:wishListId/gifts/:giftId/external-urls`
 
-- `500` External URL not found.
 - `501` External URL failed validation.
-
-### `/scrape-product-page/:url`
-
-- `600` URL was not found or is invalid.

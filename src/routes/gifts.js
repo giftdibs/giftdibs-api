@@ -31,13 +31,17 @@ function addUpdateOrRemoveExternalUrls(gift, formData) {
     }
   });
 
-  // Update existing urls.
   formData.externalUrls.forEach((data) => {
-    let externalUrl = gift.externalUrls.id(data._id);
+    // Add a new external url if no _id provided.
+    if (!data._id) {
+      gift.externalUrls.push(data);
+      return;
+    }
+
+    // Update existing external urls.
+    const externalUrl = gift.externalUrls.id(data._id);
     if (externalUrl) {
       externalUrl.update(data);
-    } else {
-      gift.externalUrls.push(data);
     }
   });
 }

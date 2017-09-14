@@ -101,7 +101,6 @@ describe('Wish list router', () => {
 
       tick(() => {
         expect(_res.json.output.wishList._id).toBeDefined();
-        expect(typeof _res.json.output.externalUrls.dateScrapedRecommended).toEqual('number');
         done();
       });
     });
