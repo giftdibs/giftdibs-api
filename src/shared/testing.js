@@ -14,15 +14,7 @@ MockDocument.remove = function () {
   return Promise.resolve();
 };
 
-class MockExternalUrl extends MockDocument {
-  constructor(definition = {}) {
-    super();
-
-    const defaults = {};
-
-    Object.assign(this, defaults, definition);
-  }
-}
+class MockExternalUrl extends MockDocument {}
 
 class MockGift extends MockDocument {
   constructor(definition = {}) {
@@ -34,15 +26,7 @@ class MockGift extends MockDocument {
 
     Object.assign(this, defaults, definition);
 
-    this.externalUrls.id = (id) => {
-      if (!id) {
-        return;
-      }
-
-      return this.externalUrls.filter((externalUrl) => {
-        return (externalUrl instanceof MockExternalUrl && externalUrl._id === id);
-      })[0];
-    };
+    this.externalUrls.id = () => {};
   }
 }
 

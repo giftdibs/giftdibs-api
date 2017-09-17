@@ -20,6 +20,10 @@ const giftSchema = new Schema({
     required: [true, 'Please provide a gift name.'],
     trim: true,
     maxlength: [250, 'The gift\'s name cannot be longer than 250 characters.']
+  },
+  order: {
+    type: Number,
+    min: [0, 'The gift\'s order must greater than zero.']
   }
 }, {
   timestamps: {
@@ -29,7 +33,7 @@ const giftSchema = new Schema({
 });
 
 giftSchema.methods.update = function (values) {
-  const fields = ['budget', 'isReceived', 'name'];
+  const fields = ['budget', 'isReceived', 'name', 'order'];
   updateDocument(this, fields, values);
 };
 

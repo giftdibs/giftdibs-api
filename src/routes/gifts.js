@@ -15,37 +15,6 @@ function handleError(err, next) {
   next(err);
 }
 
-function addUpdateOrRemoveExternalUrls(gift, formData) {
-  if (!Array.isArray(gift.externalUrls) || !Array.isArray(formData.externalUrls)) {
-    return;
-  }
-
-  // Handle any external URLs that need to be removed.
-  gift.externalUrls.forEach((externalUrl) => {
-    const found = formData.externalUrls.filter((data) => {
-      return (externalUrl._id.toString() === data._id);
-    })[0];
-
-    if (!found) {
-      externalUrl.remove();
-    }
-  });
-
-  formData.externalUrls.forEach((data) => {
-    // Add a new external url if no _id provided.
-    if (!data._id) {
-      gift.externalUrls.push(data);
-      return;
-    }
-
-    // Update existing external urls.
-    const externalUrl = gift.externalUrls.id(data._id);
-    if (externalUrl) {
-      externalUrl.update(data);
-    }
-  });
-}
-
 const addGift = [
   confirmUserOwnsWishList,
 
@@ -99,8 +68,6 @@ const updateGift = [
       .then((result) => {
         const gift = result.gift;
         const wishList = result.wishList;
-
-        addUpdateOrRemoveExternalUrls(gift, req.body);
 
         gift.update(req.body);
 
