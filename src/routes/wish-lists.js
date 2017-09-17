@@ -16,6 +16,20 @@ function handleError(err, next) {
   next(err);
 }
 
+function sortGiftsByOrder(wishList) {
+  wishList.gifts.sort((a, b) => {
+    if (a.order < b.order) {
+      return -1;
+    }
+
+    if (a.order > b.order) {
+      return 1;
+    }
+
+    return 0;
+  });
+}
+
 const createWishList = [
   (req, res, next) => {
     const wishList = new WishList({
@@ -48,6 +62,8 @@ const getWishList = [
         if (!wishList) {
           return Promise.reject(new WishListNotFoundError());
         }
+
+        sortGiftsByOrder(wishList);
 
         return wishList;
       })

@@ -100,7 +100,7 @@ const updateGift = [
         const gift = result.gift;
         const wishList = result.wishList;
 
-        addUpdateOrRemoveExternalUrls(gift, req.body);
+        // addUpdateOrRemoveExternalUrls(gift, req.body);
 
         gift.update(req.body);
 
