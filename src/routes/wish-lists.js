@@ -18,6 +18,14 @@ function handleError(err, next) {
 
 function sortGiftsByOrder(wishList) {
   wishList.gifts.sort((a, b) => {
+    if (b.order === undefined) {
+      return -1;
+    }
+
+    if (a.order === undefined) {
+      return 1;
+    }
+
     if (a.order < b.order) {
       return -1;
     }

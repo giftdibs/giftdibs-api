@@ -3,10 +3,6 @@ const externalUrlSchema = require('./external-url');
 const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
 const { updateDocument } = require('../utils/update-document');
 
-const isPositiveInteger = (value) => {
-  return (Number.isInteger(value) && value >= 0);
-};
-
 const Schema = mongoose.Schema;
 const giftSchema = new Schema({
   budget: {
@@ -27,13 +23,7 @@ const giftSchema = new Schema({
   },
   order: {
     type: Number,
-    validate: [
-      {
-        type: 'isPositiveNumber',
-        validator: isPositiveInteger,
-        message: 'The gift\'s order must be a positive integer.'
-      }
-    ]
+    min: [0, 'The gift\'s order must greater than zero.']
   }
 }, {
   timestamps: {

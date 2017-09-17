@@ -3,7 +3,7 @@ const mock = require('mock-require');
 const {
   MockGift,
   MockWishList,
-  MockExternalUrl,
+  // MockExternalUrl,
   MockRequest,
   MockResponse,
   tick
@@ -162,106 +162,106 @@ describe('Gifts router', () => {
       });
     });
 
-    it('should update gift external urls', (done) => {
-      MockWishList.overrides.constructorDefinition = {
-        gifts: [
-          new MockGift({
-            _id: '12345',
-            externalUrls: [
-              new MockExternalUrl({
-                _id: 'abc',
-                url: 'http://'
-              }),
-              new MockExternalUrl({
-                _id: 'def',
-                url: 'http://'
-              })
-            ]
-          })
-        ]
-      };
+    // it('should update gift external urls', (done) => {
+    //   MockWishList.overrides.constructorDefinition = {
+    //     gifts: [
+    //       new MockGift({
+    //         _id: '12345',
+    //         externalUrls: [
+    //           new MockExternalUrl({
+    //             _id: 'abc',
+    //             url: 'http://'
+    //           }),
+    //           new MockExternalUrl({
+    //             _id: 'def',
+    //             url: 'http://'
+    //           })
+    //         ]
+    //       })
+    //     ]
+    //   };
 
-      _req.params.giftId = '12345';
-      _req.body.externalUrls = [{
-        _id: 'abc',
-        url: 'http://new.com'
-      }];
+    //   _req.params.giftId = '12345';
+    //   _req.body.externalUrls = [{
+    //     _id: 'abc',
+    //     url: 'http://new.com'
+    //   }];
 
-      const routeDefinition = mock.reRequire('./gifts');
-      const updateGift = routeDefinition.middleware.updateGift[1];
+    //   const routeDefinition = mock.reRequire('./gifts');
+    //   const updateGift = routeDefinition.middleware.updateGift[1];
 
-      updateGift(_req, _res, () => {});
+    //   updateGift(_req, _res, () => {});
 
-      const gift = MockWishList.lastTouched.gifts[0];
-      spyOn(gift.externalUrls[0], 'update');
+    //   const gift = MockWishList.lastTouched.gifts[0];
+    //   spyOn(gift.externalUrls[0], 'update');
 
-      tick(() => {
-        expect(gift.externalUrls[0].update).toHaveBeenCalledWith(_req.body.externalUrls[0]);
-        done();
-      });
-    });
+    //   tick(() => {
+    //     expect(gift.externalUrls[0].update).toHaveBeenCalledWith(_req.body.externalUrls[0]);
+    //     done();
+    //   });
+    // });
 
-    it('should remove gift external urls', (done) => {
-      MockWishList.overrides.constructorDefinition = {
-        gifts: [
-          new MockGift({
-            _id: '12345',
-            externalUrls: [
-              new MockExternalUrl({
-                _id: 'abc',
-                url: 'http://'
-              })
-            ]
-          })
-        ]
-      };
+    // it('should remove gift external urls', (done) => {
+    //   MockWishList.overrides.constructorDefinition = {
+    //     gifts: [
+    //       new MockGift({
+    //         _id: '12345',
+    //         externalUrls: [
+    //           new MockExternalUrl({
+    //             _id: 'abc',
+    //             url: 'http://'
+    //           })
+    //         ]
+    //       })
+    //     ]
+    //   };
 
-      _req.params.giftId = '12345';
-      _req.body.externalUrls = [];
+    //   _req.params.giftId = '12345';
+    //   _req.body.externalUrls = [];
 
-      const routeDefinition = mock.reRequire('./gifts');
-      const updateGift = routeDefinition.middleware.updateGift[1];
+    //   const routeDefinition = mock.reRequire('./gifts');
+    //   const updateGift = routeDefinition.middleware.updateGift[1];
 
-      updateGift(_req, _res, () => {});
+    //   updateGift(_req, _res, () => {});
 
-      const gift = MockWishList.lastTouched.gifts[0];
-      spyOn(gift.externalUrls[0], 'remove');
+    //   const gift = MockWishList.lastTouched.gifts[0];
+    //   spyOn(gift.externalUrls[0], 'remove');
 
-      tick(() => {
-        expect(gift.externalUrls[0].remove).toHaveBeenCalledWith();
-        done();
-      });
-    });
+    //   tick(() => {
+    //     expect(gift.externalUrls[0].remove).toHaveBeenCalledWith();
+    //     done();
+    //   });
+    // });
 
-    it('should add external urls to gifts', (done) => {
-      MockWishList.overrides.constructorDefinition = {
-        gifts: [
-          new MockGift({
-            _id: '12345',
-            externalUrls: []
-          })
-        ]
-      };
+    // it('should add external urls to gifts', (done) => {
+    //   MockWishList.overrides.constructorDefinition = {
+    //     gifts: [
+    //       new MockGift({
+    //         _id: '12345',
+    //         externalUrls: []
+    //       })
+    //     ]
+    //   };
 
-      _req.params.giftId = '12345';
-      _req.body.externalUrls = [
-        {
-          url: 'http://new.com'
-        }
-      ];
+    //   _req.params.giftId = '12345';
+    //   _req.body.externalUrls = [
+    //     {
+    //       url: 'http://new.com'
+    //     }
+    //   ];
 
-      const routeDefinition = mock.reRequire('./gifts');
-      const updateGift = routeDefinition.middleware.updateGift[1];
+    //   const routeDefinition = mock.reRequire('./gifts');
+    //   const updateGift = routeDefinition.middleware.updateGift[1];
 
-      updateGift(_req, _res, () => {});
+    //   updateGift(_req, _res, () => {});
 
-      const gift = MockWishList.lastTouched.gifts[0];
+    //   const gift = MockWishList.lastTouched.gifts[0];
 
-      tick(() => {
-        expect(gift.externalUrls[0].url).toEqual('http://new.com');
-        done();
-      });
-    });
+    //   tick(() => {
+    //     expect(gift.externalUrls[0].url).toEqual('http://new.com');
+    //     done();
+    //   });
+    // });
 
     it('should handle errors', (done) => {
       const routeDefinition = mock.reRequire('./gifts');

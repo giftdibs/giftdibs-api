@@ -92,8 +92,15 @@ describe('Gift schema', () => {
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       gift,
-      [ 'budget', 'isReceived', 'name' ],
+      [ 'budget', 'isReceived', 'name', 'order' ],
       formData
     );
+  });
+
+  it('should be invalid if order is less than zero', () => {
+    _giftDefinition.order = -1;
+    let gift = new Gift(_giftDefinition);
+    const err = gift.validateSync();
+    expect(err.errors.order.properties.type).toEqual('min');
   });
 });
