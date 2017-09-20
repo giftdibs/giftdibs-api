@@ -92,7 +92,7 @@ describe('Gift schema', () => {
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       gift,
-      [ 'budget', 'isReceived', 'name', 'order' ],
+      [ 'budget', 'isReceived', 'name', 'order', 'priority' ],
       formData
     );
   });
@@ -102,5 +102,19 @@ describe('Gift schema', () => {
     let gift = new Gift(_giftDefinition);
     const err = gift.validateSync();
     expect(err.errors.order.properties.type).toEqual('min');
+  });
+
+  it('should be invalid if priority is less than zero', () => {
+    _giftDefinition.priority = -1;
+    let gift = new Gift(_giftDefinition);
+    const err = gift.validateSync();
+    expect(err.errors.priority.properties.type).toEqual('min');
+  });
+
+  it('should be invalid if priority is greater than 10', () => {
+    _giftDefinition.priority = 11;
+    let gift = new Gift(_giftDefinition);
+    const err = gift.validateSync();
+    expect(err.errors.priority.properties.type).toEqual('max');
   });
 });
