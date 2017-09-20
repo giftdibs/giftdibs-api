@@ -23,7 +23,12 @@ const giftSchema = new Schema({
   },
   order: {
     type: Number,
-    min: [0, 'The gift\'s order must greater than zero.']
+    min: [0, 'The gift\'s order must be greater than zero.']
+  },
+  priority: {
+    type: Number,
+    min: [0, 'The gift\'s priority must be greater than zero.'],
+    max: [10, 'The gift\'s priority must be less than 10.']
   }
 }, {
   timestamps: {
@@ -33,7 +38,7 @@ const giftSchema = new Schema({
 });
 
 giftSchema.methods.update = function (values) {
-  const fields = ['budget', 'isReceived', 'name', 'order'];
+  const fields = ['budget', 'isReceived', 'name', 'order', 'priority'];
   updateDocument(this, fields, values);
 };
 
