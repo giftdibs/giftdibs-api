@@ -25,7 +25,7 @@ describe('jwt passport strategy', () => {
     let _called = false;
     mock('passport-jwt', {
       ExtractJwt: {
-        fromAuthHeader: () => {
+        fromAuthHeaderWithScheme: () => {
           _called = true;
         }
       },
@@ -40,7 +40,7 @@ describe('jwt passport strategy', () => {
     process.env.JWT_SECRET = 'secret';
     mock('passport-jwt', {
       ExtractJwt: {
-        fromAuthHeader: () => {}
+        fromAuthHeaderWithScheme: () => {}
       },
       Strategy: function MockStrategy(config) {
         _config = config;
@@ -55,7 +55,7 @@ describe('jwt passport strategy', () => {
     mockExec = () => Promise.resolve([ mockUser ]);
     mock('passport-jwt', {
       ExtractJwt: {
-        fromAuthHeader: () => {}
+        fromAuthHeaderWithScheme: () => {}
       },
       Strategy: function MockStrategy(config, verify) {
         verify({}, { id: 0 }, (err, user, info) => {
@@ -73,7 +73,7 @@ describe('jwt passport strategy', () => {
     mockExec = () => Promise.resolve([]);
     mock('passport-jwt', {
       ExtractJwt: {
-        fromAuthHeader: () => {}
+        fromAuthHeaderWithScheme: () => {}
       },
       Strategy: function MockStrategy(config, verify) {
         verify({}, { id: 0 }, (err, user, info) => {
@@ -92,7 +92,7 @@ describe('jwt passport strategy', () => {
     mockExec = () => Promise.reject(new Error());
     mock('passport-jwt', {
       ExtractJwt: {
-        fromAuthHeader: () => {}
+        fromAuthHeaderWithScheme: () => {}
       },
       Strategy: function MockStrategy(config, verify) {
         verify({}, { id: 0 }, (err) => {
@@ -109,7 +109,7 @@ describe('jwt passport strategy', () => {
     mockExec = () => Promise.resolve([ mockUser ]);
     mock('passport-jwt', {
       ExtractJwt: {
-        fromAuthHeader: () => {}
+        fromAuthHeaderWithScheme: () => {}
       },
       Strategy: function MockStrategy(config, verify) {
         let req = {};

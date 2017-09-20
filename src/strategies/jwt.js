@@ -4,7 +4,7 @@ const ExtractJwt = require('passport-jwt').ExtractJwt;
 const User = require('../database/models/user');
 
 let config = {
-  jwtFromRequest: ExtractJwt.fromAuthHeader(),
+  jwtFromRequest: ExtractJwt.fromAuthHeaderWithScheme('JWT'),
   secretOrKey: process.env.JWT_SECRET,
   passReqToCallback: true
 }
