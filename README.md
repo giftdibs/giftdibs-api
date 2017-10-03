@@ -46,6 +46,7 @@
 - `400` Gift not found.
 - `401` Gift failed validation.
 
-### `/wish-lists/:wishListId/gifts/:giftId/external-urls`
+### `/dibs`
 
-- `501` External URL failed validation.
+- `500` Dib not found.
+- `501` User does not have permission to dib that gift.

@@ -3,5 +3,6 @@ module.exports = [
   require('./auth-facebook').router,
   require('./users').router,
   require('./wish-lists').router,
-  require('./gifts').router
+  require('./gifts').router,
+  require('./dibs').router
 ];

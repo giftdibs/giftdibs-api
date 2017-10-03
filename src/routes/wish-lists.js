@@ -1,8 +1,11 @@
 const express = require('express');
 
 const WishList = require('../database/models/wish-list');
+const Dib = require('../database/models/dib');
+
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
+
 const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
 const { WishListNotFoundError } = require('../shared/errors');
 
@@ -49,7 +52,7 @@ const createWishList = [
       .save()
       .then((doc) => {
         authResponse({
-          id: doc._id,
+          wishListId: doc._id,
           message: 'Wish list successfully created.'
         })(req, res, next);
       })
@@ -76,6 +79,34 @@ const getWishList = [
         return wishList;
       })
       .then((wishList) => {
+        if (req.user._id.equals(wishList._user._id)) {
+          return wishList;
+        }
+
+        // If the current user is not the owner of the gift,
+        // attach a dib id, if it is dibbed.
+        const giftIds = wishList.gifts.map((gift) => {
+          return gift._id;
+        });
+
+        return Dib
+          .find({})
+          .where('_gift')
+          .in(giftIds)
+          .lean()
+          .then((dibs) => {
+            dibs.forEach((dib) => {
+              wishList.gifts.forEach((gift) => {
+                if (gift._id.toString() === dib._gift.toString()) {
+                  gift.dib = dib;
+                }
+              });
+            });
+
+            return wishList;
+          });
+      })
+      .then((wishList) => {
         authResponse({
           wishList
         })(req, res, next);
@@ -94,9 +125,14 @@ const getWishLists = [
 
     WishList
       .find(query)
+      .select('_user name')
       .populate('_user', 'firstName lastName')
       .lean()
-      .then(wishLists => authResponse({ wishLists })(req, res, next))
+      .then(wishLists => {
+        authResponse({
+          wishLists
+        })(req, res, next);
+      })
       .catch(next);
   }
 ];
@@ -125,7 +161,11 @@ const deleteWishList = [
   (req, res, next) => {
     WishList
       .remove({ _id: req.params.wishListId })
-      .then(() => res.json({ message: `Wish list successfully deleted.` }))
+      .then(() => {
+        authResponse({
+          message: 'Wish list successfully deleted.'
+        })(req, res, next);
+      })
       .catch(next);
   }
 ];
