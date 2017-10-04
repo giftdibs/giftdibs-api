@@ -34,6 +34,14 @@ const dibSchema = new Schema({
 
 dibSchema.methods.update = function (values) {
   const fields = ['_user', '_gift', 'dateDelivered', 'isDelivered', 'pricePaid'];
+
+  // Update the date delivered if user marks the dib as delivered (for the first time).
+  if (values.isDelivered === true && !this.isDelivered) {
+    values.dateDelivered = new Date();
+  } else if (values.isDelivered === false) {
+    values.dateDelivered = null;
+  }
+
   updateDocument(this, fields, values);
 };
 

@@ -4,12 +4,14 @@ const WishList = require('../database/models/wish-list');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
+const { GiftValidationError } = require('../shared/errors');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
-    err.code = 401;
-    err.status = 400;
-    err.message = 'Gift update validation failed.';
+    const error = new GiftValidationError();
+    error.errors = err.errors;
+    next(error);
+    return;
   }
 
   next(err);

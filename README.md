@@ -49,4 +49,6 @@
 ### `/dibs`
 
 - `500` Dib not found.
-- `501` User does not have permission to dib that gift.
+- `501` Dib failed validation.
+- `502` User does not have permission to dib that gift.
+- `503` Gift has already been dibbed.

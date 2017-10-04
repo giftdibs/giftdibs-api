@@ -7,13 +7,17 @@ const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 
 const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
-const { WishListNotFoundError } = require('../shared/errors');
+const {
+  WishListNotFoundError,
+  WishListValidationError
+} = require('../shared/errors');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
-    err.code = 301;
-    err.status = 400;
-    err.message = 'Wish list update validation failed.';
+    const error = new WishListValidationError();
+    error.errors = err.errors;
+    next(error);
+    return;
   }
 
   next(err);

@@ -1,10 +1,12 @@
 const express = require('express');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
+const { confirmUserOwnsDib } = require('../middleware/confirm-user-owns-dib');
 
 const {
   DibNotFoundError,
   DibPermissionError,
+  DibValidationError,
   GiftAlreadyDibbedError
 } = require('../shared/errors');
 
@@ -13,9 +15,10 @@ const Dib = require('../database/models/dib');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
-    err.code = 401;
-    err.status = 400;
-    err.message = 'Gift update validation failed.';
+    const error = new DibValidationError();
+    error.errors = err.errors;
+    next(error);
+    return;
   }
 
   next(err);
@@ -31,27 +34,6 @@ function checkAlreadyDibbed(req, res, next) {
 
       if (dib) {
         next(new GiftAlreadyDibbedError());
-        return;
-      }
-
-      next();
-    })
-    .catch(next);
-}
-
-function confirmUserOwnsDib(req, res, next) {
-  Dib
-    .find({
-      _id: req.params.dibId,
-      _user: req.user._id
-    })
-    .limit(1)
-    .lean()
-    .then((docs) => {
-      const dib = docs[0];
-
-      if (!dib) {
-        next(new DibPermissionError());
         return;
       }
 
@@ -81,47 +63,33 @@ function confirmUserDoesNotOwnWishList(req, res, next) {
     .catch(next);
 }
 
+function getSumBudget(recipient) {
+  let total = 0;
+
+  recipient.gifts.forEach((gift) => {
+    if (gift.dib.pricePaid) {
+      total += parseInt(gift.dib.pricePaid, 10);
+      return;
+    }
+
+    if (gift.budget) {
+      total += parseInt(gift.budget, 10);
+    }
+  });
+
+  recipient.budget = total;
+}
+
 const getDibsRecipients = [
   (req, res, next) => {
     Dib
-      .find({
-        _user: req.user._id
-      })
+      .find({ _user: req.user._id })
       .lean()
       .then((dibs) => {
-        // need to manually populate _gift, since it's just an array on wishlist
         const giftIds = dibs.map((dib) => dib._gift.toString());
-
-        /*
-        1. Get all wish lists where the user has dibbed a gift.
-        2. Group the response by wishlist owner, such that:
-        {
-          dibInfo: {
-            recipients: [
-              {
-                name;
-                wishList: {
-                  _id;
-                  name;
-                  gifts: [
-                    {
-                      name;
-                      budget;
-                      externalUrls;
-
-                      _dib: {} // as it applies to the requestor
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        }
-        */
-
         const recipients = [];
 
-        WishList
+        return WishList
           .find({})
           .where('gifts._id')
           .in(giftIds)
@@ -129,22 +97,21 @@ const getDibsRecipients = [
           .lean()
           .then((wishLists) => {
             wishLists.forEach((wishList) => {
-              // Only return the gifts that are dibbed by the current user.
-              wishList.gifts = wishList.gifts.filter((gift) => {
+              const dibbedGifts = wishList.gifts.filter((gift) => {
                 return (giftIds.includes(gift._id.toString()));
               });
 
-              wishList.gifts.forEach((gift) => {
-                const giftInfo = gift;
-
-                giftInfo.wishList = {
+              dibbedGifts.forEach((gift) => {
+                // Set wish list information.
+                gift.wishList = {
                   _id: wishList._id,
                   name: wishList.name
                 };
 
+                // Assign the specific dib to the gift.
                 dibs.forEach((dib) => {
                   if (dib._gift.toString() === gift._id.toString()) {
-                    giftInfo.dib = dib;
+                    gift.dib = dib;
                   }
                 });
 
@@ -153,34 +120,21 @@ const getDibsRecipients = [
                 })[0];
 
                 if (recipient) {
-                  recipient.gifts.push(giftInfo);
-                } else {
-                  recipients.push({
-                    _id: wishList._user._id,
-                    firstName: wishList._user.firstName,
-                    lastName: wishList._user.lastName,
-                    gifts: [giftInfo]
-                  });
-                }
-              });
-            });
-
-            recipients.forEach((recipient) => {
-              let total = 0;
-
-              recipient.gifts.forEach((gift) => {
-                if (gift.dib.pricePaid) {
-                  total += parseInt(gift.dib.pricePaid, 10);
+                  recipient.gifts.push(gift);
                   return;
                 }
 
-                if (gift.budget) {
-                  total += parseInt(gift.budget, 10);
-                }
+                // Add a new recipient.
+                recipients.push({
+                  _id: wishList._user._id,
+                  firstName: wishList._user.firstName,
+                  lastName: wishList._user.lastName,
+                  gifts: [gift]
+                });
               });
-
-              recipient.budget = total;
             });
+
+            recipients.forEach(getSumBudget);
 
             authResponse({
               recipients
@@ -195,7 +149,7 @@ const createDib = [
   confirmUserDoesNotOwnWishList,
   checkAlreadyDibbed,
 
-  function createDib(req, res, next) {
+  (req, res, next) => {
     const dib = new Dib({
       _gift: req.body._gift,
       _user: req.body._user
@@ -225,16 +179,6 @@ const updateDib = [
         if (!dib) {
           next(new DibNotFoundError());
           return;
-        }
-
-        return dib;
-      })
-      .then((dib) => {
-        // Update the date delivered if user marks the dib as delivered (for the first time).
-        if (req.body.isDelivered === true && !dib.isDelivered) {
-          req.body.dateDelivered = new Date();
-        } else if (req.body.isDelivered === false) {
-          req.body.dateDelivered = null;
         }
 
         dib.update(req.body);
