@@ -83,7 +83,9 @@ const login = [
       // allow other middlewares to access it.
       req.user = user;
 
-      authResponse({ message: `Welcome, ${req.user.firstName}!` })(req, res, next);
+      authResponse({
+        message: `Welcome, ${req.user.firstName}!`
+      })(req, res, next);
     })(req, res, next);
   }
 ];
@@ -255,7 +257,11 @@ const verifyEmailAddress = [
     if (isVerified) {
       req.user
         .save()
-        .then(() => authResponse({ message: 'Email address verified!' })(req, res, next))
+        .then(() => {
+          authResponse({
+            message: 'Email address verified!'
+          })(req, res, next);
+        })
         .catch(next);
       return;
     }
