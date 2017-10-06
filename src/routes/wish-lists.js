@@ -7,6 +7,7 @@ const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 
 const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
+
 const {
   WishListNotFoundError,
   WishListValidationError
@@ -83,7 +84,12 @@ const getWishList = [
         return wishList;
       })
       .then((wishList) => {
-        if (req.user._id.equals(wishList._user._id)) {
+        // Don't get dib information if the current user owns the wish list.
+        if (req.user._id.toString() === wishList._user._id.toString()) {
+          return wishList;
+        }
+
+        if (wishList.gifts.length === 0) {
           return wishList;
         }
 
@@ -111,6 +117,7 @@ const getWishList = [
           });
       })
       .then((wishList) => {
+        console.log('wishlist?', wishList);
         authResponse({
           wishList
         })(req, res, next);

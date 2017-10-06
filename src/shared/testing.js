@@ -14,22 +14,6 @@ MockDocument.remove = function () {
   return Promise.resolve();
 };
 
-class MockExternalUrl extends MockDocument {}
-
-class MockGift extends MockDocument {
-  constructor(definition = {}) {
-    super();
-
-    const defaults = {
-      externalUrls: []
-    };
-
-    Object.assign(this, defaults, definition);
-
-    this.externalUrls.id = () => {};
-  }
-}
-
 class MockWishList extends MockDocument {
   constructor(definition = {}) {
     super();
@@ -74,10 +58,17 @@ MockWishList.find = function () {
     };
   };
 
+  const select = () => {
+    return {
+      populate
+    };
+  };
+
   return {
     limit,
     lean,
-    populate
+    populate,
+    select
   };
 };
 
@@ -117,6 +108,24 @@ MockWishList.reset = function () {
   };
 };
 
+class MockGift extends MockDocument {
+  constructor(definition = {}) {
+    super();
+
+    const defaults = {
+      externalUrls: []
+    };
+
+    Object.assign(this, defaults, definition);
+
+    this.externalUrls.id = () => {};
+  }
+}
+
+class MockExternalUrl extends MockDocument {}
+
+class MockDib extends MockDocument {}
+
 function MockRequest(options = {}) {
   return Object.assign({}, {
     body: {},
@@ -133,6 +142,7 @@ function MockResponse() {
 
 module.exports = {
   tick,
+  MockDib,
   MockGift,
   MockWishList,
   MockExternalUrl,

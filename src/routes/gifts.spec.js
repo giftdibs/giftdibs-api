@@ -85,7 +85,7 @@ describe('Gifts router', () => {
       tick(() => {
         expect(_err.code).toEqual(401);
         expect(_err.status).toEqual(400);
-        expect(_err.message).toEqual('Gift update validation failed.');
+        expect(_err.message).toEqual('Gift validation failed.');
         done();
       });
     });

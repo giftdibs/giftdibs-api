@@ -1,6 +1,13 @@
 const mock = require('mock-require');
 
-const { MockWishList, MockGift, MockRequest, MockResponse, tick } = require('../shared/testing');
+const {
+  MockDib,
+  MockGift,
+  MockRequest,
+  MockResponse,
+  MockWishList,
+  tick
+} = require('../shared/testing');
 
 describe('Wish list router', () => {
   let _req;
@@ -9,6 +16,7 @@ describe('Wish list router', () => {
   const beforeEachCallback = () => {
     MockWishList.reset();
     mock('../database/models/wish-list', MockWishList);
+    mock('../database/models/dib', MockDib);
 
     _req = new MockRequest({
       user: {},
@@ -97,6 +105,16 @@ describe('Wish list router', () => {
       const wishLists = mock.reRequire('./wish-lists');
       const getWishList = wishLists.middleware.getWishList[0];
 
+      _req.user = {
+        _id: 'abc'
+      };
+
+      MockWishList.overrides.constructorDefinition = {
+        _user: {
+          _id: 'abc'
+        }
+      };
+
       getWishList(_req, _res, () => {});
 
       tick(() => {
@@ -120,6 +138,9 @@ describe('Wish list router', () => {
     it('should get a single document and sort gifts by order', (done) => {
       MockWishList.overrides.find.returnWith = () => Promise.resolve([
         new MockWishList({
+          _user: {
+            _id: 'abc'
+          },
           gifts: [
             new MockGift({
               name: 'D',
@@ -150,6 +171,10 @@ describe('Wish list router', () => {
           ]
         })
       ]);
+
+      _req.user = {
+        _id: 'abc'
+      };
 
       const wishLists = mock.reRequire('./wish-lists');
       const getWishList = wishLists.middleware.getWishList[0];
@@ -209,8 +234,9 @@ describe('Wish list router', () => {
       createWishList(_req, _res, () => {});
 
       tick(() => {
-        expect(_res.json.output.id).toBeDefined();
-        expect(_res.json.output.message).toBeDefined();
+        expect(_res.json.output.wishListId).toBeDefined();
+        expect(_res.json.output.message).toEqual('Wish list successfully created.');
+        expect(_res.json.output.authResponse).toBeDefined();
         expect(MockWishList.lastTouched._user).toEqual('userid');
         expect(MockWishList.lastTouched.name).toEqual('New wish list');
         done();
