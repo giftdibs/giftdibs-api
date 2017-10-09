@@ -117,7 +117,6 @@ const getWishList = [
           });
       })
       .then((wishList) => {
-        console.log('wishlist?', wishList);
         authResponse({
           wishList
         })(req, res, next);

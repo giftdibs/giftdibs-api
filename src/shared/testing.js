@@ -2,6 +2,63 @@ function tick(callback) {
   setTimeout(callback, 0);
 }
 
+function assignFind(model) {
+  model.find = function () {
+    const lean = () => {
+      return model.overrides.find.returnWith();
+    };
+
+    const populate = (field, subFields) => {
+      model.populatedFields[field] = subFields;
+
+      return { lean };
+    };
+
+    const limit = () => {
+      return {
+        lean,
+        populate
+      };
+    };
+
+    const select = () => {
+      return {
+        populate
+      };
+    };
+
+    return {
+      limit,
+      lean,
+      populate,
+      select
+    };
+  }
+}
+
+function assignReset(Model) {
+  Model.reset = function () {
+    Model.lastTouched = undefined;
+    Model.populatedFields = {};
+    Model.overrides = {
+      constructorDefinition: {},
+      find: {
+        returnWith() {
+          return Promise.resolve([
+            new Model(),
+            new Model()
+          ]);
+        }
+      },
+      save: {
+        returnWith() {
+          return Promise.resolve(Model.lastTouched);
+        }
+      }
+    };
+  }
+}
+
 class MockDocument {
   constructor() {
     this.remove = () => {};
@@ -42,36 +99,6 @@ class MockWishList extends MockDocument {
   }
 }
 
-MockWishList.find = function () {
-  const lean = () => {
-    return MockWishList.overrides.find.returnWith();
-  };
-
-  const populate = (field, subFields) => {
-    MockWishList.populatedFields[field] = subFields;
-    return { lean };
-  };
-
-  const limit = () => {
-    return {
-      populate
-    };
-  };
-
-  const select = () => {
-    return {
-      populate
-    };
-  };
-
-  return {
-    limit,
-    lean,
-    populate,
-    select
-  };
-};
-
 MockWishList.getById = function () {
   const wishList = new MockWishList(MockWishList.overrides.constructorDefinition);
   MockWishList.lastTouched = wishList;
@@ -85,27 +112,6 @@ MockWishList.getGiftById = function (wishListId, giftId) {
       const gift = wishList.gifts.filter((g) => g._id === giftId)[0];
       return { wishList, gift };
     });
-};
-
-MockWishList.reset = function () {
-  MockWishList.lastTouched = undefined;
-  MockWishList.populatedFields = {};
-  MockWishList.overrides = {
-    constructorDefinition: {},
-    find: {
-      returnWith() {
-        return Promise.resolve([
-          new MockWishList(),
-          new MockWishList()
-        ]);
-      }
-    },
-    save: {
-      returnWith() {
-        return Promise.resolve(MockWishList.lastTouched);
-      }
-    }
-  };
 };
 
 class MockGift extends MockDocument {
@@ -139,6 +145,11 @@ function MockResponse() {
     this.json.output = output;
   };
 }
+
+assignFind(MockWishList);
+assignFind(MockDib);
+assignReset(MockWishList);
+assignReset(MockDib);
 
 module.exports = {
   tick,

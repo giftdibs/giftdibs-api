@@ -35,6 +35,10 @@ describe('confirm user owns wishlist middleware', () => {
     };
   });
 
+  afterEach(() => {
+    mock.stopAll();
+  });
+
   it('should pass an error to the callback if the session does not own the resource', () => {
     _wishList = {
       _user: ''
