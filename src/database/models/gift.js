@@ -21,6 +21,11 @@ const giftSchema = new Schema({
     trim: true,
     maxlength: [250, 'The gift\'s name cannot be longer than 250 characters.']
   },
+  quantity: {
+    type: Number,
+    required: [true, 'Please provide a quantity.'],
+    max: [1000000000000, 'The gift\'s quantity must be less than 1,000,000,000,000.']
+  },
   order: {
     type: Number,
     min: [0, 'The gift\'s order must be greater than zero.']
