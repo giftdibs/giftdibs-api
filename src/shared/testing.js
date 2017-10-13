@@ -105,14 +105,14 @@ MockWishList.getById = function () {
   return Promise.resolve(wishList);
 };
 
-MockWishList.getGiftById = function (wishListId, giftId) {
-  return MockWishList
-    .getById()
-    .then((wishList) => {
-      const gift = wishList.gifts.filter((g) => g._id === giftId)[0];
-      return { wishList, gift };
-    });
-};
+// MockWishList.getGiftById = function (wishListId, giftId) {
+//   return MockWishList
+//     .getById()
+//     .then((wishList) => {
+//       const gift = wishList.gifts.filter((g) => g._id === giftId)[0];
+//       return { wishList, gift };
+//     });
+// };
 
 class MockGift extends MockDocument {
   constructor(definition = {}) {

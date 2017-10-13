@@ -1,7 +1,7 @@
 const express = require('express');
 const passport = require('passport');
 
-const User = require('../database/models/user');
+const { User } = require('../database/models/user');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 

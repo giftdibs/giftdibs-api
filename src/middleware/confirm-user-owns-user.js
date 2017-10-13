@@ -1,3 +1,5 @@
+const { UserPermissionError } = require('../shared/errors');
+
 function confirmUserOwnership(req, res, next) {
   // Don't worry about the check if userId is not in the req parameters.
   if (req.params.userId === undefined) {
@@ -12,10 +14,7 @@ function confirmUserOwnership(req, res, next) {
     return;
   }
 
-  const err = new Error('Forbidden.');
-  err.status = 403;
-  err.code = 103;
-  next(err);
+  next(new UserPermissionError());
 }
 
 module.exports = confirmUserOwnership;

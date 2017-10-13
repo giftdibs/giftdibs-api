@@ -5,13 +5,12 @@ const { confirmUserOwnsDib } = require('../middleware/confirm-user-owns-dib');
 
 const {
   DibNotFoundError,
-  DibPermissionError,
   DibValidationError,
   GiftAlreadyDibbedError
 } = require('../shared/errors');
 
-const WishList = require('../database/models/wish-list');
-const Dib = require('../database/models/dib');
+const { Gift } = require('../database/models/gift');
+const { Dib } = require('../database/models/dib');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
@@ -25,8 +24,12 @@ function handleError(err, next) {
 }
 
 function checkAlreadyDibbed(req, res, next) {
+  // Fail if the current user has already dibbed this gift.
   Dib
-    .find({ _gift: req.body._gift })
+    .find({
+      _gift: req.body._gift,
+      _user: req.user._id
+    })
     .limit(1)
     .lean()
     .then((docs) => {
@@ -42,23 +45,64 @@ function checkAlreadyDibbed(req, res, next) {
     .catch(next);
 }
 
-function confirmUserDoesNotOwnWishList(req, res, next) {
-  WishList
-    .find({
-      'gifts._id': req.body._gift,
-      '_user': req.body._user
-    })
-    .limit(1)
-    .lean()
-    .then((docs) => {
-      const wishList = docs[0];
+function validateDibQuantity(formData) {
+  if (formData.quantity === undefined) {
+    formData.quantity = 1;
+  }
 
-      if (!wishList) {
-        next();
+  return Promise.all([
+    Gift.find({ _id: formData._gift }).limit(1).lean(),
+    Dib.find({ _gift: formData._gift }).lean()
+  ])
+    .then((results) => {
+      const gift = results[0][0];
+      const dibs = results[1];
+
+      let totalDibs = formData.quantity;
+
+      if (!gift) {
+        return Promise.reject(new Error('Gift not found.'));
+      }
+
+      if (gift.quantity === 1 && totalDibs === 1) {
         return;
       }
 
-      next(new DibPermissionError());
+      dibs.forEach((dib) => {
+        // Don't count the quantity of a dib that's being updated.
+        if (formData._id === dib._id.toString()) {
+          return;
+        }
+
+        totalDibs += dib.quantity;
+      });
+
+      if (totalDibs > gift.quantity) {
+        const err = new Error('Dib quantity is not valid.');
+        err.errors = [{
+          message: 'Dib quantity is more than are available. Please choose a smaller amount.',
+          field: 'quantity'
+        }];
+        return Promise.reject(err);
+      }
+    });
+}
+
+function confirmUserDoesNotOwnGift(req, res, next) {
+  // Do not allow owner to dib their own gift.
+  Gift
+    .find({
+      _id: req.body._gift,
+      _user: req.user._id
+    })
+    .lean()
+    .then((docs) => {
+      if (docs[0]) {
+        next(new Error('You cannot dib your own gift!'));
+        return;
+      }
+
+      next();
     })
     .catch(next);
 }
@@ -67,12 +111,12 @@ function getSumBudget(recipient) {
   let total = 0;
 
   recipient.gifts.forEach((gift) => {
-    if (gift.dib.pricePaid) {
-      total += parseInt(gift.dib.pricePaid, 10);
+    if (gift._dib.pricePaid !== undefined) {
+      total += parseInt(gift._dib.pricePaid, 10);
       return;
     }
 
-    if (gift.budget) {
+    if (gift.budget !== undefined) {
       total += parseInt(gift.budget, 10);
     }
   });
@@ -89,48 +133,36 @@ const getDibsRecipients = [
         const giftIds = dibs.map((dib) => dib._gift.toString());
         const recipients = [];
 
-        return WishList
+        return Gift
           .find({})
-          .where('gifts._id')
+          .where('_id')
           .in(giftIds)
-          .populate('_user')
+          .populate('_user _wishList')
           .lean()
-          .then((wishLists) => {
-            wishLists.forEach((wishList) => {
-              const dibbedGifts = wishList.gifts.filter((gift) => {
-                return (giftIds.includes(gift._id.toString()));
+          .then((gifts) => {
+            gifts.forEach((gift) => {
+              // Assign the specific dib to the gift.
+              dibs.forEach((dib) => {
+                if (dib._gift.toString() === gift._id.toString()) {
+                  gift._dib = dib;
+                }
               });
 
-              dibbedGifts.forEach((gift) => {
-                // Set wish list information.
-                gift.wishList = {
-                  _id: wishList._id,
-                  name: wishList.name
-                };
+              const recipient = recipients.filter((recipient) => {
+                return (recipient._id.toString() === gift._user._id.toString());
+              })[0];
 
-                // Assign the specific dib to the gift.
-                dibs.forEach((dib) => {
-                  if (dib._gift.toString() === gift._id.toString()) {
-                    gift.dib = dib;
-                  }
-                });
+              if (recipient) {
+                recipient.gifts.push(gift);
+                return;
+              }
 
-                const recipient = recipients.filter((recipient) => {
-                  return (recipient._id.toString() === wishList._user._id.toString());
-                })[0];
-
-                if (recipient) {
-                  recipient.gifts.push(gift);
-                  return;
-                }
-
-                // Add a new recipient.
-                recipients.push({
-                  _id: wishList._user._id,
-                  firstName: wishList._user.firstName,
-                  lastName: wishList._user.lastName,
-                  gifts: [gift]
-                });
+              // Add a new recipient.
+              recipients.push({
+                _id: gift._user._id,
+                firstName: gift._user.firstName,
+                lastName: gift._user.lastName,
+                gifts: [gift]
               });
             });
 
@@ -146,17 +178,20 @@ const getDibsRecipients = [
 ];
 
 const createDib = [
-  confirmUserDoesNotOwnWishList,
+  confirmUserDoesNotOwnGift,
   checkAlreadyDibbed,
 
   (req, res, next) => {
-    const dib = new Dib({
-      _gift: req.body._gift,
-      _user: req.body._user
-    });
+    validateDibQuantity(req.body)
+      .then(() => {
+        const dib = new Dib({
+          _gift: req.body._gift,
+          _user: req.user._id,
+          quantity: req.body.quantity
+        });
 
-    dib
-      .save()
+        return dib.save();
+      })
       .then((doc) => {
         authResponse({
           dibId: doc._id,
@@ -169,10 +204,14 @@ const createDib = [
 
 const updateDib = [
   confirmUserOwnsDib,
+
   (req, res, next) => {
-    Dib
-      .find({ _id: req.params.dibId })
-      .limit(1)
+    validateDibQuantity(req.body)
+      .then(() => {
+        return Dib
+          .find({ _id: req.params.dibId })
+          .limit(1);
+      })
       .then((docs) => {
         const dib = docs[0];
 
@@ -196,6 +235,7 @@ const updateDib = [
 
 const deleteDib = [
   confirmUserOwnsDib,
+
   (req, res, next) => {
     Dib
       .remove({ _id: req.params.dibId })
@@ -208,9 +248,59 @@ const deleteDib = [
   }
 ];
 
+const getDibs = [
+  (req, res, next) => {
+    if (req.query.wishListId) {
+      next();
+      return;
+    }
+
+    Dib
+      .find({ _user: req.user._id })
+      .lean()
+      .then((dibs) => {
+        authResponse({
+          dibs
+        })(req, res, next);
+      })
+      .catch(next);
+  },
+
+  // TODO: Make sure user has permission to retrieve dibs from this wish list,
+  // once we've established wish list privacy.
+
+  (req, res, next) => {
+    Gift
+      // get all gifts in a wish list, not owned by current user.
+      // (we don't want to retrieve dibs for current user)
+      .find({
+        _wishList: req.query.wishListId,
+        _user: { $ne: req.user._id }
+      })
+      .lean()
+      .then((gifts) => {
+        const giftIds = gifts.map(gift => gift._id);
+
+        return Dib
+          .find({})
+          .where('_gift')
+          .in(giftIds)
+          .populate('_user', 'firstName lastName')
+          .lean();
+      })
+      .then((dibs) => {
+        authResponse({
+          dibs
+        })(req, res, next);
+      })
+      .catch(next);
+  }
+];
+
 const router = express.Router();
 router.use(authenticateJwt);
 router.route('/dibs')
+  .get(getDibs)
   .post(createDib);
 router.route('/dibs/:dibId')
   .patch(updateDib)

@@ -1,27 +1,34 @@
-const WishList = require('../database/models/wish-list');
-const { WishListNotFoundError } = require('../shared/errors');
+const { WishList } = require('../database/models/wish-list');
+
+const {
+  WishListNotFoundError,
+  WishListPermissionError
+} = require('../shared/errors');
 
 function confirmUserOwnsWishList(req, res, next) {
+  const wishListId = req.params.wishListId || req.body._wishList;
+
+  if (wishListId === undefined) {
+    next();
+  }
+
   WishList
-    .find({ _id: req.params.wishListId })
+    .find({ _id: wishListId })
     .limit(1)
     .lean()
     .then((docs) => {
-      const wishList = docs[0];
+      const doc = docs[0];
 
-      if (!wishList) {
+      if (!doc) {
         return Promise.reject(new WishListNotFoundError());
       }
 
-      if (req.user._id.equals(wishList._user)) {
+      if (req.user._id.toString() === doc._user.toString()) {
         next();
         return;
       }
 
-      const err = new Error('Forbidden.');
-      err.status = 403;
-      err.code = 103;
-      return Promise.reject(err);
+      return Promise.reject(new WishListPermissionError());
     })
     .catch(next);
 }

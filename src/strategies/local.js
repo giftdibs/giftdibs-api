@@ -1,7 +1,7 @@
 const LocalStrategy = require('passport-local').Strategy;
-const User = require('../database/models/user');
+const { User } = require('../database/models/user');
 
-const config = {
+const strategyConfig = {
   usernameField: 'emailAddress'
 };
 
@@ -36,6 +36,6 @@ const verify = (emailAddress, password, done) => {
     .catch(err => done(err));
 };
 
-const strategy = new LocalStrategy(config, verify);
+const strategy = new LocalStrategy(strategyConfig, verify);
 
 module.exports = strategy;

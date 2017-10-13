@@ -1,11 +1,7 @@
 const express = require('express');
-
-const WishList = require('../database/models/wish-list');
-const Dib = require('../database/models/dib');
-
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
-
+const { WishList } = require('../database/models/wish-list');
 const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
 
 const {
@@ -22,28 +18,6 @@ function handleError(err, next) {
   }
 
   next(err);
-}
-
-function sortGiftsByOrder(wishList) {
-  wishList.gifts.sort((a, b) => {
-    if (b.order === undefined) {
-      return -1;
-    }
-
-    if (a.order === undefined) {
-      return 1;
-    }
-
-    if (a.order < b.order) {
-      return -1;
-    }
-
-    if (a.order > b.order) {
-      return 1;
-    }
-
-    return 0;
-  });
 }
 
 const createWishList = [
@@ -79,42 +53,7 @@ const getWishList = [
           return Promise.reject(new WishListNotFoundError());
         }
 
-        sortGiftsByOrder(wishList);
-
         return wishList;
-      })
-      .then((wishList) => {
-        // Don't get dib information if the current user owns the wish list.
-        if (req.user._id.toString() === wishList._user._id.toString()) {
-          return wishList;
-        }
-
-        if (wishList.gifts.length === 0) {
-          return wishList;
-        }
-
-        // If the current user is not the owner of the gift,
-        // attach a dib id, if it is dibbed.
-        const giftIds = wishList.gifts.map((gift) => {
-          return gift._id;
-        });
-
-        return Dib
-          .find({})
-          .where('_gift')
-          .in(giftIds)
-          .lean()
-          .then((dibs) => {
-            dibs.forEach((dib) => {
-              wishList.gifts.forEach((gift) => {
-                if (gift._id.toString() === dib._gift.toString()) {
-                  gift.dib = dib;
-                }
-              });
-            });
-
-            return wishList;
-          });
       })
       .then((wishList) => {
         authResponse({
@@ -127,7 +66,7 @@ const getWishList = [
 
 const getWishLists = [
   function getAll(req, res, next) {
-    let query = {};
+    const query = {};
 
     if (req.query.userId) {
       query._user = req.query.userId;
@@ -152,7 +91,17 @@ const updateWishList = [
 
   function updateWithFormData(req, res, next) {
     WishList
-      .getById(req.params.wishListId)
+      .find({ _id: req.params.wishListId })
+      .limit(1)
+      .then((docs) => {
+        const wishList = docs[0];
+
+        if (!wishList) {
+          return Promise.reject(new WishListNotFoundError());
+        }
+
+        return wishList;
+      })
       .then((wishList) => {
         wishList.update(req.body);
         return wishList.save();

@@ -1,9 +1,8 @@
 const express = require('express');
 const randomstring = require('randomstring');
-
 const facebook = require('../lib/facebook');
-const User = require('../database/models/user');
 const authResponse = require('../middleware/auth-response');
+const { User } = require('../database/models/user');
 
 function findUserByFacebookId(facebookId) {
   return User

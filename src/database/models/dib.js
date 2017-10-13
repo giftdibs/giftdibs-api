@@ -23,9 +23,15 @@ const dibSchema = new Schema({
     type: Number,
     min: [0, 'The price paid must be more than zero.'],
     max: [1000000000000, 'The price paid must be less than 1,000,000,000,000.']
+  },
+  quantity: {
+    required: true,
+    type: Number,
+    min: [1, 'The dib\'s quantity must be at least 1.'],
+    max: [1000000000000, 'The dib\'s quantity must be less than 1,000,000,000,000.']
   }
 }, {
-  collection: 'Dib',
+  collection: 'dib',
   timestamps: {
     createdAt: 'dateCreated',
     updatedAt: 'dateUpdated'
@@ -33,7 +39,7 @@ const dibSchema = new Schema({
 });
 
 dibSchema.methods.update = function (values) {
-  const fields = ['_user', '_gift', 'dateDelivered', 'isDelivered', 'pricePaid'];
+  const fields = ['dateDelivered', 'isDelivered', 'pricePaid', 'quantity'];
 
   // Update the date delivered if user marks the dib as delivered (for the first time).
   if (values.isDelivered === true && !this.isDelivered) {
@@ -49,4 +55,4 @@ dibSchema.plugin(MongoDbErrorHandlerPlugin);
 
 const Dib = mongoose.model('Dib', dibSchema);
 
-module.exports = Dib;
+module.exports = { Dib };

@@ -1,10 +1,10 @@
 const express = require('express');
-
 const facebook = require('../lib/facebook');
-const User = require('../database/models/user');
 const authenticateJwt = require('../middleware/authenticate-jwt');
-const confirmUserOwnership = require('../middleware/confirm-user-ownership');
+const confirmUserOwnership = require('../middleware/confirm-user-owns-user');
 const authResponse = require('../middleware/auth-response');
+const { User } = require('../database/models/user');
+
 const {
   UserNotFoundError,
   UserValidationError

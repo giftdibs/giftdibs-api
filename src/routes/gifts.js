@@ -1,10 +1,13 @@
 const express = require('express');
-
-const WishList = require('../database/models/wish-list');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
+const { Gift } = require('../database/models/gift');
+const { confirmUserOwnsGift } = require('../middleware/confirm-user-owns-gift');
 const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
-const { GiftValidationError } = require('../shared/errors');
+const {
+  GiftNotFoundError,
+  GiftValidationError
+} = require('../shared/errors');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
@@ -17,25 +20,67 @@ function handleError(err, next) {
   next(err);
 }
 
+function sortByOrder(gifts) {
+  gifts.sort((a, b) => {
+    if (b.orderInWishList === undefined) {
+      return -1;
+    }
+
+    if (a.orderInWishList === undefined) {
+      return 1;
+    }
+
+    if (a.orderInWishList < b.orderInWishList) {
+      return -1;
+    }
+
+    if (a.orderInWishList > b.orderInWishList) {
+      return 1;
+    }
+
+    return 0;
+  });
+}
+
+const getGifts = [
+  (req, res, next) => {
+    const query = {};
+
+    if (req.query.wishListId) {
+      query._wishList = req.query.wishListId;
+    }
+
+    Gift
+      .find(query)
+      .lean()
+      .then((gifts) => {
+        sortByOrder(gifts);
+        authResponse({
+          gifts
+        })(req, res, next);
+      })
+      .catch(next);
+  }
+];
+
 const addGift = [
   confirmUserOwnsWishList,
 
   (req, res, next) => {
-    WishList
-      .getById(req.params.wishListId)
-      .then((wishList) => {
-        wishList.gifts.push({
-          budget: req.body.budget,
-          externalUrls: req.body.externalUrls,
-          name: req.body.name
-        });
+    const gift = new Gift({
+      _user: req.user._id,
+      _wishList: req.body._wishList,
+      budget: req.body.budget,
+      externalUrls: req.body.externalUrls,
+      name: req.body.name
+    });
 
-        return wishList.save();
-      })
-      .then((wishList) => {
+    gift
+      .save()
+      .then((newGift) => {
         authResponse({
-          giftId: wishList.gifts[wishList.gifts.length - 1]._id,
-          message: 'Gift successfully added.'
+          giftId: newGift._id,
+          message: 'Gift successfully created.'
         })(req, res, next);
       })
       .catch((err) => handleError(err, next));
@@ -43,37 +88,41 @@ const addGift = [
 ];
 
 const deleteGift = [
-  confirmUserOwnsWishList,
+  confirmUserOwnsGift,
 
   (req, res, next) => {
-    WishList
-      .getGiftById(req.params.wishListId, req.params.giftId)
-      .then((result) => {
-        result.gift.remove();
-        return result.wishList.save();
-      })
-      .then((doc) => {
+    Gift
+      .remove({ _id: req.params.giftId })
+      .then(() => {
         authResponse({
           message: 'Gift successfully deleted.'
         })(req, res, next);
       })
-      .catch((err) => handleError(err, next));
+      .catch(next);
   }
 ];
 
 const updateGift = [
+  confirmUserOwnsGift,
   confirmUserOwnsWishList,
 
   (req, res, next) => {
-    WishList
-      .getGiftById(req.params.wishListId, req.params.giftId)
-      .then((result) => {
-        const gift = result.gift;
-        const wishList = result.wishList;
+    Gift
+      .find({
+        _id: req.params.giftId
+      })
+      .limit(1)
+      .then((docs) => {
+        const gift = docs[0];
+
+        if (!gift) {
+          next(new GiftNotFoundError());
+          return;
+        }
 
         gift.update(req.body);
 
-        return wishList.save();
+        return gift.save();
       })
       .then(() => {
         authResponse({
@@ -86,15 +135,17 @@ const updateGift = [
 
 const router = express.Router();
 router.use(authenticateJwt);
-router.route('/wish-lists/:wishListId/gifts')
+router.route('/gifts')
+  .get(getGifts)
   .post(addGift)
-router.route('/wish-lists/:wishListId/gifts/:giftId')
+router.route('/gifts/:giftId')
   .delete(deleteGift)
   .patch(updateGift);
 
 module.exports = {
   middleware: {
     addGift,
+    getGifts,
     deleteGift,
     updateGift
   },

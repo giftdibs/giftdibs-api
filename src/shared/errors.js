@@ -14,6 +14,14 @@ function UserValidationError() {
 }
 UserValidationError.prototype = Error.prototype;
 
+function UserPermissionError() {
+  this.name = 'UserPermissionError';
+  this.message = 'Permission denied to modify user.';
+  this.code = 202;
+  this.status = 403;
+}
+UserPermissionError.prototype = Error.prototype;
+
 function WishListNotFoundError() {
   this.name = 'WishListNotFoundError';
   this.message = 'Wish list not found.';
@@ -30,6 +38,14 @@ function WishListValidationError() {
 }
 WishListValidationError.prototype = Error.prototype;
 
+function WishListPermissionError() {
+  this.name = 'WishListPermissionError';
+  this.message = 'Permission denied to modify wish list.';
+  this.code = 302;
+  this.status = 403;
+}
+WishListPermissionError.prototype = Error.prototype;
+
 function GiftNotFoundError() {
   this.name = 'GiftNotFoundError';
   this.message = 'Gift not found.';
@@ -45,6 +61,14 @@ function GiftValidationError() {
   this.status = 400;
 }
 GiftValidationError.prototype = Error.prototype;
+
+function GiftPermissionError() {
+  this.name = 'GiftPermissionError';
+  this.message = 'Permission denied to modify gift.';
+  this.code = 402;
+  this.status = 403;
+}
+GiftPermissionError.prototype = Error.prototype;
 
 function DibNotFoundError() {
   this.name = 'DibNotFoundError';
@@ -64,7 +88,7 @@ DibValidationError.prototype = Error.prototype;
 
 function DibPermissionError() {
   this.name = 'DibPermissionError';
-  this.message = 'You do not have permission to modify that resource.';
+  this.message = 'Permission denied to modify dib.';
   this.code = 502;
   this.status = 403;
 }
@@ -72,7 +96,7 @@ DibPermissionError.prototype = Error.prototype;
 
 function GiftAlreadyDibbedError() {
   this.name = 'GiftAlreadyDibbedError';
-  this.message = 'That gift has already been dibbed.';
+  this.message = 'You have already dibbed that gift.';
   this.code = 503;
   this.status = 400;
 }
@@ -81,12 +105,18 @@ GiftAlreadyDibbedError.prototype = Error.prototype;
 module.exports = {
   UserNotFoundError,
   UserValidationError,
+  UserPermissionError,
+
   WishListNotFoundError,
   WishListValidationError,
+  WishListPermissionError,
+
   GiftNotFoundError,
   GiftValidationError,
+  GiftPermissionError,
+
   DibNotFoundError,
-  DibPermissionError,
   DibValidationError,
+  DibPermissionError,
   GiftAlreadyDibbedError
 };
