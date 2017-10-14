@@ -10,13 +10,15 @@ describe('Gift schema', () => {
 
   beforeEach(() => {
     _giftDefinition = {
-      name: 'Foo',
-      budget: 1
+      _user: new mongoose.Types.ObjectId(),
+      _wishList: new mongoose.Types.ObjectId(),
+      budget: 1,
+      name: 'Foo'
     };
     updateDocumentUtil = mock.reRequire('../utils/update-document');
     spyOn(updateDocumentUtil, 'updateDocument').and.returnValue();
     spyOn(console, 'log').and.returnValue();
-    Gift = mongoose.model('Gift', mock.reRequire('./gift'));
+    Gift = mock.reRequire('./gift').Gift;
   });
 
   afterEach(() => {
@@ -92,16 +94,24 @@ describe('Gift schema', () => {
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       gift,
-      [ 'budget', 'isReceived', 'name', 'order', 'priority' ],
+      [
+        '_wishList',
+        'budget',
+        'isReceived',
+        'name',
+        'orderInWishList',
+        'priority',
+        'quantity'
+      ],
       formData
     );
   });
 
   it('should be invalid if order is less than zero', () => {
-    _giftDefinition.order = -1;
+    _giftDefinition.orderInWishList = -1;
     let gift = new Gift(_giftDefinition);
     const err = gift.validateSync();
-    expect(err.errors.order.properties.type).toEqual('min');
+    expect(err.errors.orderInWishList.properties.type).toEqual('min');
   });
 
   it('should be invalid if priority is less than zero', () => {

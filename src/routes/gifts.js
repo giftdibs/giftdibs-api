@@ -4,10 +4,7 @@ const authenticateJwt = require('../middleware/authenticate-jwt');
 const { Gift } = require('../database/models/gift');
 const { confirmUserOwnsGift } = require('../middleware/confirm-user-owns-gift');
 const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
-const {
-  GiftNotFoundError,
-  GiftValidationError
-} = require('../shared/errors');
+const { GiftValidationError } = require('../shared/errors');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
@@ -114,14 +111,7 @@ const updateGift = [
       .limit(1)
       .then((docs) => {
         const gift = docs[0];
-
-        if (!gift) {
-          next(new GiftNotFoundError());
-          return;
-        }
-
         gift.update(req.body);
-
         return gift.save();
       })
       .then(() => {

@@ -11,7 +11,7 @@ describe('confirm user owns dib', () => {
   beforeEach(() => {
     MockDib.reset();
 
-    mock('../database/models/dib', MockDib);
+    mock('../database/models/dib', { Dib: MockDib });
 
     _req = new MockRequest({
       user: {
@@ -30,7 +30,9 @@ describe('confirm user owns dib', () => {
   it('should pass an error to the callback if the session does not own the resource', (done) => {
     const { confirmUserOwnsDib } = mock.reRequire('./confirm-user-owns-dib');
 
-    MockDib.overrides.find.returnWith = () => Promise.resolve([]);
+    MockDib.overrides.find.returnWith = () => Promise.resolve([{
+      _user: 'def'
+    }]);
 
     const next = (err) => {
       expect(err.name).toEqual('DibPermissionError');
@@ -47,6 +49,10 @@ describe('confirm user owns dib', () => {
       expect(err).toBeUndefined();
       done();
     };
+
+    MockDib.overrides.find.returnWith = () => Promise.resolve([{
+      _user: 'abc'
+    }]);
 
     confirmUserOwnsDib(_req, null, next);
   });

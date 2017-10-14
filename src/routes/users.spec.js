@@ -37,7 +37,7 @@ describe('/users', () => {
   });
 
   it('should GET an array of all documents', (done) => {
-    mock('../database/models/user', {
+    const User = {
       find: () => {
         return {
           select: () => {
@@ -47,7 +47,8 @@ describe('/users', () => {
           }
         };
       }
-    });
+    };
+    mock('../database/models/user', { User });
     const users = mock.reRequire('./users');
     const getUsers = users.middleware.getUsers;
     getUsers[0](_req, {
@@ -60,7 +61,7 @@ describe('/users', () => {
 
   it('should GET an array of all documents with certain fields', (done) => {
     let _fields;
-    mock('../database/models/user', {
+    const User = {
       find: () => {
         return {
           select: (fields) => {
@@ -71,7 +72,8 @@ describe('/users', () => {
           }
         };
       }
-    });
+    };
+    mock('../database/models/user', { User });
     const users = mock.reRequire('./users');
     const getUsers = users.middleware.getUsers;
     getUsers[0](_req, {
@@ -83,7 +85,7 @@ describe('/users', () => {
   });
 
   it('should handle a mongoose error with GET /users', (done) => {
-    mock('../database/models/user', {
+    const User = {
       find: () => {
         return {
           select: () => {
@@ -93,7 +95,8 @@ describe('/users', () => {
           }
         };
       }
-    });
+    };
+    mock('../database/models/user', { User });
     const users = mock.reRequire('./users');
     const getUsers = users.middleware.getUsers;
     getUsers[0](_req, {}, (err) => {
@@ -103,7 +106,7 @@ describe('/users', () => {
   });
 
   it('should GET a single document', (done) => {
-    mock('../database/models/user', {
+    const User = {
       find: () => {
         return {
           limit: () => {
@@ -117,7 +120,8 @@ describe('/users', () => {
           }
         };
       }
-    });
+    };
+    mock('../database/models/user', { User });
     const users = mock.reRequire('./users');
     const getUser = users.middleware.getUser;
     getUser[0](_req, {
@@ -130,7 +134,7 @@ describe('/users', () => {
 
   it('should GET a single document with certain fields', (done) => {
     let _fields;
-    mock('../database/models/user', {
+    const User = {
       find: () => {
         return {
           limit: () => {
@@ -145,7 +149,8 @@ describe('/users', () => {
           }
         };
       }
-    });
+    };
+    mock('../database/models/user', { User });
     const users = mock.reRequire('./users');
     const getUser = users.middleware.getUser;
     getUser[0](_req, {
@@ -158,7 +163,7 @@ describe('/users', () => {
 
   it('should return different fields if the user owns the resource', (done) => {
     let _fields;
-    mock('../database/models/user', {
+    const User = {
       find: () => {
         return {
           limit: () => {
@@ -173,7 +178,8 @@ describe('/users', () => {
           }
         };
       }
-    });
+    };
+    mock('../database/models/user', { User });
     const users = mock.reRequire('./users');
     const getUser = users.middleware.getUser;
     _req.user._id.equals = () => true;
@@ -186,7 +192,7 @@ describe('/users', () => {
   });
 
   it('should return a status 400 if the user cannot be found', (done) => {
-    mock('../database/models/user', {
+    const User = {
       find: () => {
         return {
           limit: () => {
@@ -200,7 +206,8 @@ describe('/users', () => {
           }
         };
       }
-    });
+    };
+    mock('../database/models/user', { User });
     const users = mock.reRequire('./users');
     const getUser = users.middleware.getUser;
     getUser[0](_req, {}, (err) => {
@@ -212,7 +219,7 @@ describe('/users', () => {
   });
 
   it('should handle a mongoose error with GET /users/:id', (done) => {
-    mock('../database/models/user', {
+    const User = {
       find: () => {
         return {
           limit: () => {
@@ -226,7 +233,8 @@ describe('/users', () => {
           }
         };
       }
-    });
+    };
+    mock('../database/models/user', { User });
     const users = mock.reRequire('./users');
     const getUser = users.middleware.getUser;
     getUser[0](_req, {}, (err) => {
@@ -343,9 +351,10 @@ describe('/users', () => {
   });
 
   it('should DELETE a document', (done) => {
-    mock('../database/models/user', {
+    const User = {
       remove: () => Promise.resolve()
-    });
+    };
+    mock('../database/models/user', { User });
     const users = mock.reRequire('./users');
     const deleteUser = users.middleware.deleteUser;
     const res = {
@@ -363,9 +372,10 @@ describe('/users', () => {
   });
 
   it('should handle a mongoose error with DELETE /users/:id', (done) => {
-    mock('../database/models/user', {
+    const User = {
       remove: () => Promise.reject(new Error())
-    });
+    };
+    mock('../database/models/user', { User });
     const users = mock.reRequire('./users');
     const deleteUser = users.middleware.deleteUser;
     deleteUser[1](_req, {}, (err) => {

@@ -117,13 +117,16 @@ describe('/auth', () => {
   });
 
   it('register - should register a user', (done) => {
-    mock('../database/models/user', function User() {
+    function User() {
       return {
         setPassword: () => Promise.resolve(),
         resetEmailAddressVerification: () => {},
         save: () => Promise.resolve({ _id: 0 })
       };
-    });
+    }
+
+    mock('../database/models/user', { User });
+
     const auth = mock.reRequire('./auth');
     const register = auth.middleware.register;
     const req = {
@@ -144,7 +147,7 @@ describe('/auth', () => {
   });
 
   it('register - should fail registration if schema validation fails', (done) => {
-    mock('../database/models/user', function User() {
+    function User() {
       return {
         setPassword: () => {
           const error = new Error();
@@ -152,7 +155,10 @@ describe('/auth', () => {
           return Promise.reject(error);
         }
       };
-    });
+    }
+
+    mock('../database/models/user', { User });
+
     const auth = mock.reRequire('./auth');
     const register = auth.middleware.register;
     const req = {
@@ -172,11 +178,14 @@ describe('/auth', () => {
   });
 
   it('register - should fail registration if mongoose fails', (done) => {
-    mock('../database/models/user', function User() {
+    function User() {
       return {
         setPassword: () => Promise.reject(new Error())
       };
-    });
+    }
+
+    mock('../database/models/user', { User });
+
     const auth = mock.reRequire('./auth');
     const register = auth.middleware.register;
     const req = {
@@ -231,10 +240,12 @@ describe('/auth', () => {
     };
     spyOn(_user, 'setResetPasswordToken').and.callThrough();
     mock('../database/models/user', {
-      find: () => {
-        return {
-          limit: () => Promise.resolve([_user])
-        };
+      User: {
+        find: () => {
+          return {
+            limit: () => Promise.resolve([_user])
+          };
+        }
       }
     });
     const auth = mock.reRequire('./auth');
@@ -281,10 +292,12 @@ describe('/auth', () => {
 
   it('forgotten - should handle errors finding a user for a reset password token', (done) => {
     mock('../database/models/user', {
-      find: () => {
-        return {
-          limit: () => Promise.resolve([])
-        };
+      User: {
+        find: () => {
+          return {
+            limit: () => Promise.resolve([])
+          };
+        }
       }
     });
     const auth = mock.reRequire('./auth');
@@ -326,10 +339,12 @@ describe('/auth', () => {
 
   it('reset-password - should validate a token before resetting the password', (done) => {
     mock('../database/models/user', {
-      find: () => {
-        return {
-          limit: () => Promise.resolve([{ firstName: 'Foo' }])
-        };
+      User: {
+        find: () => {
+          return {
+            limit: () => Promise.resolve([{ firstName: 'Foo' }])
+          };
+        }
       }
     });
     const auth = mock.reRequire('./auth');
@@ -488,10 +503,12 @@ describe('/auth', () => {
 
   it('reset-password - should fail reset password if the token is not found on a user record', (done) => {
     mock('../database/models/user', {
-      find: () => {
-        return {
-          limit: () => Promise.resolve([])
-        };
+      User: {
+        find: () => {
+          return {
+            limit: () => Promise.resolve([])
+          };
+        }
       }
     });
     const auth = mock.reRequire('./auth');

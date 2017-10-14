@@ -15,7 +15,8 @@ describe('ExternalUrl schema', () => {
     updateDocumentUtil = mock.reRequire('../utils/update-document');
     spyOn(updateDocumentUtil, 'updateDocument').and.returnValue();
     spyOn(console, 'log').and.returnValue();
-    ExternalUrl = mongoose.model('ExternalUrl', mock.reRequire('./external-url'));
+    const { externalUrlSchema } = mock.reRequire('./external-url');
+    ExternalUrl = mongoose.model('ExternalUrl', externalUrlSchema);
   });
 
   afterEach(() => {

@@ -1,38 +1,22 @@
 const mock = require('mock-require');
+const { MockWishList, MockRequest } = require('../shared/testing');
 
 describe('confirm user owns wishlist middleware', () => {
-  let _wishList;
   let _req;
 
-  function MockWishList() {}
-
-  function getWishList() {
-    return Promise.resolve([_wishList]);
-  }
-
   beforeEach(() => {
-    MockWishList.find = function () {
-      return {
-        limit: () => {
-          return {
-            lean: () => {
-              return getWishList();
-            }
-          };
-        }
-      };
-    };
+    MockWishList.reset();
 
-    _req = {
+    mock('../database/models/wish-list', { WishList: MockWishList });
+
+    _req = new MockRequest({
       user: {
-        _id: {
-          equals: () => false
-        }
+        _id: 'userid'
       },
       params: {
-        wishListId: 0
+        wishListId: 'wishlistid'
       }
-    };
+    });
   });
 
   afterEach(() => {
@@ -40,43 +24,44 @@ describe('confirm user owns wishlist middleware', () => {
   });
 
   it('should pass an error to the callback if the session does not own the resource', () => {
-    _wishList = {
-      _user: ''
+    const { confirmUserOwnsWishList } = mock.reRequire('./confirm-user-owns-wish-list');
+
+    MockWishList.overrides.find.returnWith = () => Promise.resolve([{
+      _user: 'baz'
+    }]);
+
+    const next = (err) => {
+      expect(err.name).toEqual('WishListPermissionError');
     };
 
-    mock('../database/models/wish-list', MockWishList);
-    const { confirmUserOwnsWishList } = require('./confirm-user-owns-wish-list');
-    const next = (err) => {
-      expect(err).toBeDefined();
-      expect(err.status).toEqual(403);
-      expect(err.code).toEqual(103);
-    };
     confirmUserOwnsWishList(_req, null, next);
   });
 
   it('should continue if the session does own the resource', (done) => {
-    _wishList = { _user: '' };
-    _req.user._id.equals = () => true;
+    const { confirmUserOwnsWishList } = mock.reRequire('./confirm-user-owns-wish-list');
 
-    mock('../database/models/wish-list', MockWishList);
-    const { confirmUserOwnsWishList } = require('./confirm-user-owns-wish-list');
+    MockWishList.overrides.find.returnWith = () => Promise.resolve([{
+      _user: 'userid'
+    }]);
+
     const next = (err) => {
       expect(err).toBeUndefined();
       done();
     };
+
     confirmUserOwnsWishList(_req, null, next);
   });
 
   it('should handle wish list not found error', (done) => {
-    _wishList = undefined;
-    _req.user._id.equals = () => true;
+    const { confirmUserOwnsWishList } = mock.reRequire('./confirm-user-owns-wish-list');
 
-    mock('../database/models/wish-list', MockWishList);
-    const { confirmUserOwnsWishList } = require('./confirm-user-owns-wish-list');
+    MockWishList.overrides.find.returnWith = () => Promise.resolve([]);
+
     const next = (err) => {
       expect(err.name).toEqual('WishListNotFoundError');
       done();
     };
+
     confirmUserOwnsWishList(_req, null, next);
   });
 });

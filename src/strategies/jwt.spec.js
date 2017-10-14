@@ -6,14 +6,15 @@ describe('jwt passport strategy', () => {
   let _findQuery;
 
   beforeEach(() => {
-    mock('../database/models/user', {
+    const mockUser = {
       find: (query) => {
         _findQuery = query;
         return {
           limit: () => mockExec()
         }
       }
-    });
+    };
+    mock('../database/models/user', { User: mockUser });
   });
 
   afterEach(() => {

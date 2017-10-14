@@ -2,10 +2,19 @@ function tick(callback) {
   setTimeout(callback, 0);
 }
 
+function assignSave(model) {
+  model.prototype.save = function () {
+    model.lastTouched = this;
+    return model.overrides.save.returnWith();
+  };
+}
+
 function assignFind(model) {
   model.find = function () {
+    const promise = model.overrides.find.returnWith();
+
     const lean = () => {
-      return model.overrides.find.returnWith();
+      return promise;
     };
 
     const populate = (field, subFields) => {
@@ -15,10 +24,9 @@ function assignFind(model) {
     };
 
     const limit = () => {
-      return {
-        lean,
-        populate
-      };
+      promise.lean = lean;
+      promise.populate = populate;
+      return promise;
     };
 
     const select = () => {
@@ -75,35 +83,19 @@ class MockWishList extends MockDocument {
   constructor(definition = {}) {
     super();
 
-    const defaults = {
-      gifts: []
-    };
+    const defaults = {};
 
     Object.assign(this, defaults, definition, MockWishList.overrides.constructorDefinition);
 
-    this.save = () => {
-      this.gifts.forEach(gift => {
-        if (!gift._id) {
-          gift._id = 'abc123';
-        }
-      });
-
-      MockWishList.lastTouched = this;
-
-      return MockWishList.overrides.save.returnWith();
-    };
-
     this.set = () => {};
-
-    this.gifts.id = () => {};
   }
 }
 
-MockWishList.getById = function () {
-  const wishList = new MockWishList(MockWishList.overrides.constructorDefinition);
-  MockWishList.lastTouched = wishList;
-  return Promise.resolve(wishList);
-};
+// MockWishList.getById = function () {
+//   const wishList = new MockWishList(MockWishList.overrides.constructorDefinition);
+//   MockWishList.lastTouched = wishList;
+//   return Promise.resolve(wishList);
+// };
 
 // MockWishList.getGiftById = function (wishListId, giftId) {
 //   return MockWishList
@@ -123,6 +115,10 @@ class MockGift extends MockDocument {
     };
 
     Object.assign(this, defaults, definition);
+
+    if (!this.externalUrls) {
+      this.externalUrls = [];
+    }
 
     this.externalUrls.id = () => {};
   }
@@ -147,8 +143,15 @@ function MockResponse() {
 }
 
 assignFind(MockWishList);
+assignFind(MockGift);
 assignFind(MockDib);
+
+assignSave(MockWishList);
+assignSave(MockGift);
+assignSave(MockDib);
+
 assignReset(MockWishList);
+assignReset(MockGift);
 assignReset(MockDib);
 
 module.exports = {
