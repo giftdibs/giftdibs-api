@@ -15,10 +15,10 @@ describe('confirm user owns dib', () => {
 
     _req = new MockRequest({
       user: {
-        _id: 'abc'
+        _id: 'userid'
       },
       params: {
-        dibId: '123'
+        dibId: 'dibid'
       }
     });
   });
@@ -31,7 +31,7 @@ describe('confirm user owns dib', () => {
     const { confirmUserOwnsDib } = mock.reRequire('./confirm-user-owns-dib');
 
     MockDib.overrides.find.returnWith = () => Promise.resolve([{
-      _user: 'def'
+      _user: 'diffuserid'
     }]);
 
     const next = (err) => {
@@ -51,7 +51,7 @@ describe('confirm user owns dib', () => {
     };
 
     MockDib.overrides.find.returnWith = () => Promise.resolve([{
-      _user: 'abc'
+      _user: 'userid'
     }]);
 
     confirmUserOwnsDib(_req, null, next);
@@ -63,8 +63,33 @@ describe('confirm user owns dib', () => {
     MockDib.overrides.find.returnWith = () => Promise.reject(new Error());
 
     const next = (err) => {
-      expect(err).toBeDefined();
+      expect(err.name).toEqual('Error');
       done();
+    };
+
+    confirmUserOwnsDib(_req, null, next);
+  });
+
+  it('should handle wish list not found error', (done) => {
+    const { confirmUserOwnsDib } = mock.reRequire('./confirm-user-owns-dib');
+
+    MockDib.overrides.find.returnWith = () => Promise.resolve([]);
+
+    const next = (err) => {
+      expect(err.name).toEqual('DibNotFoundError');
+      done();
+    };
+
+    confirmUserOwnsDib(_req, null, next);
+  });
+
+  it('should pass an error to the callback if the wish list ID is not provided', () => {
+    const { confirmUserOwnsDib } = mock.reRequire('./confirm-user-owns-dib');
+
+    _req.params.dibId = undefined;
+
+    const next = (err) => {
+      expect(err.name).toEqual('DibNotFoundError');
     };
 
     confirmUserOwnsDib(_req, null, next);

@@ -9,7 +9,8 @@ function confirmUserOwnsWishList(req, res, next) {
   const wishListId = req.params.wishListId || req.body._wishList;
 
   if (wishListId === undefined) {
-    next();
+    next(new WishListNotFoundError());
+    return;
   }
 
   WishList

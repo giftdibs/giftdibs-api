@@ -310,10 +310,11 @@ router.route('/dibs-recipients')
 
 module.exports = {
   middleware: {
-    getDibsRecipients,
-    updateDib,
+    createDib,
     deleteDib,
-    createDib
+    getDibs,
+    getDibsRecipients,
+    updateDib
   },
   router
 };

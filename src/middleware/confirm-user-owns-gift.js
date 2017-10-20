@@ -9,7 +9,8 @@ function confirmUserOwnsGift(req, res, next) {
   const giftId = req.params.giftId || req.body._gift;
 
   if (giftId === undefined) {
-    next();
+    next(new GiftNotFoundError());
+    return;
   }
 
   Gift

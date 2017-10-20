@@ -1,68 +1,51 @@
+const mock = require('mock-require');
+
 describe('confirm user owns User object middleware', () => {
-  it('should pass an error to the callback if the session does not own the resource', () => {
-    const middleware = require('./confirm-user-owns-user');
-    const req = {
+  let _req;
+
+  beforeEach(() => {
+    _req = {
       user: {
-        _id: {
-          equals: () => false
-        }
+        _id: 'userid'
       },
       params: {
-        userId: 0
+        userId: 'userid'
       }
     };
+  });
+
+  afterEach(() => {
+    mock.stopAll();
+  });
+
+  it('should pass an error to the callback if the session does not own the resource', () => {
+    const middleware = mock.reRequire('./confirm-user-owns-user');
     const next = (err) => {
-      expect(err).toBeDefined();
-      expect(err.status).toEqual(403);
-      expect(err.code).toEqual(202);
+      expect(err.name).toEqual('UserPermissionError');
     };
-    middleware(req, null, next);
+
+    _req.user._id = 'diffuserid';
+
+    middleware(_req, null, next);
   });
 
   it('should pass an error to the callback if the session does not include a user', () => {
-    const middleware = require('./confirm-user-owns-user');
-    const req = {
-      params: {
-        userId: 0
-      }
-    };
+    const middleware = mock.reRequire('./confirm-user-owns-user');
     const next = (err) => {
-      expect(err).toBeDefined();
+      expect(err.name).toEqual('UserPermissionError');
     };
-    middleware(req, null, next);
+
+    _req.user = undefined;
+
+    middleware(_req, null, next);
   });
 
   it('should continue if the session does own the resource', () => {
-    const middleware = require('./confirm-user-owns-user');
-    const req = {
-      user: {
-        _id: {
-          equals: () => true
-        }
-      },
-      params: {
-        userId: 0
-      }
-    };
+    const middleware = mock.reRequire('./confirm-user-owns-user');
     const next = (err) => {
       expect(err).toBeUndefined();
     };
-    middleware(req, null, next);
-  });
 
-  it('should continue if the req does not include an ID', () => {
-    const middleware = require('./confirm-user-owns-user');
-    const req = {
-      user: {
-        _id: {
-          equals: () => true
-        }
-      },
-      params: {}
-    };
-    const next = (err) => {
-      expect(err).toBeUndefined();
-    };
-    middleware(req, null, next);
+    middleware(_req, null, next);
   });
 });

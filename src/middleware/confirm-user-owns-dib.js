@@ -11,7 +11,8 @@ function confirmUserOwnsDib(req, res, next) {
   const dibId = req.params.dibId;
 
   if (dibId === undefined) {
-    next();
+    next(new DibNotFoundError());
+    return;
   }
 
   Dib

@@ -95,14 +95,6 @@ const updateWishList = [
       .limit(1)
       .then((docs) => {
         const wishList = docs[0];
-
-        if (!wishList) {
-          return Promise.reject(new WishListNotFoundError());
-        }
-
-        return wishList;
-      })
-      .then((wishList) => {
         wishList.update(req.body);
         return wishList.save();
       })

@@ -52,6 +52,105 @@ describe('Gifts router', () => {
     expect(routeDefinition.middleware.updateGift[1].name).toEqual('confirmUserOwnsWishList');
   });
 
+  describe('GET /gifts', () => {
+    beforeEach(beforeEachCallback);
+
+    afterEach(afterEachCallback);
+
+    it('should get an unsorted array of all gifts', (done) => {
+      const gifts = mock.reRequire('./gifts');
+      const getGifts = gifts.middleware.getGifts[0];
+
+      MockGift.overrides.find.returnWith = () => {
+        return Promise.resolve([
+          new MockGift({
+            _wishList: 'wishlistid',
+            name: 'foo',
+            orderInWishList: 1
+          }),
+          new MockGift({
+            _wishList: 'wishlistid',
+            name: 'bar',
+            orderInWishList: 0
+          })
+        ]);
+      };
+
+      getGifts(_req, _res, () => {});
+
+      tick(() => {
+        expect(Array.isArray(_res.json.output.gifts)).toEqual(true);
+        expect(_res.json.output.gifts[0].name).toEqual('foo');
+        done();
+      });
+    });
+
+    it('should get an array of all gifts in a wish list, ordered', (done) => {
+      const gifts = mock.reRequire('./gifts');
+      const getGifts = gifts.middleware.getGifts[0];
+
+      MockGift.overrides.find.returnWith = () => {
+        return Promise.resolve([
+          new MockGift({
+            _wishList: 'wishlistid',
+            name: 'd',
+            orderInWishList: 2
+          }),
+          new MockGift({
+            _wishList: 'wishlistid',
+            name: 'a',
+            orderInWishList: 0
+          }),
+          new MockGift({
+            _wishList: 'wishlistid',
+            name: 'e'
+          }),
+          new MockGift({
+            _wishList: 'wishlistid',
+            name: 'c',
+            orderInWishList: 1
+          }),
+          new MockGift({
+            _wishList: 'wishlistid',
+            name: 'b',
+            orderInWishList: 0
+          }),
+          new MockGift({
+            _wishList: 'wishlistid',
+            name: 'f'
+          })
+        ]);
+      };
+
+      _req.query.wishListId = 'wishlistid';
+
+      getGifts(_req, _res, () => { });
+
+      tick(() => {
+        const gifts = _res.json.output.gifts;
+        expect(gifts[0].name).toEqual('a');
+        expect(gifts[1].name).toEqual('b');
+        expect(gifts[2].name).toEqual('c');
+        expect(gifts[3].name).toEqual('d');
+        expect(gifts[4].name).toEqual('e');
+        expect(gifts[5].name).toEqual('f');
+        done();
+      });
+    });
+
+    it('should handle errors', (done) => {
+      const gifts = mock.reRequire('./gifts');
+      const getGifts = gifts.middleware.getGifts[0];
+
+      MockGift.overrides.find.returnWith = () => Promise.reject(new Error());
+
+      getGifts(_req, _res, (err) => {
+        expect(err).toBeDefined();
+        done();
+      });
+    });
+  });
+
   describe('POST /gifts', () => {
     beforeEach(beforeEachCallback);
 
@@ -86,20 +185,20 @@ describe('Gifts router', () => {
       });
     });
 
-    // it('should handle errors', (done) => {
-    //   MockGift.overrides.save.returnWith = () => {
-    //     const err = new Error();
-    //     err.name = 'ValidationError';
-    //     return Promise.reject(err);
-    //   };
-    //   const routeDefinition = mock.reRequire('./gifts');
-    //   const addGift = routeDefinition.middleware.addGift[1];
+    it('should handle validation errors', (done) => {
+      MockGift.overrides.save.returnWith = () => {
+        const err = new Error();
+        err.name = 'ValidationError';
+        return Promise.reject(err);
+      };
+      const routeDefinition = mock.reRequire('./gifts');
+      const addGift = routeDefinition.middleware.addGift[1];
 
-    //   addGift(_req, _res, (err) => {
-    //     expect(err.name).toEqual('GiftValidationError');
-    //     done();
-    //   });
-    // });
+      addGift(_req, _res, (err) => {
+        expect(err.name).toEqual('GiftValidationError');
+        done();
+      });
+    });
   });
 
   describe('DELETE /gifts/:giftId', () => {

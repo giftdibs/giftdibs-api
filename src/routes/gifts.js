@@ -42,16 +42,20 @@ function sortByOrder(gifts) {
 const getGifts = [
   (req, res, next) => {
     const query = {};
+    const wishListId = req.query.wishListId;
 
-    if (req.query.wishListId) {
-      query._wishList = req.query.wishListId;
+    if (wishListId) {
+      query._wishList = wishListId;
     }
 
     Gift
       .find(query)
       .lean()
       .then((gifts) => {
-        sortByOrder(gifts);
+        if (wishListId) {
+          sortByOrder(gifts);
+        }
+
         authResponse({
           gifts
         })(req, res, next);
