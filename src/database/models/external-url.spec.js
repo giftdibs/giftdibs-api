@@ -25,7 +25,7 @@ describe('ExternalUrl schema', () => {
     mock.stopAll();
   });
 
-  it('should add a wish list record', () => {
+  it('should add a document', () => {
     let externalUrl = new ExternalUrl(_externalUrlDefinition);
     const err = externalUrl.validateSync();
     expect(err).toBeUndefined();

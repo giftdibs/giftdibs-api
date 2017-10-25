@@ -55,3 +55,4 @@
 - `501` Dib failed validation.
 - `502` Invalid permissions to modify.
 - `503` Gift has already been dibbed.
+- `504` Dib quantity invalid.

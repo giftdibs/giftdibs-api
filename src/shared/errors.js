@@ -78,9 +78,9 @@ function DibNotFoundError() {
 }
 DibNotFoundError.prototype = Error.prototype;
 
-function DibValidationError() {
+function DibValidationError(message) {
   this.name = 'DibValidationError';
-  this.message = 'Dib validation failed.';
+  this.message = message || 'Dib validation failed.';
   this.code = 501;
   this.status = 400;
 }
@@ -94,13 +94,13 @@ function DibPermissionError() {
 }
 DibPermissionError.prototype = Error.prototype;
 
-function GiftAlreadyDibbedError() {
-  this.name = 'GiftAlreadyDibbedError';
-  this.message = 'You have already dibbed that gift.';
-  this.code = 503;
+function DibQuantityError() {
+  this.name = 'DibQuantityError';
+  this.message = 'Dib quantity is not valid.';
+  this.code = 504;
   this.status = 400;
 }
-GiftAlreadyDibbedError.prototype = Error.prototype;
+DibQuantityError.prototype = Error.prototype;
 
 module.exports = {
   UserNotFoundError,
@@ -118,5 +118,5 @@ module.exports = {
   DibNotFoundError,
   DibValidationError,
   DibPermissionError,
-  GiftAlreadyDibbedError
+  DibQuantityError
 };

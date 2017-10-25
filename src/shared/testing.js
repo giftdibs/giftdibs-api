@@ -126,7 +126,15 @@ class MockGift extends MockDocument {
 
 class MockExternalUrl extends MockDocument {}
 
-class MockDib extends MockDocument {}
+class MockDib extends MockDocument {
+  constructor(definition = {}) {
+    super();
+
+    const defaults = {};
+
+    Object.assign(this, defaults, definition, MockDib.overrides.constructorDefinition);
+  }
+}
 
 function MockRequest(options = {}) {
   return Object.assign({}, {

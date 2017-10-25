@@ -25,7 +25,7 @@ describe('WishList schema', () => {
     mock.stopAll();
   });
 
-  it('should add a wish list record', () => {
+  it('should validate a document', () => {
     let wishList = new WishList(_wishListDefinition);
     const err = wishList.validateSync();
     expect(err).toBeUndefined();

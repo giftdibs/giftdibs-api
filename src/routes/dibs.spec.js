@@ -50,12 +50,6 @@ describe('Dibs router', () => {
     expect(routeDefinition.router.stack[0].name).toEqual('authenticateJwt');
   });
 
-  it('should require the user owns the dib when modifying resource', () => {
-    const routeDefinition = mock.reRequire('./dibs');
-    expect(routeDefinition.middleware.deleteDib[0].name).toEqual('confirmUserOwnsDib');
-    expect(routeDefinition.middleware.updateDib[0].name).toEqual('confirmUserOwnsDib');
-  });
-
   describe('GET /dibs', () => {
     beforeEach(beforeEachCallback);
 
@@ -161,10 +155,114 @@ describe('Dibs router', () => {
       const dibs = mock.reRequire('./dibs');
       const getDibs = dibs.middleware.getDibs[0];
 
-      MockDib.overrides.find.returnWith = () => Promise.reject(new Error());
+      MockDib.overrides.find.returnWith = () => {
+        return Promise.reject(new Error('Some error'));
+      };
 
       getDibs(_req, _res, (err) => {
-        expect(err).toBeDefined();
+        expect(err.message).toEqual('Some error');
+        done();
+      });
+    });
+  });
+
+  describe('GET /dibs-recipients', () => {
+    beforeEach(beforeEachCallback);
+
+    afterEach(afterEachCallback);
+
+    it('should get an array of all dibs belonging to user, formatted', (done) => {
+      MockDib.overrides.find.returnWith = () => {
+        return Promise.resolve([
+          new MockDib({
+            _gift: 'giftid1',
+            pricePaid: 10
+          }),
+          new MockDib({
+            _gift: 'giftid2'
+          }),
+          new MockDib({
+            _gift: 'giftid3',
+            pricePaid: 3
+          }),
+          new MockDib({
+            _gift: 'giftid4'
+          })
+        ]);
+      };
+
+      spyOn(MockGift, 'find').and.returnValue({
+        where() {
+          return {
+            in() {
+              return {
+                populate() {
+                  return {
+                    lean() {
+                      return Promise.resolve([
+                        new MockGift({
+                          _id: 'giftid1',
+                          _user: {
+                            _id: 'userid1',
+                            firstName: 'John',
+                            lastName: 'Doe'
+                          }
+                        }),
+                        new MockGift({
+                          _id: 'giftid2',
+                          _user: {
+                            _id: 'userid2',
+                            firstName: 'Jane',
+                            lastName: 'Do'
+                          }
+                        }),
+                        new MockGift({
+                          _id: 'giftid3',
+                          _user: {
+                            _id: 'userid2',
+                            firstName: 'Jane',
+                            lastName: 'Do'
+                          },
+                          budget: 8
+                        }),
+                        new MockGift({
+                          _id: 'giftid4',
+                          _user: {
+                            _id: 'userid2',
+                            firstName: 'Jane',
+                            lastName: 'Do'
+                          },
+                          budget: 12
+                        })
+                      ]);
+                    }
+                  };
+                }
+              };
+            }
+          };
+        }
+      });
+
+      const dibs = mock.reRequire('./dibs');
+      const getDibsRecipients = dibs.middleware.getDibsRecipients[0];
+
+      getDibsRecipients(_req, _res, (err) => { console.log(err); });
+
+      tick(() => {
+        const recipients = _res.json.output.recipients;
+        expect(Array.isArray(recipients)).toEqual(true);
+        expect(recipients.length).toEqual(2);
+        expect(recipients[0].firstName).toEqual('John');
+        expect(recipients[0].lastName).toEqual('Doe');
+        expect(recipients[0].gifts.length).toEqual(1);
+        expect(recipients[0].budget).toEqual(10);
+
+        expect(recipients[1].firstName).toEqual('Jane');
+        expect(recipients[1].lastName).toEqual('Do');
+        expect(recipients[1].gifts.length).toEqual(3);
+        expect(recipients[1].budget).toEqual(15);
+
         done();
       });
     });
@@ -174,6 +272,11 @@ describe('Dibs router', () => {
     beforeEach(beforeEachCallback);
 
     afterEach(afterEachCallback);
+
+    it('should require the user owns the dib', () => {
+      const routeDefinition = mock.reRequire('./dibs');
+      expect(routeDefinition.middleware.deleteDib[0].name).toEqual('confirmUserOwnsDib');
+    });
 
     it('should delete a dib', (done) => {
       spyOn(MockDib, 'remove').and.callThrough();
@@ -192,149 +295,319 @@ describe('Dibs router', () => {
     });
 
     it('should handle errors', (done) => {
-      spyOn(MockDib, 'remove').and.returnValue(Promise.reject(new Error()));
+      spyOn(MockDib, 'remove').and.returnValue(Promise.reject(new Error('Some error')));
       const routeDefinition = mock.reRequire('./dibs');
       const deleteDib = routeDefinition.middleware.deleteDib[1];
 
       deleteDib(_req, _res, (err) => {
-        expect(err).toBeDefined();
+        expect(err.message).toEqual('Some error');
         done();
       });
     });
   });
 
-  // describe('POST /dibs', () => {
-  //   beforeEach(beforeEachCallback);
+  describe('PATCH /dibs/:dibId', () => {
+    beforeEach(beforeEachCallback);
 
-  //   afterEach(afterEachCallback);
+    afterEach(afterEachCallback);
 
-  //   it('should create a gift', (done) => {
-  //     MockDib.overrides.save.returnWith = () => Promise.resolve({
-  //       _id: 'newdibid'
-  //     });
-  //     const routeDefinition = mock.reRequire('./dibs');
-  //     const addGift = routeDefinition.middleware.addGift[1];
+    it('should require the user owns the dib', () => {
+      const routeDefinition = mock.reRequire('./dibs');
+      expect(routeDefinition.middleware.updateDib[0].name).toEqual('confirmUserOwnsDib');
+    });
 
-  //     _req.body.name = 'New gift';
+    it('should update a dib', (done) => {
+      const dib = new MockDib({
+        _id: 'dibid'
+      });
 
-  //     addGift(_req, _res, () => { });
+      const gift = new MockGift({
+        quantity: 1
+      });
 
-  //     tick(() => {
-  //       expect(_res.json.output.dibId).toEqual('newdibid');
-  //       expect(MockDib.lastTouched.name).toEqual('New gift');
-  //       done();
-  //     });
-  //   });
+      const updateSpy = spyOn(dib, 'update');
+      const saveSpy = spyOn(dib, 'save');
 
-  //   it('should handle errors', (done) => {
-  //     MockDib.overrides.save.returnWith = () => Promise.reject(new Error());
-  //     const routeDefinition = mock.reRequire('./dibs');
-  //     const addGift = routeDefinition.middleware.addGift[1];
+      MockDib.overrides.find.returnWith = () => Promise.resolve([dib]);
+      MockGift.overrides.find.returnWith = () => Promise.resolve([gift]);
 
-  //     addGift(_req, _res, (err) => {
-  //       expect(err).toBeDefined();
-  //       done();
-  //     });
-  //   });
+      _req.params.dibId = 'dibid';
+      _req.body.pricePaid = 10;
 
-  //   it('should handle validation errors', (done) => {
-  //     MockDib.overrides.save.returnWith = () => {
-  //       const err = new Error();
-  //       err.name = 'ValidationError';
-  //       return Promise.reject(err);
-  //     };
-  //     const routeDefinition = mock.reRequire('./dibs');
-  //     const addGift = routeDefinition.middleware.addGift[1];
+      const routeDefinition = mock.reRequire('./dibs');
+      const updateDib = routeDefinition.middleware.updateDib[1];
 
-  //     addGift(_req, _res, (err) => {
-  //       expect(err.name).toEqual('GiftValidationError');
-  //       done();
-  //     });
-  //   });
-  // });
+      updateDib(_req, _res, () => {});
 
-  // describe('DELETE /dibs/:dibId', () => {
-  //   beforeEach(beforeEachCallback);
+      tick(() => {
+        expect(updateSpy).toHaveBeenCalledWith(_req.body);
+        expect(saveSpy).toHaveBeenCalledWith();
+        done();
+      });
+    });
 
-  //   afterEach(afterEachCallback);
+    it('should validate dib quantity against gift quantity', (done) => {
+      const dibs = [
+        new MockDib({
+          _id: 'dibid',
+          quantity: 1
+        }),
+        new MockDib({
+          _id: 'dibid1',
+          quantity: 1
+        })
+      ];
 
-  //   it('should delete a gift', (done) => {
-  //     spyOn(MockDib, 'remove').and.callThrough();
-  //     _req.params.dibId = 'dibid';
+      const gift = new MockGift({
+        quantity: 5
+      });
 
-  //     const routeDefinition = mock.reRequire('./dibs');
-  //     const deleteDib = routeDefinition.middleware.deleteDib[1];
+      MockDib.overrides.find.returnWith = () => Promise.resolve(dibs);
+      MockGift.overrides.find.returnWith = () => Promise.resolve([gift]);
 
-  //     deleteDib(_req, _res, () => {});
+      _req.params.dibId = 'dibid';
+      _req.body.quantity = 1;
 
-  //     tick(() => {
-  //       expect(MockDib.remove).toHaveBeenCalledWith({ _id: 'dibid' });
-  //       expect(_res.json.output.message).toEqual('Gift successfully deleted.');
-  //       done();
-  //     });
-  //   });
+      const routeDefinition = mock.reRequire('./dibs');
+      const updateDib = routeDefinition.middleware.updateDib[1];
 
-  //   it('should handle errors', (done) => {
-  //     spyOn(MockDib, 'remove').and.returnValue(Promise.reject(new Error()));
-  //     const routeDefinition = mock.reRequire('./dibs');
-  //     const deleteDib = routeDefinition.middleware.deleteDib[1];
+      updateDib(_req, _res, () => { });
 
-  //     deleteDib(_req, _res, (err) => {
-  //       expect(err).toBeDefined();
-  //       done();
-  //     });
-  //   });
-  // });
+      tick(() => {
+        expect(_res.json.output.message).toEqual('Dib successfully updated.');
+        done();
+      });
+    });
 
-  // describe('PATCH /dibs/:dibId', () => {
-  //   beforeEach(beforeEachCallback);
+    it('should fail if dib quantity is more than gift quantity', (done) => {
+      const dibs = [
+        new MockDib({
+          _id: 'dibid',
+          quantity: 1
+        }),
+        new MockDib({
+          _id: 'dibid1',
+          quantity: 2
+        }),
+        new MockDib({
+          _id: 'dibid2',
+          quantity: 1
+        })
+      ];
 
-  //   afterEach(afterEachCallback);
+      const gift = new MockGift({
+        quantity: 2
+      });
 
-  //   it('should update a gift', (done) => {
-  //     const gift = new MockDib({
-  //       name: 'Old name',
-  //       _id: 'dibid'
-  //     });
+      MockDib.overrides.find.returnWith = () => Promise.resolve(dibs);
+      MockGift.overrides.find.returnWith = () => Promise.resolve([gift]);
 
-  //     const updateSpy = spyOn(gift, 'update');
-  //     const saveSpy = spyOn(gift, 'save');
+      _req.params.dibId = 'dibid';
+      _req.body.quantity = 10;
 
-  //     spyOn(MockDib, 'find').and.returnValue({
-  //       limit: () => {
-  //         return Promise.resolve([gift]);
-  //       }
-  //     });
+      const routeDefinition = mock.reRequire('./dibs');
+      const updateDib = routeDefinition.middleware.updateDib[1];
 
-  //     _req.params.dibId = 'dibid';
-  //     _req.body.name = 'Updated name';
+      updateDib(_req, _res, (err) => {
+        expect(err.name).toEqual('DibQuantityError');
+        expect(err.errors[0].message).toEqual('Dib quantity is more than are available. Please choose a smaller amount.');
+        done();
+      });
+    });
 
-  //     const routeDefinition = mock.reRequire('./dibs');
-  //     const updateGift = routeDefinition.middleware.updateGift[2];
+    it('should handle gift not found', (done) => {
+      MockDib.overrides.find.returnWith = () => Promise.resolve([]);
+      MockGift.overrides.find.returnWith = () => Promise.resolve([]);
 
-  //     updateGift(_req, _res, () => {});
+      const routeDefinition = mock.reRequire('./dibs');
+      const updateDib = routeDefinition.middleware.updateDib[1];
 
-  //     tick(() => {
-  //       expect(updateSpy).toHaveBeenCalledWith(_req.body);
-  //       expect(saveSpy).toHaveBeenCalledWith();
-  //       done();
-  //     });
-  //   });
+      updateDib(_req, _res, (err) => {
+        expect(err.name).toEqual('GiftNotFoundError');
+        done();
+      });
+    });
 
-  //   it('should handle errors', (done) => {
-  //     spyOn(MockDib, 'find').and.returnValue({
-  //       limit: () => {
-  //         return Promise.reject(new Error());
-  //       }
-  //     });
+    it('should handle dib not found error', (done) => {
+      MockDib.overrides.find.returnWith = () => Promise.resolve([]);
+      MockGift.overrides.find.returnWith = () => Promise.resolve([
+        new MockGift()
+      ]);
 
-  //     const routeDefinition = mock.reRequire('./dibs');
-  //     const updateGift = routeDefinition.middleware.updateGift[2];
+      const routeDefinition = mock.reRequire('./dibs');
+      const updateDib = routeDefinition.middleware.updateDib[1];
 
-  //     updateGift(_req, _res, (err) => {
-  //       expect(err).toBeDefined();
-  //       done();
-  //     });
-  //   });
-  // });
+      updateDib(_req, _res, (err) => {
+        expect(err.name).toEqual('DibNotFoundError');
+        done();
+      });
+    });
+
+    it('should handle validation errors', (done) => {
+      MockDib.overrides.find.returnWith = () => {
+        const err = new Error();
+        err.name = 'ValidationError';
+        return Promise.reject(err);
+      };
+
+      const routeDefinition = mock.reRequire('./dibs');
+      const updateDib = routeDefinition.middleware.updateDib[1];
+
+      updateDib(_req, _res, (err) => {
+        expect(err.name).toEqual('DibValidationError');
+        done();
+      });
+    });
+
+    it('should handle errors', (done) => {
+      MockDib.overrides.find.returnWith = () => {
+        return Promise.reject(new Error('Some error'));
+      };
+
+      const routeDefinition = mock.reRequire('./dibs');
+      const updateDib = routeDefinition.middleware.updateDib[1];
+
+      updateDib(_req, _res, (err) => {
+        expect(err.message).toEqual('Some error');
+        done();
+      });
+    });
+  });
+
+  describe('POST /dibs', () => {
+    beforeEach(beforeEachCallback);
+
+    afterEach(afterEachCallback);
+
+    it('should create a dib', (done) => {
+      const spy = spyOn(MockDib.prototype, 'save').and.returnValue(
+        Promise.resolve({
+          _id: 'dibid'
+        })
+      );
+
+      const routeDefinition = mock.reRequire('./dibs');
+      const createDib = routeDefinition.middleware.createDib[2];
+
+      createDib(_req, _res, () => { });
+
+      tick(() => {
+        expect(spy).toHaveBeenCalledWith();
+        expect(_res.json.output.dibId).toEqual('dibid');
+        done();
+      });
+    });
+
+    it('should pass if the user does not own the gift', (done) => {
+      MockGift.overrides.find.returnWith = () => Promise.resolve([]);
+
+      const routeDefinition = mock.reRequire('./dibs');
+      const confirmUserDoesNotOwnGift = routeDefinition.middleware.createDib[0];
+
+      confirmUserDoesNotOwnGift(_req, _res, (err) => {
+        expect(err).toBeUndefined();
+        done();
+      });
+    });
+
+    it('should prevent user from creating a dib on their own gift', (done) => {
+      MockGift.overrides.find.returnWith = () => {
+        return Promise.resolve([new MockGift()]);
+      };
+
+      const routeDefinition = mock.reRequire('./dibs');
+      const confirmUserDoesNotOwnGift = routeDefinition.middleware.createDib[0];
+
+      confirmUserDoesNotOwnGift(_req, _res, (err) => {
+        expect(err.name).toEqual('DibValidationError');
+        expect(err.message).toEqual('You cannot dib your own gift.');
+        done();
+      });
+    });
+
+    it('should handle errors when preventing user from creating a dib on their own gift', (done) => {
+      MockGift.overrides.find.returnWith = () => {
+        return Promise.reject(new Error('Some error'));
+      };
+
+      const routeDefinition = mock.reRequire('./dibs');
+      const confirmUserDoesNotOwnGift = routeDefinition.middleware.createDib[0];
+
+      confirmUserDoesNotOwnGift(_req, _res, (err) => {
+        expect(err.message).toEqual('Some error');
+        done();
+      });
+    });
+
+    it('should pass if the user has not dibbed the gift already', (done) => {
+      MockDib.overrides.find.returnWith = () => Promise.resolve([]);
+
+      const routeDefinition = mock.reRequire('./dibs');
+      const checkAlreadyDibbed = routeDefinition.middleware.createDib[1];
+
+      checkAlreadyDibbed(_req, _res, (err) => {
+        expect(err).toBeUndefined();
+        done();
+      });
+    });
+
+    it('should prevent user from creating a dib twice on the same gift', (done) => {
+      MockDib.overrides.find.returnWith = () => {
+        return Promise.resolve([new MockDib()]);
+      };
+
+      const routeDefinition = mock.reRequire('./dibs');
+      const checkAlreadyDibbed = routeDefinition.middleware.createDib[1];
+
+      checkAlreadyDibbed(_req, _res, (err) => {
+        expect(err.name).toEqual('DibValidationError');
+        expect(err.message).toEqual('You have already dibbed that gift.');
+        done();
+      });
+    });
+
+    it('should handle errors when a user attempts to dib a gift twice', (done) => {
+      MockDib.overrides.find.returnWith = () => {
+        return Promise.reject(new Error('Some error'));
+      };
+
+      const routeDefinition = mock.reRequire('./dibs');
+      const checkAlreadyDibbed = routeDefinition.middleware.createDib[1];
+
+      checkAlreadyDibbed(_req, _res, (err) => {
+        expect(err.message).toEqual('Some error');
+        done();
+      });
+    });
+
+    it('should handle validation errors', (done) => {
+      MockDib.overrides.save.returnWith = () => {
+        const err = new Error();
+        err.name = 'ValidationError';
+        return Promise.reject(err);
+      };
+
+      const routeDefinition = mock.reRequire('./dibs');
+      const createDib = routeDefinition.middleware.createDib[2];
+
+      createDib(_req, _res, (err) => {
+        expect(err.name).toEqual('DibValidationError');
+        done();
+      });
+    });
+
+    it('should handle errors', (done) => {
+      MockDib.overrides.save.returnWith = () => {
+        return Promise.reject(new Error('Some error'));
+      };
+
+      const routeDefinition = mock.reRequire('./dibs');
+      const createDib = routeDefinition.middleware.createDib[2];
+
+      createDib(_req, _res, (err) => {
+        expect(err.message).toEqual('Some error');
+        done();
+      });
+    });
+  });
 });

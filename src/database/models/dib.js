@@ -15,17 +15,13 @@ const dibSchema = new Schema({
     required: [true, 'A user ID must be provided.']
   },
   dateDelivered: Date,
-  isDelivered: {
-    type: Boolean,
-    default: false
-  },
   pricePaid: {
     type: Number,
-    min: [0, 'The price paid must be more than zero.'],
+    min: [0, 'The price paid must be at least zero.'],
     max: [1000000000000, 'The price paid must be less than 1,000,000,000,000.']
   },
   quantity: {
-    required: true,
+    required: [true, 'The dib\'s quantity must be provided.'],
     type: Number,
     min: [1, 'The dib\'s quantity must be at least 1.'],
     max: [1000000000000, 'The dib\'s quantity must be less than 1,000,000,000,000.']
@@ -39,13 +35,13 @@ const dibSchema = new Schema({
 });
 
 dibSchema.methods.update = function (values) {
-  const fields = ['dateDelivered', 'isDelivered', 'pricePaid', 'quantity'];
+  const fields = ['pricePaid', 'quantity'];
 
   // Update the date delivered if user marks the dib as delivered (for the first time).
-  if (values.isDelivered === true && !this.isDelivered) {
-    values.dateDelivered = new Date();
+  if (values.isDelivered === true && !this.dateDelivered) {
+    this.set('dateDelivered', new Date());
   } else if (values.isDelivered === false) {
-    values.dateDelivered = null;
+    this.set('dateDelivered', undefined);
   }
 
   updateDocument(this, fields, values);

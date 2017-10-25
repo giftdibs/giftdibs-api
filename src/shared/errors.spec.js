@@ -12,8 +12,7 @@ describe('error', () => {
       GiftPermissionError,
       DibNotFoundError,
       DibPermissionError,
-      DibValidationError,
-      GiftAlreadyDibbedError
+      DibValidationError
     } = require('./errors');
 
     expect(typeof UserNotFoundError).toEqual('function');
@@ -28,7 +27,6 @@ describe('error', () => {
     expect(typeof DibNotFoundError).toEqual('function');
     expect(typeof DibValidationError).toEqual('function');
     expect(typeof DibPermissionError).toEqual('function');
-    expect(typeof GiftAlreadyDibbedError).toEqual('function');
 
     let err = new UserNotFoundError();
     expect(err.code).toEqual(200);
@@ -77,9 +75,5 @@ describe('error', () => {
     err = new DibPermissionError();
     expect(err.code).toEqual(502);
     expect(err.status).toEqual(403);
-
-    err = new GiftAlreadyDibbedError();
-    expect(err.code).toEqual(503);
-    expect(err.status).toEqual(400);
   });
 });

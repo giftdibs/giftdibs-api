@@ -6,7 +6,8 @@ const { confirmUserOwnsDib } = require('../middleware/confirm-user-owns-dib');
 const {
   DibNotFoundError,
   DibValidationError,
-  GiftAlreadyDibbedError
+  DibQuantityError,
+  GiftNotFoundError
 } = require('../shared/errors');
 
 const { Gift } = require('../database/models/gift');
@@ -36,7 +37,7 @@ function checkAlreadyDibbed(req, res, next) {
       const dib = docs[0];
 
       if (dib) {
-        next(new GiftAlreadyDibbedError());
+        next(new DibValidationError('You have already dibbed that gift.'));
         return;
       }
 
@@ -45,23 +46,23 @@ function checkAlreadyDibbed(req, res, next) {
     .catch(next);
 }
 
-function validateDibQuantity(formData) {
-  if (formData.quantity === undefined) {
-    formData.quantity = 1;
+function validateDibQuantity(req) {
+  if (req.body.quantity === undefined) {
+    req.body.quantity = 1;
   }
 
   return Promise.all([
-    Gift.find({ _id: formData._gift }).limit(1).lean(),
-    Dib.find({ _gift: formData._gift }).lean()
+    Gift.find({ _id: req.body._gift }).limit(1).lean(),
+    Dib.find({ _gift: req.body._gift }).lean()
   ])
     .then((results) => {
       const gift = results[0][0];
       const dibs = results[1];
 
-      let totalDibs = formData.quantity;
+      let totalDibs = req.body.quantity;
 
       if (!gift) {
-        return Promise.reject(new Error('Gift not found.'));
+        return Promise.reject(new GiftNotFoundError());
       }
 
       if (gift.quantity === 1 && totalDibs === 1) {
@@ -70,7 +71,7 @@ function validateDibQuantity(formData) {
 
       dibs.forEach((dib) => {
         // Don't count the quantity of a dib that's being updated.
-        if (formData._id === dib._id.toString()) {
+        if (req.params.dibId === dib._id.toString()) {
           return;
         }
 
@@ -78,13 +79,17 @@ function validateDibQuantity(formData) {
       });
 
       if (totalDibs > gift.quantity) {
-        const err = new Error('Dib quantity is not valid.');
+        const err = new DibQuantityError();
+
         err.errors = [{
           message: 'Dib quantity is more than are available. Please choose a smaller amount.',
           field: 'quantity'
         }];
+
         return Promise.reject(err);
       }
+
+      return true;
     });
 }
 
@@ -98,7 +103,7 @@ function confirmUserDoesNotOwnGift(req, res, next) {
     .lean()
     .then((docs) => {
       if (docs[0]) {
-        next(new Error('You cannot dib your own gift!'));
+        next(new DibValidationError('You cannot dib your own gift.'));
         return;
       }
 
@@ -111,6 +116,7 @@ function getSumBudget(recipient) {
   let total = 0;
 
   recipient.gifts.forEach((gift) => {
+    // `_dib` is added to the model manually by getDibsRecipients().
     if (gift._dib.pricePaid !== undefined) {
       total += parseInt(gift._dib.pricePaid, 10);
       return;
@@ -141,7 +147,7 @@ const getDibsRecipients = [
           .lean()
           .then((gifts) => {
             gifts.forEach((gift) => {
-              // Assign the specific dib to the gift.
+              // Match the specific dib to the gift.
               dibs.forEach((dib) => {
                 if (dib._gift.toString() === gift._id.toString()) {
                   gift._dib = dib;
@@ -182,7 +188,7 @@ const createDib = [
   checkAlreadyDibbed,
 
   (req, res, next) => {
-    validateDibQuantity(req.body)
+    validateDibQuantity(req)
       .then(() => {
         const dib = new Dib({
           _gift: req.body._gift,
@@ -206,7 +212,7 @@ const updateDib = [
   confirmUserOwnsDib,
 
   (req, res, next) => {
-    validateDibQuantity(req.body)
+    validateDibQuantity(req)
       .then(() => {
         return Dib
           .find({ _id: req.params.dibId })

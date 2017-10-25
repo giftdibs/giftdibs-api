@@ -27,7 +27,7 @@ describe('Gift schema', () => {
     mock.stopAll();
   });
 
-  it('should add a wish list record', () => {
+  it('should validate a document', () => {
     let gift = new Gift(_giftDefinition);
     const err = gift.validateSync();
     expect(err).toBeUndefined();
