@@ -11,7 +11,7 @@ describe('User schema', () => {
     updateDocumentUtil = mock.reRequire('../utils/update-document');
     spyOn(updateDocumentUtil, 'updateDocument').and.returnValue();
     spyOn(console, 'log').and.returnValue();
-    User = mock.reRequire('./user');
+    User = mock.reRequire('./user').User;
   });
 
   afterEach(() => {

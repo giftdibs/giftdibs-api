@@ -82,7 +82,7 @@ const userSchema = new Schema({
     required: true
   }
 }, {
-  collection: 'User',
+  collection: 'user',
   timestamps: {
     createdAt: 'dateCreated',
     updatedAt: 'dateUpdated'
@@ -182,4 +182,4 @@ userSchema.plugin(MongoDbErrorHandlerPlugin);
 
 const User = mongoose.model('User', userSchema);
 
-module.exports = User;
+module.exports = { User };

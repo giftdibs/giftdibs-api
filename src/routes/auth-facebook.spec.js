@@ -36,7 +36,7 @@ describe('/auth-facebook', () => {
       return Promise.resolve(docs);
     };
     mock('../middleware/auth-response', () => {});
-    mock('../database/models/user', MockUser);
+    mock('../database/models/user', { User: MockUser });
     spyOn(facebook, 'verifyUserAccessToken').and.returnValue(Promise.resolve({
       data: {
         user_id: '0'

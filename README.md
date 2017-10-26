@@ -35,17 +35,22 @@
 
 - `200` A user was not found with the specified ID.
 - `201` The user update request failed database schema validation.
+- `202` Invalid permissions to modify.
 
 ### `/wish-lists`
 
 - `300` A wish list was not found with the specified ID.
 - `301` Wish list failed validation.
+- `302` Invalid permissions to modify.
 
 ### `/wish-lists/:wishListId/gifts`
 
 - `400` Gift not found.
 - `401` Gift failed validation.
+- `402` Invalid permissions to modify.
 
-### `/wish-lists/:wishListId/gifts/:giftId/external-urls`
+### `/dibs`
 
-- `501` External URL failed validation.
+- `500` Dib not found.
+- `501` Dib failed validation.
+- `502` Invalid permissions to modify.

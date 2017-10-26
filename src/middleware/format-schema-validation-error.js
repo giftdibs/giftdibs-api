@@ -1,5 +1,5 @@
 const formatSchemaValidationError = (err, req, res, next) => {
-  if (err.name !== 'ValidationError') {
+  if (err.name.indexOf('ValidationError') === -1) {
     next(err);
     return;
   }

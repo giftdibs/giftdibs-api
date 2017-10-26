@@ -4,13 +4,14 @@ describe('local passport strategy', () => {
   let mockExec = () => {};
 
   beforeEach(() => {
-    mock('../database/models/user', {
+    const mockUser = {
       find: () => {
         return {
           limit: () => mockExec()
         }
       }
-    });
+    };
+    mock('../database/models/user', { User: mockUser });
   });
 
   afterEach(() => {

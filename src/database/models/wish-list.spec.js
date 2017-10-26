@@ -16,7 +16,7 @@ describe('WishList schema', () => {
     updateDocumentUtil = mock.reRequire('../utils/update-document');
     spyOn(updateDocumentUtil, 'updateDocument').and.returnValue();
     spyOn(console, 'log').and.returnValue();
-    WishList = mock.reRequire('./wish-list');
+    WishList = mock.reRequire('./wish-list').WishList;
   });
 
   afterEach(() => {
@@ -25,7 +25,7 @@ describe('WishList schema', () => {
     mock.stopAll();
   });
 
-  it('should add a wish list record', () => {
+  it('should validate a document', () => {
     let wishList = new WishList(_wishListDefinition);
     const err = wishList.validateSync();
     expect(err).toBeUndefined();
@@ -88,69 +88,5 @@ describe('WishList schema', () => {
       [ 'name' ],
       formData
     );
-  });
-
-  it('should get a document by id', (done) => {
-    spyOn(WishList, 'find').and.returnValue({
-      limit() {
-        return Promise.resolve([{ _id: 0 }])
-      }
-    });
-    WishList.getById(0).then((data) => {
-      expect(WishList.find).toHaveBeenCalledWith({ _id: 0 });
-      expect(data._id).toEqual(0);
-      done();
-    });
-  });
-
-  it('should handle errors with getting a document by id', (done) => {
-    spyOn(WishList, 'find').and.returnValue({
-      limit() {
-        return Promise.resolve([])
-      }
-    });
-    WishList.getById(0).catch((err) => {
-      expect(err).toBeDefined();
-      expect(err.name).toEqual('WishListNotFoundError');
-      done();
-    });
-  });
-
-  it('should get a gift by id', (done) => {
-    spyOn(WishList, 'find').and.returnValue({
-      limit() {
-        const gifts = {
-          id() {
-            return { _id: 'giftid' };
-          }
-        };
-        return Promise.resolve([{ _id: 'wishlistid', gifts }])
-      }
-    });
-    WishList.getGiftById('wishlistid', 'giftid').then((data) => {
-      expect(WishList.find).toHaveBeenCalledWith({ _id: 'wishlistid' });
-      expect(data.wishList._id).toEqual('wishlistid');
-      expect(data.gift._id).toEqual('giftid');
-      done();
-    });
-  });
-
-  it('should handle gift not found', (done) => {
-    spyOn(WishList, 'find').and.returnValue({
-      limit() {
-        const gifts = {
-          id() {
-            return null;
-          }
-        };
-        return Promise.resolve([{ _id: 'wishlistid', gifts }])
-      }
-    });
-
-    WishList.getGiftById('wishlistid', 'giftid').catch((err) => {
-      expect(err).toBeDefined();
-      expect(err.name).toEqual('GiftNotFoundError');
-      done();
-    });
   });
 });

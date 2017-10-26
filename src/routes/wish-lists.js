@@ -1,41 +1,23 @@
 const express = require('express');
-
-const WishList = require('../database/models/wish-list');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
+const { WishList } = require('../database/models/wish-list');
 const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
-const { WishListNotFoundError } = require('../shared/errors');
+
+const {
+  WishListNotFoundError,
+  WishListValidationError
+} = require('../shared/errors');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
-    err.code = 301;
-    err.status = 400;
-    err.message = 'Wish list update validation failed.';
+    const error = new WishListValidationError();
+    error.errors = err.errors;
+    next(error);
+    return;
   }
 
   next(err);
-}
-
-function sortGiftsByOrder(wishList) {
-  wishList.gifts.sort((a, b) => {
-    if (b.order === undefined) {
-      return -1;
-    }
-
-    if (a.order === undefined) {
-      return 1;
-    }
-
-    if (a.order < b.order) {
-      return -1;
-    }
-
-    if (a.order > b.order) {
-      return 1;
-    }
-
-    return 0;
-  });
 }
 
 const createWishList = [
@@ -49,7 +31,7 @@ const createWishList = [
       .save()
       .then((doc) => {
         authResponse({
-          id: doc._id,
+          wishListId: doc._id,
           message: 'Wish list successfully created.'
         })(req, res, next);
       })
@@ -71,8 +53,6 @@ const getWishList = [
           return Promise.reject(new WishListNotFoundError());
         }
 
-        sortGiftsByOrder(wishList);
-
         return wishList;
       })
       .then((wishList) => {
@@ -86,7 +66,7 @@ const getWishList = [
 
 const getWishLists = [
   function getAll(req, res, next) {
-    let query = {};
+    const query = {};
 
     if (req.query.userId) {
       query._user = req.query.userId;
@@ -94,9 +74,14 @@ const getWishLists = [
 
     WishList
       .find(query)
+      .select('_user name')
       .populate('_user', 'firstName lastName')
       .lean()
-      .then(wishLists => authResponse({ wishLists })(req, res, next))
+      .then(wishLists => {
+        authResponse({
+          wishLists
+        })(req, res, next);
+      })
       .catch(next);
   }
 ];
@@ -106,8 +91,10 @@ const updateWishList = [
 
   function updateWithFormData(req, res, next) {
     WishList
-      .getById(req.params.wishListId)
-      .then((wishList) => {
+      .find({ _id: req.params.wishListId })
+      .limit(1)
+      .then((docs) => {
+        const wishList = docs[0];
         wishList.update(req.body);
         return wishList.save();
       })
@@ -125,7 +112,11 @@ const deleteWishList = [
   (req, res, next) => {
     WishList
       .remove({ _id: req.params.wishListId })
-      .then(() => res.json({ message: `Wish list successfully deleted.` }))
+      .then(() => {
+        authResponse({
+          message: 'Wish list successfully deleted.'
+        })(req, res, next);
+      })
       .catch(next);
   }
 ];

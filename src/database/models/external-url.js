@@ -35,4 +35,4 @@ externalUrlSchema.methods.update = function (values) {
 
 externalUrlSchema.plugin(MongoDbErrorHandlerPlugin);
 
-module.exports = externalUrlSchema;
+module.exports = { externalUrlSchema };

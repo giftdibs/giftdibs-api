@@ -1,7 +1,7 @@
 const express = require('express');
 const passport = require('passport');
 
-const User = require('../database/models/user');
+const { User } = require('../database/models/user');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 
@@ -83,7 +83,9 @@ const login = [
       // allow other middlewares to access it.
       req.user = user;
 
-      authResponse({ message: `Welcome, ${req.user.firstName}!` })(req, res, next);
+      authResponse({
+        message: `Welcome, ${req.user.firstName}!`
+      })(req, res, next);
     })(req, res, next);
   }
 ];
@@ -255,7 +257,11 @@ const verifyEmailAddress = [
     if (isVerified) {
       req.user
         .save()
-        .then(() => authResponse({ message: 'Email address verified!' })(req, res, next))
+        .then(() => {
+          authResponse({
+            message: 'Email address verified!'
+          })(req, res, next);
+        })
         .catch(next);
       return;
     }

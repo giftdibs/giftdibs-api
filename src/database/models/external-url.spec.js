@@ -15,7 +15,8 @@ describe('ExternalUrl schema', () => {
     updateDocumentUtil = mock.reRequire('../utils/update-document');
     spyOn(updateDocumentUtil, 'updateDocument').and.returnValue();
     spyOn(console, 'log').and.returnValue();
-    ExternalUrl = mongoose.model('ExternalUrl', mock.reRequire('./external-url'));
+    const { externalUrlSchema } = mock.reRequire('./external-url');
+    ExternalUrl = mongoose.model('ExternalUrl', externalUrlSchema);
   });
 
   afterEach(() => {
@@ -24,7 +25,7 @@ describe('ExternalUrl schema', () => {
     mock.stopAll();
   });
 
-  it('should add a wish list record', () => {
+  it('should add a document', () => {
     let externalUrl = new ExternalUrl(_externalUrlDefinition);
     const err = externalUrl.validateSync();
     expect(err).toBeUndefined();

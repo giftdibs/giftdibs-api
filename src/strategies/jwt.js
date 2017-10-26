@@ -1,9 +1,9 @@
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 
-const User = require('../database/models/user');
+const { User } = require('../database/models/user');
 
-let config = {
+const strategyConfig = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderWithScheme('JWT'),
   secretOrKey: process.env.JWT_SECRET,
   passReqToCallback: true
@@ -17,16 +17,19 @@ const verify = (req, payload, done) => {
       const user = results[0];
 
       if (!user) {
-        done(undefined, false, { message: 'A user was not found that matched that access token.' });
+        done(undefined, false, {
+          message: 'A user was not found that matched that access token.'
+        });
         return;
       }
 
       req.user = user;
+
       done(undefined, user);
     })
     .catch(err => done(err, false));
 };
 
-const strategy = new JwtStrategy(config, verify);
+const strategy = new JwtStrategy(strategyConfig, verify);
 
 module.exports = strategy;
