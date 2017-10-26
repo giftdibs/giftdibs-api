@@ -409,7 +409,7 @@ describe('Dibs router', () => {
       const updateDib = routeDefinition.middleware.updateDib[1];
 
       updateDib(_req, _res, (err) => {
-        expect(err.name).toEqual('DibQuantityError');
+        expect(err.name).toEqual('DibValidationError');
         expect(err.errors[0].message).toEqual('Dib quantity is more than are available. Please choose a smaller amount.');
         done();
       });

@@ -6,7 +6,6 @@ const { confirmUserOwnsDib } = require('../middleware/confirm-user-owns-dib');
 const {
   DibNotFoundError,
   DibValidationError,
-  DibQuantityError,
   GiftNotFoundError
 } = require('../shared/errors');
 
@@ -79,7 +78,7 @@ function validateDibQuantity(req) {
       });
 
       if (totalDibs > gift.quantity) {
-        const err = new DibQuantityError();
+        const err = new DibValidationError();
 
         err.errors = [{
           message: 'Dib quantity is more than are available. Please choose a smaller amount.',

@@ -94,14 +94,6 @@ function DibPermissionError() {
 }
 DibPermissionError.prototype = Error.prototype;
 
-function DibQuantityError() {
-  this.name = 'DibQuantityError';
-  this.message = 'Dib quantity is not valid.';
-  this.code = 504;
-  this.status = 400;
-}
-DibQuantityError.prototype = Error.prototype;
-
 module.exports = {
   UserNotFoundError,
   UserValidationError,
@@ -117,6 +109,5 @@ module.exports = {
 
   DibNotFoundError,
   DibValidationError,
-  DibPermissionError,
-  DibQuantityError
+  DibPermissionError
 };
