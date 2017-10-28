@@ -94,6 +94,30 @@ function DibPermissionError() {
 }
 DibPermissionError.prototype = Error.prototype;
 
+function FriendshipNotFoundError() {
+  this.name = 'FriendshipNotFoundError';
+  this.message = 'Friendship not found.';
+  this.code = 600;
+  this.status = 400;
+}
+FriendshipNotFoundError.prototype = Error.prototype;
+
+function FriendshipValidationError(message) {
+  this.name = 'FriendshipValidationError';
+  this.message = message || 'Friendship validation failed.';
+  this.code = 601;
+  this.status = 400;
+}
+FriendshipValidationError.prototype = Error.prototype;
+
+function FriendshipPermissionError() {
+  this.name = 'FriendshipPermissionError';
+  this.message = 'Permission denied to modify friendship.';
+  this.code = 602;
+  this.status = 403;
+}
+FriendshipPermissionError.prototype = Error.prototype;
+
 module.exports = {
   UserNotFoundError,
   UserValidationError,
@@ -109,5 +133,9 @@ module.exports = {
 
   DibNotFoundError,
   DibValidationError,
-  DibPermissionError
+  DibPermissionError,
+
+  FriendshipNotFoundError,
+  FriendshipValidationError,
+  FriendshipPermissionError,
 };

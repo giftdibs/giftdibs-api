@@ -27,6 +27,8 @@ const getFriendships = [
 
     Friendship
       .find(query)
+      .populate('_friend', 'firstName lastName')
+      .populate('_user', 'firstName lastName')
       .lean()
       .then((friendships) => {
         authResponse({
@@ -37,14 +39,11 @@ const getFriendships = [
   }
 ];
 
-const addFriendship = [
+const createFriendship = [
   (req, res, next) => {
     const friendship = new Friendship({
       _user: req.user._id,
-      _wishList: req.body._wishList,
-      budget: req.body.budget,
-      externalUrls: req.body.externalUrls,
-      name: req.body.name
+      _friend: req.body._friend
     });
 
     friendship
@@ -101,7 +100,7 @@ const router = express.Router();
 router.use(authenticateJwt);
 router.route('/friendships')
   .get(getFriendships)
-  .post(addFriendship)
+  .post(createFriendship)
 router.route('/friendships/:friendshipId')
   .delete(deleteFriendship)
   .patch(updateFriendship);

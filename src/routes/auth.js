@@ -161,7 +161,7 @@ const resetPassword = [
   },
 
   function validateResetPasswordJwt(req, res, next) {
-    if (req.headers.authorization) {
+    if (req.headers.authorization && !req.body.resetPasswordToken) {
       authenticateJwt(req, res, next);
       return;
     }

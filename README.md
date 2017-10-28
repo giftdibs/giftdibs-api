@@ -54,3 +54,9 @@
 - `500` Dib not found.
 - `501` Dib failed validation.
 - `502` Invalid permissions to modify.
+
+### `/friendships`
+
+- `600` Friendship not found.
+- `601` Friendship failed validation.
+- `602` Invalid permissions to modify.
