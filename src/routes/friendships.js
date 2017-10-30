@@ -5,6 +5,31 @@ const { Friendship } = require('../database/models/friendship');
 const { confirmUserOwnsFriendship } = require('../middleware/confirm-user-owns-friendship');
 const { FriendshipValidationError } = require('../shared/errors');
 
+function validateFriendRequest(req, res, next) {
+  if (req.user._id.toString() === req.body._friend) {
+    next(new FriendshipValidationError('You cannot follow yourself.'));
+    return;
+  }
+
+  Friendship
+    .find({
+      _user: req.user._id,
+      _friend: req.body._friend
+    })
+    .limit(1)
+    .lean()
+    .then((docs) => {
+      const friend = docs[0];
+      if (!friend) {
+        next();
+        return;
+      }
+
+      next(new FriendshipValidationError('You are already following that person.'));
+    })
+    .catch(next);
+}
+
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
     const error = new FriendshipValidationError();
@@ -19,10 +44,14 @@ function handleError(err, next) {
 const getFriendships = [
   (req, res, next) => {
     const query = {};
-    const wishListId = req.query.wishListId;
+    const userId = req.query.userId;
 
-    if (wishListId) {
-      query._wishList = wishListId;
+    if (userId) {
+      query.$or = [{
+        _user: userId
+      }, {
+        _friend: userId
+      }];
     }
 
     Friendship
@@ -40,6 +69,8 @@ const getFriendships = [
 ];
 
 const createFriendship = [
+  validateFriendRequest,
+
   (req, res, next) => {
     const friendship = new Friendship({
       _user: req.user._id,
@@ -73,37 +104,13 @@ const deleteFriendship = [
   }
 ];
 
-const updateFriendship = [
-  confirmUserOwnsFriendship,
-
-  (req, res, next) => {
-    Friendship
-      .find({
-        _id: req.params.friendshipId
-      })
-      .limit(1)
-      .then((docs) => {
-        const friendship = docs[0];
-        friendship.update(req.body);
-        return friendship.save();
-      })
-      .then(() => {
-        authResponse({
-          message: 'Friendship successfully updated.'
-        })(req, res, next);
-      })
-      .catch((err) => handleError(err, next));
-  }
-];
-
 const router = express.Router();
 router.use(authenticateJwt);
 router.route('/friendships')
   .get(getFriendships)
   .post(createFriendship)
 router.route('/friendships/:friendshipId')
-  .delete(deleteFriendship)
-  .patch(updateFriendship);
+  .delete(deleteFriendship);
 
 module.exports = {
   middleware: {},
