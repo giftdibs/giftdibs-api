@@ -81,7 +81,8 @@ describe('jwt passport strategy', () => {
           expect(_findQuery._id).toEqual(0);
           expect(err).toBeUndefined();
           expect(user).toEqual(false);
-          expect(info.message).toEqual('A user was not found that matched that access token.');
+          expect(info.message)
+            .toEqual('A user was not found that matched that access token.');
           done();
         });
       }
@@ -105,7 +106,7 @@ describe('jwt passport strategy', () => {
     mock.reRequire('./jwt');
   });
 
-  it('should attach the authenticated user model to the request object', (done) => {
+  it('should attach the authenticated user to the request object', (done) => {
     const mockUser = {};
     mockExec = () => Promise.resolve([ mockUser ]);
     mock('passport-jwt', {

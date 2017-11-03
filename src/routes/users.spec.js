@@ -1,6 +1,6 @@
 const mock = require('mock-require');
 
-describe('/users', () => {
+describe('Users router', () => {
   let _req;
 
   beforeEach(() => {
@@ -185,7 +185,10 @@ describe('/users', () => {
     _req.user._id.equals = () => true;
     getUser[0](_req, {
       json: (doc) => {
-        expect(_fields).toEqual('facebookId firstName lastName emailAddress emailAddressVerified');
+        expect(_fields)
+          .toEqual(
+            'facebookId firstName lastName emailAddress emailAddressVerified'
+          );
         done();
       }
     }, () => {});
@@ -254,7 +257,7 @@ describe('/users', () => {
     });
   });
 
-  it('should skip PATCH of form data if facebook access token is set', (done) => {
+  it('should skip PATCH of form data if fb access token is set', (done) => {
     spyOn(_req.user, 'set').and.callThrough();
     const users = mock.reRequire('./users');
     const updateUser = users.middleware.updateUser;
@@ -269,7 +272,7 @@ describe('/users', () => {
     });
   });
 
-  it('should PATCH a user with facebook profile if facebook access token is set', (done) => {
+  it('should PATCH a user if facebook access token is set', (done) => {
     mock('../lib/facebook', {
       verifyUserAccessToken: () => Promise.resolve(),
       getProfile: () => Promise.resolve({
@@ -294,7 +297,7 @@ describe('/users', () => {
     });
   });
 
-  it('should skip PATCH with facebook profile if facebook access token is not set', (done) => {
+  it('should skip PATCH if facebook access token is not set', (done) => {
     const facebook = mock.reRequire('../lib/facebook');
     spyOn(facebook, 'verifyUserAccessToken').and.returnValue(Promise.resolve());
     const users = mock.reRequire('./users');
@@ -311,17 +314,19 @@ describe('/users', () => {
     expect(users.middleware.updateUser[0].name).toEqual('confirmUserOwnership');
   });
 
-  it('should issue a new email verification token if the email address changes', (done) => {
-    const users = mock.reRequire('./users');
-    const updateUser = users.middleware.updateUser;
-    _req.user.emailAddress = 'my@email.com';
-    _req.body = { emailAddress: 'new@email.com' };
-    spyOn(_req.user, 'resetEmailAddressVerification');
-    updateUser[2](_req, {}, () => {
-      expect(_req.user.resetEmailAddressVerification).toHaveBeenCalledWith();
-      done();
-    });
-  });
+  it('should issue a new email verification token if the email address changes',
+    (done) => {
+      const users = mock.reRequire('./users');
+      const updateUser = users.middleware.updateUser;
+      _req.user.emailAddress = 'my@email.com';
+      _req.body = { emailAddress: 'new@email.com' };
+      spyOn(_req.user, 'resetEmailAddressVerification');
+      updateUser[2](_req, {}, () => {
+        expect(_req.user.resetEmailAddressVerification).toHaveBeenCalledWith();
+        done();
+      });
+    }
+  );
 
   it('should handle a mongoose error with PATCH /users/:id', (done) => {
     const users = mock.reRequire('./users');
@@ -332,7 +337,7 @@ describe('/users', () => {
     });
   });
 
-  it('should handle a schema validation error with PATCH /users/:id', (done) => {
+  it('should handle schema validation error with PATCH /users/:id', (done) => {
     const users = mock.reRequire('./users');
     const updateUser = users.middleware.updateUser;
 

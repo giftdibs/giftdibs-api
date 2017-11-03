@@ -1,7 +1,7 @@
 const mock = require('mock-require');
 const jwt = require('jsonwebtoken');
 
-describe('auth response middleware', () => {
+describe('Auth response middleware', () => {
   let originalSecret = process.env.JWT_SECRET;
 
   afterEach(() => {
@@ -49,7 +49,10 @@ describe('auth response middleware', () => {
     middleware()(req, res, next);
   });
 
-  it('should not attach auth information to the response if the session user does not exist', () => {
+  it([
+    'should not attach auth information to the response',
+    'if the session user does not exist'
+  ].join(' '), () => {
     const middleware = mock.reRequire('./auth-response');
     const req = {};
     const next = () => {};

@@ -11,6 +11,11 @@
     "semi": 0,
     "object-curly-spacing": ["error", "always"],
     "space-before-function-paren": ["error", {"anonymous": "always", "named": "never", "asyncArrow": "always"}],
+    "max-len": ["error", {
+      "code": 80,
+      "tabWidth": 2,
+      "ignoreUrls": true
+    }],
     "jasmine/new-line-before-expect": 0,
     "jasmine/no-spec-dupes": [1, "branch"],
     "jasmine/no-focused-tests": 0

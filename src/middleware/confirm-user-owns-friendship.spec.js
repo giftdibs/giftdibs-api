@@ -5,7 +5,7 @@ const {
   MockRequest
 } = mock.reRequire('../shared/testing');
 
-describe('confirm user owns friendship', () => {
+describe('Confirm user owns friendship middleware', () => {
   let _req;
 
   beforeEach(() => {
@@ -27,8 +27,10 @@ describe('confirm user owns friendship', () => {
     mock.stopAll();
   });
 
-  it('should pass an error to the callback if the session does not own the resource', (done) => {
-    const { confirmUserOwnsFriendship } = mock.reRequire('./confirm-user-owns-friendship');
+  it('should fail if the session does not own the resource', (done) => {
+    const {
+      confirmUserOwnsFriendship
+    } = mock.reRequire('./confirm-user-owns-friendship');
 
     MockFriendship.overrides.find.returnWith = () => Promise.resolve([{
       _user: 'diffuserid'
@@ -43,7 +45,9 @@ describe('confirm user owns friendship', () => {
   });
 
   it('should continue if the session does own the resource', (done) => {
-    const { confirmUserOwnsFriendship } = mock.reRequire('./confirm-user-owns-friendship');
+    const {
+      confirmUserOwnsFriendship
+    } = mock.reRequire('./confirm-user-owns-friendship');
 
     const next = (err) => {
       expect(err).toBeUndefined();
@@ -58,9 +62,13 @@ describe('confirm user owns friendship', () => {
   });
 
   it('should handle errors', (done) => {
-    const { confirmUserOwnsFriendship } = mock.reRequire('./confirm-user-owns-friendship');
+    const {
+      confirmUserOwnsFriendship
+    } = mock.reRequire('./confirm-user-owns-friendship');
 
-    MockFriendship.overrides.find.returnWith = () => Promise.reject(new Error());
+    MockFriendship.overrides.find.returnWith = () => {
+      return Promise.reject(new Error());
+    };
 
     const next = (err) => {
       expect(err.name).toEqual('Error');
@@ -71,7 +79,9 @@ describe('confirm user owns friendship', () => {
   });
 
   it('should handle friendship not found error', (done) => {
-    const { confirmUserOwnsFriendship } = mock.reRequire('./confirm-user-owns-friendship');
+    const {
+      confirmUserOwnsFriendship
+    } = mock.reRequire('./confirm-user-owns-friendship');
 
     MockFriendship.overrides.find.returnWith = () => Promise.resolve([]);
 
@@ -83,8 +93,10 @@ describe('confirm user owns friendship', () => {
     confirmUserOwnsFriendship(_req, null, next);
   });
 
-  it('should pass an error to the callback if the friendship ID is not provided', () => {
-    const { confirmUserOwnsFriendship } = mock.reRequire('./confirm-user-owns-friendship');
+  it('should fail if the friendship ID is not provided', () => {
+    const {
+      confirmUserOwnsFriendship
+    } = mock.reRequire('./confirm-user-owns-friendship');
 
     _req.params.friendshipId = undefined;
 

@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
-const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
+
+const {
+  MongoDbErrorHandlerPlugin
+} = require('../plugins/mongodb-error-handler');
+
 const { updateDocument } = require('../utils/update-document');
 
 const Schema = mongoose.Schema;
@@ -24,7 +28,10 @@ const dibSchema = new Schema({
     required: [true, 'The dib\'s quantity must be provided.'],
     type: Number,
     min: [1, 'The dib\'s quantity must be at least 1.'],
-    max: [1000000000000, 'The dib\'s quantity must be less than 1,000,000,000,000.']
+    max: [
+      1000000000000,
+      'The dib\'s quantity must be less than 1,000,000,000,000.'
+    ]
   }
 }, {
   collection: 'dib',
@@ -37,7 +44,8 @@ const dibSchema = new Schema({
 dibSchema.methods.update = function (values) {
   const fields = ['pricePaid', 'quantity'];
 
-  // Update the date delivered if user marks the dib as delivered (for the first time).
+  // Update the date delivered if user marks the dib as delivered
+  // (for the first time).
   if (values.isDelivered === true && !this.dateDelivered) {
     this.set('dateDelivered', new Date());
   } else if (values.isDelivered === false) {

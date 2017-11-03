@@ -10,7 +10,14 @@ module.exports = (data) => {
     }
 
     const payload = { id: req.user._id };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
+
+    const token = jwt.sign(
+      payload,
+      process.env.JWT_SECRET,
+      {
+        expiresIn: '15m'
+      }
+    );
 
     response.authResponse = {};
     response.authResponse.token = token;

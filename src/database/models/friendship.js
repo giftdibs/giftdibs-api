@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
-const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
+
+const {
+  MongoDbErrorHandlerPlugin
+} = require('../plugins/mongodb-error-handler');
 
 const Schema = mongoose.Schema;
 const friendshipSchema = new Schema({

@@ -5,7 +5,9 @@ const getEnvironment = (filePath = 'config.env') => {
   const result = dotenv.config({ path: filePath });
 
   if (result.error) {
-    logger.info(`Environment configuration could not be parsed from ${filePath}.`);
+    logger.info(
+      `Environment configuration could not be parsed from ${filePath}.`
+    );
   }
 
   return process.env;

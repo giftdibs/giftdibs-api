@@ -3,317 +3,425 @@ const mock = require('mock-require');
 describe('Auth router', () => {
   let passport;
 
-  beforeEach(() => {
+  const beforeEachCallback = () => {
     passport = mock.reRequire('passport');
-  });
+  };
 
-  afterEach(() => {
+  const afterEachCallback = () => {
     mock.stopAll();
-  });
+  };
 
-  it('login - should login a user and return a jwt', (done) => {
-    spyOn(passport, 'authenticate').and.callFake((hook, callback) => {
-      const err = null;
-      const user = {};
-      const info = {};
-      callback(err, user, info);
-      return (req, res, next) => {};
+  beforeEach(beforeEachCallback);
+
+  afterEach(afterEachCallback);
+
+  describe('login', () => {
+    beforeEach(beforeEachCallback);
+
+    afterEach(afterEachCallback);
+
+    it('should login a user and return a jwt', (done) => {
+      spyOn(passport, 'authenticate').and.callFake((hook, callback) => {
+        const err = null;
+        const user = {};
+        const info = {};
+        callback(err, user, info);
+        return (req, res, next) => {};
+      });
+
+      const auth = mock.reRequire('./auth');
+      expect(auth.middleware.login[0].name).toEqual('checkEmptyCredentials');
+      expect(auth.middleware.login[1].name).toEqual('authenticate');
+
+      const res = {
+        json: (data) => {
+          expect(passport.authenticate)
+            .toHaveBeenCalledWith('local', jasmine.any(Function));
+          expect(data.authResponse).toBeDefined();
+          expect(data.authResponse.token).toBeDefined();
+          expect(data.authResponse.user).toBeDefined();
+          done();
+        }
+      };
+
+      auth.middleware.login[1]({}, res, () => {});
     });
 
-    const auth = mock.reRequire('./auth');
-    expect(auth.middleware.login[0].name).toEqual('checkEmptyCredentials');
-    expect(auth.middleware.login[1].name).toEqual('authenticate');
+    it('should fail login if credentials are empty', (done) => {
+      const auth = mock.reRequire('./auth');
+      auth.middleware.login[0]({ body: {} }, {}, (err) => {
+        expect(err.status).toEqual(400);
+        expect(err.code).toEqual(100);
 
-    const res = {
-      json: (data) => {
-        expect(passport.authenticate).toHaveBeenCalledWith('local', jasmine.any(Function));
-        expect(data.authResponse).toBeDefined();
-        expect(data.authResponse.token).toBeDefined();
-        expect(data.authResponse.user).toBeDefined();
+        const body = {
+          emailAddress: 'a',
+          password: 'b'
+        };
+        auth.middleware.login[0]({ body }, {}, (err) => {
+          expect(err).toBeUndefined();
+          done();
+        });
+      });
+    });
+
+    it('should login and add the user to the request object', (done) => {
+      spyOn(passport, 'authenticate').and.callFake((hook, callback) => {
+        const err = null;
+        const user = {};
+        const info = {};
+        callback(err, user, info);
+        return (req, res, next) => {};
+      });
+
+      const auth = mock.reRequire('./auth');
+      const req = { body: {} };
+      const authenticate = auth.middleware.login[1];
+
+      authenticate(req, {
+        json: (data) => {
+          expect(req.user).toBeDefined();
+          done();
+        }
+      }, () => {});
+    });
+
+    it('should handle passport failures', (done) => {
+      spyOn(passport, 'authenticate').and.callFake((hook, callback) => {
+        const err = new Error();
+        const user = {};
+        const info = {};
+        callback(err, user, info);
+        return (req, res, next) => {};
+      });
+
+      const auth = mock.reRequire('./auth');
+      const req = { body: {} };
+      const authenticate = auth.middleware.login[1];
+
+      authenticate(req, {}, (err) => {
+        expect(err).toBeDefined();
         done();
-      }
-    };
+      });
+    });
 
-    auth.middleware.login[1]({}, res, () => {});
+    it('should handle user not found errors', (done) => {
+      spyOn(passport, 'authenticate').and.callFake((hook, callback) => {
+        const err = null;
+        const user = false;
+        const info = {};
+        callback(err, user, info);
+        return (req, res, next) => {};
+      });
+
+      const auth = mock.reRequire('./auth');
+      const req = { body: {} };
+      const authenticate = auth.middleware.login[1];
+
+      authenticate(req, {}, (err) => {
+        expect(err).toBeDefined();
+        expect(err.status).toEqual(400);
+        expect(err.code).toEqual(101);
+        done();
+      });
+    });
   });
 
-  it('login - should fail login if credentials are empty', (done) => {
-    const auth = mock.reRequire('./auth');
-    auth.middleware.login[0]({ body: {} }, {}, (err) => {
-      expect(err.status).toEqual(400);
-      expect(err.code).toEqual(100);
+  describe('register', () => {
+    beforeEach(beforeEachCallback);
 
-      const body = {
-        emailAddress: 'a',
-        password: 'b'
+    afterEach(afterEachCallback);
+
+    it('should register a user', (done) => {
+      function User() {
+        return {
+          setPassword: () => Promise.resolve(),
+          resetEmailAddressVerification: () => {},
+          save: () => Promise.resolve({ _id: 0 })
+        };
+      }
+
+      mock('../database/models/user', { User });
+
+      const auth = mock.reRequire('./auth');
+      const register = auth.middleware.register;
+      const req = {
+        body: {
+          firstName: '',
+          lastName: '',
+          emailAddress: '',
+          password: ''
+        }
       };
-      auth.middleware.login[0]({ body }, {}, (err) => {
+      const res = {
+        json: (result) => {
+          expect(result.id).toEqual(0);
+          done();
+        }
+      };
+      register[1](req, res, () => {});
+    });
+
+    it('should fail registration if schema validation fails', (done) => {
+      function User() {
+        return {
+          setPassword: () => {
+            const error = new Error();
+            error.name = 'ValidationError';
+            return Promise.reject(error);
+          }
+        };
+      }
+
+      mock('../database/models/user', { User });
+
+      const auth = mock.reRequire('./auth');
+      const register = auth.middleware.register;
+      const req = {
+        body: {
+          firstName: '',
+          lastName: '',
+          emailAddress: '',
+          password: ''
+        }
+      };
+      const res = {};
+      register[1](req, res, (err) => {
+        expect(err).toBeDefined();
+        expect(err.code).toEqual(102);
+        done();
+      });
+    });
+
+    it('should fail registration if mongoose fails', (done) => {
+      function User() {
+        return {
+          setPassword: () => Promise.reject(new Error())
+        };
+      }
+
+      mock('../database/models/user', { User });
+
+      const auth = mock.reRequire('./auth');
+      const register = auth.middleware.register;
+      const req = {
+        body: {
+          firstName: '',
+          lastName: '',
+          emailAddress: '',
+          password: ''
+        }
+      };
+      const res = {};
+      register[1](req, res, (err) => {
+        expect(err).toBeDefined();
+        done();
+      });
+    });
+
+    it('should fail registration if nickname included in request', (done) => {
+      // Spam bot control.
+      const auth = mock.reRequire('./auth');
+      const register = auth.middleware.register;
+      const req = {
+        body: {
+          gdNickname: 'bot'
+        }
+      };
+      register[0](req, {}, (err) => {
+        expect(err).toBeDefined();
+        expect(err.code).toEqual(108);
+        expect(err.status).toEqual(400);
+        done();
+      });
+    });
+
+    it('should continue registration if gdNickname is undefined', (done) => {
+      // Spam bot control.
+      const auth = mock.reRequire('./auth');
+      const register = auth.middleware.register;
+      const req = {
+        body: {}
+      };
+      register[0](req, {}, (err) => {
         expect(err).toBeUndefined();
         done();
       });
     });
   });
 
-  it('login - should login and add the user to the request object', (done) => {
-    spyOn(passport, 'authenticate').and.callFake((hook, callback) => {
-      const err = null;
-      const user = {};
-      const info = {};
-      callback(err, user, info);
-      return (req, res, next) => {};
-    });
+  describe('forgotten', () => {
+    beforeEach(beforeEachCallback);
 
-    const auth = mock.reRequire('./auth');
-    const req = { body: {} };
-    const authenticate = auth.middleware.login[1];
+    afterEach(afterEachCallback);
 
-    authenticate(req, {
-      json: (data) => {
-        expect(req.user).toBeDefined();
-        done();
-      }
-    }, () => {});
-  });
-
-  it('login - should handle passport failures', (done) => {
-    spyOn(passport, 'authenticate').and.callFake((hook, callback) => {
-      const err = new Error();
-      const user = {};
-      const info = {};
-      callback(err, user, info);
-      return (req, res, next) => {};
-    });
-
-    const auth = mock.reRequire('./auth');
-    const req = { body: {} };
-    const authenticate = auth.middleware.login[1];
-
-    authenticate(req, {}, (err) => {
-      expect(err).toBeDefined();
-      done();
-    });
-  });
-
-  it('login - should handle user not found errors', (done) => {
-    spyOn(passport, 'authenticate').and.callFake((hook, callback) => {
-      const err = null;
-      const user = false;
-      const info = {};
-      callback(err, user, info);
-      return (req, res, next) => {};
-    });
-
-    const auth = mock.reRequire('./auth');
-    const req = { body: {} };
-    const authenticate = auth.middleware.login[1];
-
-    authenticate(req, {}, (err) => {
-      expect(err).toBeDefined();
-      expect(err.status).toEqual(400);
-      expect(err.code).toEqual(101);
-      done();
-    });
-  });
-
-  it('register - should register a user', (done) => {
-    function User() {
-      return {
-        setPassword: () => Promise.resolve(),
-        resetEmailAddressVerification: () => {},
-        save: () => Promise.resolve({ _id: 0 })
+    it('should create a reset password token', (done) => {
+      const _user = {
+        save: () => Promise.resolve(),
+        setResetPasswordToken: () => {}
       };
-    }
-
-    mock('../database/models/user', { User });
-
-    const auth = mock.reRequire('./auth');
-    const register = auth.middleware.register;
-    const req = {
-      body: {
-        firstName: '',
-        lastName: '',
-        emailAddress: '',
-        password: ''
-      }
-    };
-    const res = {
-      json: (result) => {
-        expect(result.id).toEqual(0);
-        done();
-      }
-    };
-    register[1](req, res, () => {});
-  });
-
-  it('register - should fail registration if schema validation fails', (done) => {
-    function User() {
-      return {
-        setPassword: () => {
-          const error = new Error();
-          error.name = 'ValidationError';
-          return Promise.reject(error);
+      spyOn(_user, 'setResetPasswordToken').and.callThrough();
+      mock('../database/models/user', {
+        User: {
+          find: () => {
+            return {
+              limit: () => Promise.resolve([_user])
+            };
+          }
+        }
+      });
+      const auth = mock.reRequire('./auth');
+      const forgotten = auth.middleware.forgotten;
+      const req = {
+        body: {
+          emailAddress: ''
         }
       };
-    }
-
-    mock('../database/models/user', { User });
-
-    const auth = mock.reRequire('./auth');
-    const register = auth.middleware.register;
-    const req = {
-      body: {
-        firstName: '',
-        lastName: '',
-        emailAddress: '',
-        password: ''
-      }
-    };
-    const res = {};
-    register[1](req, res, (err) => {
-      expect(err).toBeDefined();
-      expect(err.code).toEqual(102);
-      done();
-    });
-  });
-
-  it('register - should fail registration if mongoose fails', (done) => {
-    function User() {
-      return {
-        setPassword: () => Promise.reject(new Error())
+      const res = {
+        json: () => {
+          expect(_user.setResetPasswordToken).toHaveBeenCalledWith();
+          done();
+        }
       };
-    }
-
-    mock('../database/models/user', { User });
-
-    const auth = mock.reRequire('./auth');
-    const register = auth.middleware.register;
-    const req = {
-      body: {
-        firstName: '',
-        lastName: '',
-        emailAddress: '',
-        password: ''
-      }
-    };
-    const res = {};
-    register[1](req, res, (err) => {
-      expect(err).toBeDefined();
-      done();
+      forgotten[1](req, res, () => {});
     });
-  });
 
-  it('register - should fail registration if gdNickname is included in the request', (done) => {
-    // Spam bot control.
-    const auth = mock.reRequire('./auth');
-    const register = auth.middleware.register;
-    const req = {
-      body: {
-        gdNickname: 'dick'
-      }
-    };
-    register[0](req, {}, (err) => {
-      expect(err).toBeDefined();
-      expect(err.code).toEqual(108);
-      expect(err.status).toEqual(400);
-      done();
+    it('should fail if email is empty', () => {
+      const auth = mock.reRequire('./auth');
+      const forgotten = auth.middleware.forgotten;
+      const req = {
+        body: {}
+      };
+      forgotten[0](req, {}, (err) => {
+        expect(err.message).toBeDefined();
+        expect(err.status).toEqual(400);
+        expect(err.code).toEqual(104);
+      });
     });
-  });
 
-  it('register - should continue registration if gdNickname is undefined', (done) => {
-    // Spam bot control.
-    const auth = mock.reRequire('./auth');
-    const register = auth.middleware.register;
-    const req = {
-      body: {}
-    };
-    register[0](req, {}, (err) => {
-      expect(err).toBeUndefined();
-      done();
-    });
-  });
-
-  it('forgotten - should create a reset password token', (done) => {
-    const _user = {
-      save: () => Promise.resolve(),
-      setResetPasswordToken: () => {}
-    };
-    spyOn(_user, 'setResetPasswordToken').and.callThrough();
-    mock('../database/models/user', {
-      User: {
-        find: () => {
-          return {
-            limit: () => Promise.resolve([_user])
-          };
+    it('should continue if email is not empty', () => {
+      const auth = mock.reRequire('./auth');
+      const forgotten = auth.middleware.forgotten;
+      const req = {
+        body: {
+          emailAddress: 'foo@bar.com'
         }
-      }
+      };
+      forgotten[0](req, {}, (err) => {
+        expect(err).not.toBeDefined();
+      });
     });
-    const auth = mock.reRequire('./auth');
-    const forgotten = auth.middleware.forgotten;
-    const req = {
-      body: {
-        emailAddress: ''
-      }
-    };
-    const res = {
-      json: () => {
-        expect(_user.setResetPasswordToken).toHaveBeenCalledWith();
+
+    it('should handle errors finding user for reset password token', (done) => {
+      mock('../database/models/user', {
+        User: {
+          find: () => {
+            return {
+              limit: () => Promise.resolve([])
+            };
+          }
+        }
+      });
+      const auth = mock.reRequire('./auth');
+      const forgotten = auth.middleware.forgotten;
+      const req = {
+        body: {
+          emailAddress: ''
+        }
+      };
+      forgotten[1](req, {}, (err) => {
+        expect(err.code).toEqual(104);
+        expect(err.status).toEqual(400);
         done();
-      }
-    };
-    forgotten[1](req, res, () => {});
-  });
-
-  it('forgotten - should fail if email is empty', () => {
-    const auth = mock.reRequire('./auth');
-    const forgotten = auth.middleware.forgotten;
-    const req = {
-      body: {}
-    };
-    forgotten[0](req, {}, (err) => {
-      expect(err.message).toBeDefined();
-      expect(err.status).toEqual(400);
-      expect(err.code).toEqual(104);
+      });
     });
   });
 
-  it('forgotten - should continue if email is not empty', () => {
-    const auth = mock.reRequire('./auth');
-    const forgotten = auth.middleware.forgotten;
-    const req = {
-      body: {
-        emailAddress: 'foo@bar.com'
-      }
-    };
-    forgotten[0](req, {}, (err) => {
-      expect(err).not.toBeDefined();
-    });
-  });
+  describe('resend-email-address-verification', () => {
+    beforeEach(beforeEachCallback);
 
-  it('forgotten - should handle errors finding a user for a reset password token', (done) => {
-    mock('../database/models/user', {
-      User: {
-        find: () => {
-          return {
-            limit: () => Promise.resolve([])
-          };
+    afterEach(afterEachCallback);
+
+    it('should require jwt when getting reset email verification token', () => {
+      const auth = mock.reRequire('./auth');
+      expect(auth.middleware.resendEmailAddressVerification[0].name)
+        .toEqual('authenticateJwt');
+    });
+
+    it('should reset email verification token', (done) => {
+      const auth = mock.reRequire('./auth');
+      const req = {
+        user: {
+          resetEmailAddressVerification: () => {},
+          save: () => Promise.resolve()
         }
-      }
-    });
-    const auth = mock.reRequire('./auth');
-    const forgotten = auth.middleware.forgotten;
-    const req = {
-      body: {
-        emailAddress: ''
-      }
-    };
-    forgotten[1](req, {}, (err) => {
-      expect(err.code).toEqual(104);
-      expect(err.status).toEqual(400);
-      done();
+      };
+      const res = {
+        json: () => {
+          expect(req.user.resetEmailAddressVerification).toHaveBeenCalledWith();
+          done();
+        }
+      };
+      spyOn(req.user, 'resetEmailAddressVerification').and.callThrough();
+      auth.middleware.resendEmailAddressVerification[1](req, res, () => {});
     });
   });
 
-  describe('/auth/reset-password', () => {
+  describe('verify-email', () => {
+    beforeEach(beforeEachCallback);
+
+    afterEach(afterEachCallback);
+
+    it('should require a jwt before verifying email address', () => {
+      const auth = mock.reRequire('./auth');
+      const verifyEmailAddress = auth.middleware.verifyEmailAddress;
+      expect(verifyEmailAddress[0].name).toEqual('authenticateJwt');
+    });
+
+    it('should verify an email address', (done) => {
+      const auth = mock.reRequire('./auth');
+      const verifyEmailAddress = auth.middleware.verifyEmailAddress;
+      const req = {
+        user: {
+          verifyEmailAddress: () => true,
+          save: () => Promise.resolve()
+        },
+        body: {
+          emailAddressVerificationToken: 'abc123'
+        }
+      };
+      const res = {
+        json: () => {
+          expect(req.user.verifyEmailAddress).toHaveBeenCalledWith('abc123');
+          done();
+        }
+      };
+      spyOn(req.user, 'verifyEmailAddress').and.callThrough();
+      verifyEmailAddress[1](req, res, () => {});
+    });
+
+    it('should handle unverified email address', (done) => {
+      const auth = mock.reRequire('./auth');
+      const verifyEmailAddress = auth.middleware.verifyEmailAddress;
+      const req = {
+        user: {
+          verifyEmailAddress: () => false,
+          save: () => Promise.resolve()
+        },
+        body: {
+          emailAddressVerificationToken: 'abc123'
+        }
+      };
+      const res = {};
+      spyOn(req.user, 'verifyEmailAddress').and.callThrough();
+      verifyEmailAddress[1](req, res, (err) => {
+        expect(err.status).toEqual(400);
+        expect(err.code).toEqual(109);
+        done();
+      });
+    });
+  });
+
+  describe('reset-password', () => {
     let _req;
     let _user;
 
@@ -348,9 +456,12 @@ describe('Auth router', () => {
 
       const auth = mock.reRequire('./auth');
       const resetPassword = auth.middleware.resetPassword;
-      const unsetTokenSpy = spyOn(_req.user, 'unsetResetPasswordToken').and.callThrough();
-      const validateNewPasswordSpy = spyOn(_req.user, 'validateNewPassword').and.callThrough();
-      const setPasswordSpy = spyOn(_req.user, 'setPassword').and.callThrough();
+      const unsetTokenSpy = spyOn(_req.user, 'unsetResetPasswordToken')
+        .and.callThrough();
+      const validateNewPasswordSpy = spyOn(_req.user, 'validateNewPassword')
+        .and.callThrough();
+      const setPasswordSpy = spyOn(_req.user, 'setPassword')
+        .and.callThrough();
 
       _req.body.currentPassword = 'oldpassword';
       _req.body.password = 'newpassword';
@@ -358,7 +469,8 @@ describe('Auth router', () => {
       const res = {
         json: () => {
           expect(unsetTokenSpy).toHaveBeenCalledWith();
-          expect(validateNewPasswordSpy).toHaveBeenCalledWith(_req.body.currentPassword);
+          expect(validateNewPasswordSpy)
+            .toHaveBeenCalledWith(_req.body.currentPassword);
           expect(setPasswordSpy).toHaveBeenCalledWith(_req.body.password);
           done();
         }
@@ -393,7 +505,8 @@ describe('Auth router', () => {
 
       const res = {
         json: () => {
-          expect(_query.resetPasswordToken).toEqual(_req.body.resetPasswordToken);
+          expect(_query.resetPasswordToken)
+            .toEqual(_req.body.resetPasswordToken);
           expect(_query.resetPasswordExpires).toBeDefined();
           done();
         }
@@ -402,23 +515,25 @@ describe('Auth router', () => {
       resetPassword[2](_req, res, () => { });
     });
 
-    it('should validate a jwt before resetting the password (if token not set)', (done) => {
-      let authJwtCalled = false;
+    it('should validate jwt before resetting the password (if token not set)',
+      (done) => {
+        let authJwtCalled = false;
 
-      mock('../middleware/authenticate-jwt', (req, res, next) => {
-        authJwtCalled = true;
-        next();
-      });
+        mock('../middleware/authenticate-jwt', (req, res, next) => {
+          authJwtCalled = true;
+          next();
+        });
 
-      const auth = mock.reRequire('./auth');
-      const resetPassword = auth.middleware.resetPassword;
+        const auth = mock.reRequire('./auth');
+        const resetPassword = auth.middleware.resetPassword;
 
-      resetPassword[1](_req, {}, (err) => {
-        expect(err).toBeUndefined();
-        expect(authJwtCalled).toEqual(true);
-        done();
-      });
-    });
+        resetPassword[1](_req, {}, (err) => {
+          expect(err).toBeUndefined();
+          expect(authJwtCalled).toEqual(true);
+          done();
+        });
+      }
+    );
 
     it('should not validate jwt if reset password token set', (done) => {
       let authJwtCalled = false;
@@ -440,7 +555,7 @@ describe('Auth router', () => {
       });
     });
 
-    it('should check if the password is empty, or does not match, before a reset password request', () => {
+    it('should check if the password is empty, or does not match', () => {
       const auth = mock.reRequire('./auth');
       const resetPassword = auth.middleware.resetPassword;
 
@@ -540,7 +655,7 @@ describe('Auth router', () => {
       });
     });
 
-    it('should fail reset password if the new password fails validation', (done) => {
+    it('should fail reset password if the new password invalid', (done) => {
       const auth = mock.reRequire('./auth');
       const resetPassword = auth.middleware.resetPassword;
 
@@ -558,80 +673,6 @@ describe('Auth router', () => {
         expect(err.name).toEqual('ResetPasswordValidationError');
         done();
       });
-    });
-  });
-
-  it('resend-email-address-verification - should require a jwt before getting reset email verification token', () => {
-    const auth = mock.reRequire('./auth');
-    const resendEmailAddressVerification = auth.middleware.resendEmailAddressVerification;
-    expect(resendEmailAddressVerification[0].name).toEqual('authenticateJwt');
-  });
-
-  it('resend-email-address-verification - should reset email verification token', (done) => {
-    const auth = mock.reRequire('./auth');
-    const resendEmailAddressVerification = auth.middleware.resendEmailAddressVerification;
-    const req = {
-      user: {
-        resetEmailAddressVerification: () => {},
-        save: () => Promise.resolve()
-      }
-    };
-    const res = {
-      json: () => {
-        expect(req.user.resetEmailAddressVerification).toHaveBeenCalledWith();
-        done();
-      }
-    };
-    spyOn(req.user, 'resetEmailAddressVerification').and.callThrough();
-    resendEmailAddressVerification[1](req, res, () => {});
-  });
-
-  it('verify-email - should require a jwt before verifying email address', () => {
-    const auth = mock.reRequire('./auth');
-    const verifyEmailAddress = auth.middleware.verifyEmailAddress;
-    expect(verifyEmailAddress[0].name).toEqual('authenticateJwt');
-  });
-
-  it('verify-email - should verify an email address', (done) => {
-    const auth = mock.reRequire('./auth');
-    const verifyEmailAddress = auth.middleware.verifyEmailAddress;
-    const req = {
-      user: {
-        verifyEmailAddress: () => true,
-        save: () => Promise.resolve()
-      },
-      body: {
-        emailAddressVerificationToken: 'abc123'
-      }
-    };
-    const res = {
-      json: () => {
-        expect(req.user.verifyEmailAddress).toHaveBeenCalledWith('abc123');
-        done();
-      }
-    };
-    spyOn(req.user, 'verifyEmailAddress').and.callThrough();
-    verifyEmailAddress[1](req, res, () => {});
-  });
-
-  it('verify-email - should handle unverified email address', (done) => {
-    const auth = mock.reRequire('./auth');
-    const verifyEmailAddress = auth.middleware.verifyEmailAddress;
-    const req = {
-      user: {
-        verifyEmailAddress: () => false,
-        save: () => Promise.resolve()
-      },
-      body: {
-        emailAddressVerificationToken: 'abc123'
-      }
-    };
-    const res = {};
-    spyOn(req.user, 'verifyEmailAddress').and.callThrough();
-    verifyEmailAddress[1](req, res, (err) => {
-      expect(err.status).toEqual(400);
-      expect(err.code).toEqual(109);
-      done();
     });
   });
 });

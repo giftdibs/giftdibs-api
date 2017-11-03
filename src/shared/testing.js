@@ -88,7 +88,12 @@ class MockWishList extends MockDocument {
 
     const defaults = {};
 
-    Object.assign(this, defaults, definition, MockWishList.overrides.constructorDefinition);
+    Object.assign(
+      this,
+      defaults,
+      definition,
+      MockWishList.overrides.constructorDefinition
+    );
 
     this.set = () => {};
   }
@@ -120,7 +125,12 @@ class MockDib extends MockDocument {
 
     const defaults = {};
 
-    Object.assign(this, defaults, definition, MockDib.overrides.constructorDefinition);
+    Object.assign(
+      this,
+      defaults,
+      definition,
+      MockDib.overrides.constructorDefinition
+    );
   }
 }
 
@@ -130,7 +140,12 @@ class MockFriendship extends MockDocument {
 
     const defaults = {};
 
-    Object.assign(this, defaults, definition, MockFriendship.overrides.constructorDefinition);
+    Object.assign(
+      this,
+      defaults,
+      definition,
+      MockFriendship.overrides.constructorDefinition
+    );
   }
 }
 

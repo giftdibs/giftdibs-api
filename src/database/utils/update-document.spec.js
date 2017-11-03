@@ -1,6 +1,6 @@
 const mock = require('mock-require');
 
-describe('update document database util', () => {
+describe('Update document database util', () => {
   let doc;
 
   beforeEach(() => {
@@ -59,7 +59,10 @@ describe('update document database util', () => {
     doc.children.id = () => subdoc;
     spyOn(doc.children[0], 'update');
     updateDocument(doc, fields, changes);
-    expect(doc.children[0].update).toHaveBeenCalledWith({ _id: '123', name: 'newname' });
+    expect(doc.children[0].update).toHaveBeenCalledWith({
+      _id: '123',
+      name: 'newname'
+    });
   });
 
   it('should remove subdocuments that are not paired with form data', () => {

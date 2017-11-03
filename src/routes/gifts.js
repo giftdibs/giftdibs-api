@@ -3,8 +3,11 @@ const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 const { Gift } = require('../database/models/gift');
 const { confirmUserOwnsGift } = require('../middleware/confirm-user-owns-gift');
-const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
 const { GiftValidationError } = require('../shared/errors');
+
+const {
+  confirmUserOwnsWishList
+} = require('../middleware/confirm-user-owns-wish-list');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {

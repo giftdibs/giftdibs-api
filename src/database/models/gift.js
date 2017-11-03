@@ -1,7 +1,10 @@
 const mongoose = require('mongoose');
 const { externalUrlSchema } = require('./external-url');
-const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
 const { updateDocument } = require('../utils/update-document');
+
+const {
+  MongoDbErrorHandlerPlugin
+} = require('../plugins/mongodb-error-handler');
 
 const Schema = mongoose.Schema;
 const giftSchema = new Schema({
@@ -18,7 +21,10 @@ const giftSchema = new Schema({
   budget: {
     type: Number,
     min: [0, 'The gift\'s budget must greater than zero.'],
-    max: [1000000000000, 'The gift\'s budget must be less than 1,000,000,000,000.']
+    max: [
+      1000000000000,
+      'The gift\'s budget must be less than 1,000,000,000,000.'
+    ]
   },
   externalUrls: [externalUrlSchema],
   isReceived: {
@@ -34,7 +40,10 @@ const giftSchema = new Schema({
   quantity: {
     type: Number,
     min: [1, 'The gift\'s quantity must be greater than zero.'],
-    max: [1000000000000, 'The gift\'s quantity must be less than 1,000,000,000,000.'],
+    max: [
+      1000000000000,
+      'The gift\'s quantity must be less than 1,000,000,000,000.'
+    ],
     default: 1
   },
   orderInWishList: {

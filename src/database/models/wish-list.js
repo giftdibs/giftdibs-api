@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
-const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
 const { updateDocument } = require('../utils/update-document');
+
+const {
+  MongoDbErrorHandlerPlugin
+} = require('../plugins/mongodb-error-handler');
 
 const Schema = mongoose.Schema;
 const wishListSchema = new Schema({
@@ -13,7 +16,10 @@ const wishListSchema = new Schema({
     type: String,
     required: [true, 'Please provide a wish list name.'],
     trim: true,
-    maxlength: [100, 'The wish list\'s name cannot be longer than 100 characters.']
+    maxlength: [
+      100,
+      'The wish list\'s name cannot be longer than 100 characters.'
+    ]
   }
 }, {
   collection: 'wishlist',

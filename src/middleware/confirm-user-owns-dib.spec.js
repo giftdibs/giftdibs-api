@@ -5,7 +5,7 @@ const {
   MockRequest
 } = mock.reRequire('../shared/testing');
 
-describe('confirm user owns dib', () => {
+describe('Confirm user owns dib middleware', () => {
   let _req;
 
   beforeEach(() => {
@@ -27,7 +27,7 @@ describe('confirm user owns dib', () => {
     mock.stopAll();
   });
 
-  it('should pass an error to the callback if the session does not own the resource', (done) => {
+  it('should fail if the session does not own the resource', (done) => {
     const { confirmUserOwnsDib } = mock.reRequire('./confirm-user-owns-dib');
 
     MockDib.overrides.find.returnWith = () => Promise.resolve([{
@@ -83,7 +83,7 @@ describe('confirm user owns dib', () => {
     confirmUserOwnsDib(_req, null, next);
   });
 
-  it('should pass an error to the callback if the wish list ID is not provided', () => {
+  it('should fail if the wish list ID is not provided', () => {
     const { confirmUserOwnsDib } = mock.reRequire('./confirm-user-owns-dib');
 
     _req.params.dibId = undefined;

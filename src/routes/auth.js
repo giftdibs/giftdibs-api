@@ -129,7 +129,7 @@ const login = [
         return;
       }
 
-      // Add the found user record to the request to 
+      // Add the found user record to the request to
       // allow other middlewares to access it.
       req.user = user;
 
@@ -161,7 +161,10 @@ const forgotten = [
         const user = docs[0];
 
         if (!user) {
-          const err = new Error(`The email address "${req.body.emailAddress}" was not found in our records.`);
+          const err = new Error([
+            `The email address "${req.body.emailAddress}"`,
+            'was not found in our records.'
+          ].join(' '));
           err.code = 104;
           err.status = 400;
           return Promise.reject(err);
@@ -175,7 +178,10 @@ const forgotten = [
         // TODO: Send an email, here.
 
         return res.json({
-          message: 'Email sent. Please check your spam folder if it does not appear in your inbox within 15 minutes.'
+          message: [
+            'Email sent. Please check your spam folder if it does not appear',
+            'in your inbox within 15 minutes.'
+          ].join(' ')
         });
       })
       .catch(next);
@@ -185,7 +191,9 @@ const forgotten = [
 const resetPassword = [
   function checkPasswordFields(req, res, next) {
     if (!req.body.resetPasswordToken && !req.body.currentPassword) {
-      next(new ResetPasswordValidationError('Please provide your current password.'));
+      next(new ResetPasswordValidationError(
+        'Please provide your current password.'
+      ));
       return;
     }
 
@@ -195,7 +203,9 @@ const resetPassword = [
     }
 
     if (req.body.password !== req.body.passwordAgain) {
-      next(new ResetPasswordValidationError('The passwords you typed do not match.'));
+      next(new ResetPasswordValidationError(
+        'The passwords you typed do not match.'
+      ));
       return;
     }
 
@@ -234,7 +244,11 @@ const resendEmailAddressVerification = [
       .then(() => {
         // TODO: Send email here...
         authResponse({
-          message: `Verification email sent to ${req.user.emailAddress}. If the email does not appear within 15 minutes, check your spam folder.`
+          message: [
+            `Verification email sent to ${req.user.emailAddress}.`,
+            'If the email does not appear within 15 minutes,',
+            'check your spam folder.'
+          ].join(' ')
         })(req, res, next)
       })
       .catch(next);
@@ -245,7 +259,9 @@ const verifyEmailAddress = [
   authenticateJwt,
 
   function checkEmailAddressVerificationToken(req, res, next) {
-    const isVerified = req.user.verifyEmailAddress(req.body.emailAddressVerificationToken);
+    const isVerified = req.user.verifyEmailAddress(
+      req.body.emailAddressVerificationToken
+    );
 
     if (isVerified) {
       req.user
@@ -259,7 +275,9 @@ const verifyEmailAddress = [
       return;
     }
 
-    const err = new Error('The email verification token is invalid or has expired.');
+    const err = new Error(
+      'The email verification token is invalid or has expired.'
+    );
     err.status = 400;
     err.code = 109;
     next(err);

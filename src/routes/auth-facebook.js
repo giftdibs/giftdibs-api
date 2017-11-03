@@ -48,12 +48,15 @@ const loginFacebook = [
           return user;
         }
 
-        // Attempt to find or register a user with the Facebook profile information.
+        // Attempt to find or register a user with
+        // the Facebook profile information.
         return facebook
           .getProfile(req.body.facebookUserAccessToken)
           .then((profile) => {
             return findUserByEmailAddress(profile.email)
-              .then((user) => updateOrCreateUserWithFacebookProfile(user, profile));
+              .then((user) => {
+                return updateOrCreateUserWithFacebookProfile(user, profile);
+              });
           });
       })
       .then((user) => {
@@ -63,7 +66,9 @@ const loginFacebook = [
       })
       .then((user) => {
         req.user = user;
-        authResponse({ message: `Welcome, ${req.user.firstName}!` })(req, res, next);
+        authResponse({
+          message: `Welcome, ${req.user.firstName}!`
+        })(req, res, next);
       })
       .catch(err => {
         if (err.name === 'ValidationError') {

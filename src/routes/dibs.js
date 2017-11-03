@@ -81,7 +81,10 @@ function validateDibQuantity(req) {
         const err = new DibValidationError();
 
         err.errors = [{
-          message: 'Dib quantity is more than are available. Please choose a smaller amount.',
+          message: [
+            'Dib quantity is more than are available.',
+            'Please choose a smaller amount.'
+          ].join(' '),
           field: 'quantity'
         }];
 

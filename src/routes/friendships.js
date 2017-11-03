@@ -2,8 +2,11 @@ const express = require('express');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 const { Friendship } = require('../database/models/friendship');
-const { confirmUserOwnsFriendship } = require('../middleware/confirm-user-owns-friendship');
 const { FriendshipValidationError } = require('../shared/errors');
+
+const {
+  confirmUserOwnsFriendship
+} = require('../middleware/confirm-user-owns-friendship');
 
 function validateFriendRequest(req, res, next) {
   if (req.user._id.toString() === req.body._friend) {
@@ -25,7 +28,9 @@ function validateFriendRequest(req, res, next) {
         return;
       }
 
-      next(new FriendshipValidationError('You are already following that person.'));
+      next(
+        new FriendshipValidationError('You are already following that person.')
+      );
     })
     .catch(next);
 }

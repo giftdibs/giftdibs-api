@@ -94,8 +94,10 @@ describe('Friendships router', () => {
       tick(() => {
         expect(Array.isArray(_res.json.output.friendships)).toEqual(true);
         expect(_res.json.output.authResponse).toBeDefined();
-        expect(Array.isArray(MockFriendship.overrides.find.lastQuery.$or)).toEqual(true);
-        expect(MockFriendship.overrides.find.lastQuery.$or[0]._user).toEqual('userid');
+        expect(Array.isArray(MockFriendship.overrides.find.lastQuery.$or))
+          .toEqual(true);
+        expect(MockFriendship.overrides.find.lastQuery.$or[0]._user)
+          .toEqual('userid');
         done();
       });
     });
@@ -115,108 +117,6 @@ describe('Friendships router', () => {
     });
   });
 
-  // describe('GET /friendships-recipients', () => {
-  //   beforeEach(beforeEachCallback);
-
-  //   afterEach(afterEachCallback);
-
-  //   it('should get an array of all friendships belonging to user, formatted', (done) => {
-  //     MockFriendship.overrides.find.returnWith = () => {
-  //       return Promise.resolve([
-  //         new MockFriendship({
-  //           _gift: 'giftid1',
-  //           pricePaid: 10
-  //         }),
-  //         new MockFriendship({
-  //           _gift: 'giftid2'
-  //         }),
-  //         new MockFriendship({
-  //           _gift: 'giftid3',
-  //           pricePaid: 3
-  //         }),
-  //         new MockFriendship({
-  //           _gift: 'giftid4'
-  //         })
-  //       ]);
-  //     };
-
-  //     spyOn(MockGift, 'find').and.returnValue({
-  //       where() {
-  //         return {
-  //           in() {
-  //             return {
-  //               populate() {
-  //                 return {
-  //                   lean() {
-  //                     return Promise.resolve([
-  //                       new MockGift({
-  //                         _id: 'giftid1',
-  //                         _user: {
-  //                           _id: 'userid1',
-  //                           firstName: 'John',
-  //                           lastName: 'Doe'
-  //                         }
-  //                       }),
-  //                       new MockGift({
-  //                         _id: 'giftid2',
-  //                         _user: {
-  //                           _id: 'userid2',
-  //                           firstName: 'Jane',
-  //                           lastName: 'Do'
-  //                         }
-  //                       }),
-  //                       new MockGift({
-  //                         _id: 'giftid3',
-  //                         _user: {
-  //                           _id: 'userid2',
-  //                           firstName: 'Jane',
-  //                           lastName: 'Do'
-  //                         },
-  //                         budget: 8
-  //                       }),
-  //                       new MockGift({
-  //                         _id: 'giftid4',
-  //                         _user: {
-  //                           _id: 'userid2',
-  //                           firstName: 'Jane',
-  //                           lastName: 'Do'
-  //                         },
-  //                         budget: 12
-  //                       })
-  //                     ]);
-  //                   }
-  //                 };
-  //               }
-  //             };
-  //           }
-  //         };
-  //       }
-  //     });
-
-  //     const friendships = mock.reRequire('./friendships');
-  //     const getFriendshipsRecipients = friendships.middleware.getFriendshipsRecipients[0];
-
-  //     getFriendshipsRecipients(_req, _res, (err) => { console.log(err); });
-
-  //     tick(() => {
-  //       const recipients = _res.json.output.recipients;
-  //       expect(Array.isArray(recipients)).toEqual(true);
-  //       expect(recipients.length).toEqual(2);
-  //       expect(recipients[0].firstName).toEqual('John');
-  //       expect(recipients[0].lastName).toEqual('Doe');
-  //       expect(recipients[0].gifts.length).toEqual(1);
-  //       expect(recipients[0].budget).toEqual(10);
-
-  //       expect(recipients[1].firstName).toEqual('Jane');
-  //       expect(recipients[1].lastName).toEqual('Do');
-  //       expect(recipients[1].gifts.length).toEqual(3);
-  //       expect(recipients[1].budget).toEqual(15);
-
-  //       done();
-  //     });
-  //   });
-  // });
-
   describe('DELETE /friendships/:friendshipId', () => {
     beforeEach(beforeEachCallback);
 
@@ -224,7 +124,8 @@ describe('Friendships router', () => {
 
     it('should require the user owns the friendship', () => {
       const routeDefinition = mock.reRequire('./friendships');
-      expect(routeDefinition.middleware.deleteFriendship[0].name).toEqual('confirmUserOwnsFriendship');
+      expect(routeDefinition.middleware.deleteFriendship[0].name)
+        .toEqual('confirmUserOwnsFriendship');
     });
 
     it('should delete a friendship', (done) => {
@@ -238,14 +139,22 @@ describe('Friendships router', () => {
       deleteFriendship(_req, _res, () => {});
 
       tick(() => {
-        expect(MockFriendship.remove).toHaveBeenCalledWith({ _id: 'friendshipid' });
-        expect(_res.json.output.message).toEqual('Friendship successfully deleted.');
+        expect(MockFriendship.remove)
+          .toHaveBeenCalledWith({
+            _id: 'friendshipid'
+          });
+
+        expect(_res.json.output.message)
+          .toEqual('Friendship successfully deleted.');
+
         done();
       });
     });
 
     it('should handle errors', (done) => {
-      spyOn(MockFriendship, 'remove').and.returnValue(Promise.reject(new Error('Some error')));
+      spyOn(MockFriendship, 'remove').and.returnValue(
+        Promise.reject(new Error('Some error'))
+      );
 
       const routeDefinition = mock.reRequire('./friendships');
       const deleteFriendship = routeDefinition.middleware.deleteFriendship[1];
@@ -256,158 +165,6 @@ describe('Friendships router', () => {
       });
     });
   });
-
-  // describe('PATCH /friendships/:friendshipId', () => {
-  //   beforeEach(beforeEachCallback);
-
-  //   afterEach(afterEachCallback);
-
-  //   it('should require the user owns the friendship', () => {
-  //     const routeDefinition = mock.reRequire('./friendships');
-  //     expect(routeDefinition.middleware.updateFriendship[0].name).toEqual('confirmUserOwnsFriendship');
-  //   });
-
-  //   it('should update a friendship', (done) => {
-  //     const friendship = new MockFriendship({
-  //       _id: 'friendshipid'
-  //     });
-
-  //     const gift = new MockGift({
-  //       quantity: 1
-  //     });
-
-  //     const updateSpy = spyOn(friendship, 'update');
-  //     const saveSpy = spyOn(friendship, 'save');
-
-  //     MockFriendship.overrides.find.returnWith = () => Promise.resolve([friendship]);
-  //     MockGift.overrides.find.returnWith = () => Promise.resolve([gift]);
-
-  //     _req.params.friendshipId = 'friendshipid';
-  //     _req.body.pricePaid = 10;
-
-  //     const routeDefinition = mock.reRequire('./friendships');
-  //     const updateFriendship = routeDefinition.middleware.updateFriendship[1];
-
-  //     updateFriendship(_req, _res, () => {});
-
-  //     tick(() => {
-  //       expect(updateSpy).toHaveBeenCalledWith(_req.body);
-  //       expect(saveSpy).toHaveBeenCalledWith();
-  //       done();
-  //     });
-  //   });
-
-  //   it('should validate friendship quantity against gift quantity', (done) => {
-  //     const friendships = [
-  //       new MockFriendship({
-  //         _id: 'friendshipid',
-  //         quantity: 1
-  //       }),
-  //       new MockFriendship({
-  //         _id: 'friendshipid1',
-  //         quantity: 1
-  //       })
-  //     ];
-
-  //     const gift = new MockGift({
-  //       quantity: 5
-  //     });
-
-  //     MockFriendship.overrides.find.returnWith = () => Promise.resolve(friendships);
-  //     MockGift.overrides.find.returnWith = () => Promise.resolve([gift]);
-
-  //     _req.params.friendshipId = 'friendshipid';
-  //     _req.body.quantity = 1;
-
-  //     const routeDefinition = mock.reRequire('./friendships');
-  //     const updateFriendship = routeDefinition.middleware.updateFriendship[1];
-
-  //     updateFriendship(_req, _res, () => { });
-
-  //     tick(() => {
-  //       expect(_res.json.output.message).toEqual('Friendship successfully updated.');
-  //       done();
-  //     });
-  //   });
-
-  //   it('should fail if friendship quantity is more than gift quantity', (done) => {
-  //     const friendships = [
-  //       new MockFriendship({
-  //         _id: 'friendshipid',
-  //         quantity: 1
-  //       }),
-  //       new MockFriendship({
-  //         _id: 'friendshipid1',
-  //         quantity: 2
-  //       }),
-  //       new MockFriendship({
-  //         _id: 'friendshipid2',
-  //         quantity: 1
-  //       })
-  //     ];
-
-  //     const gift = new MockGift({
-  //       quantity: 2
-  //     });
-
-  //     MockFriendship.overrides.find.returnWith = () => Promise.resolve(friendships);
-  //     MockGift.overrides.find.returnWith = () => Promise.resolve([gift]);
-
-  //     _req.params.friendshipId = 'friendshipid';
-  //     _req.body.quantity = 10;
-
-  //     const routeDefinition = mock.reRequire('./friendships');
-  //     const updateFriendship = routeDefinition.middleware.updateFriendship[1];
-
-  //     updateFriendship(_req, _res, (err) => {
-  //       expect(err.name).toEqual('FriendshipValidationError');
-  //       expect(err.errors[0].message).toEqual('Friendship quantity is more than are available. Please choose a smaller amount.');
-  //       done();
-  //     });
-  //   });
-
-  //   it('should handle gift not found', (done) => {
-  //     MockFriendship.overrides.find.returnWith = () => Promise.resolve([]);
-  //     MockGift.overrides.find.returnWith = () => Promise.resolve([]);
-
-  //     const routeDefinition = mock.reRequire('./friendships');
-  //     const updateFriendship = routeDefinition.middleware.updateFriendship[1];
-
-  //     updateFriendship(_req, _res, (err) => {
-  //       expect(err.name).toEqual('GiftNotFoundError');
-  //       done();
-  //     });
-  //   });
-
-  //   it('should handle friendship not found error', (done) => {
-  //     MockFriendship.overrides.find.returnWith = () => Promise.resolve([]);
-  //     MockGift.overrides.find.returnWith = () => Promise.resolve([
-  //       new MockGift()
-  //     ]);
-
-  //     const routeDefinition = mock.reRequire('./friendships');
-  //     const updateFriendship = routeDefinition.middleware.updateFriendship[1];
-
-  //     updateFriendship(_req, _res, (err) => {
-  //       expect(err.name).toEqual('FriendshipNotFoundError');
-  //       done();
-  //     });
-  //   });
-
-  //   it('should handle errors', (done) => {
-  //     MockFriendship.overrides.find.returnWith = () => {
-  //       return Promise.reject(new Error('Some error'));
-  //     };
-
-  //     const routeDefinition = mock.reRequire('./friendships');
-  //     const updateFriendship = routeDefinition.middleware.updateFriendship[1];
-
-  //     updateFriendship(_req, _res, (err) => {
-  //       expect(err.message).toEqual('Some error');
-  //       done();
-  //     });
-  //   });
-  // });
 
   describe('POST /friendships', () => {
     beforeEach(beforeEachCallback);

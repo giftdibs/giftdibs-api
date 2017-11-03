@@ -29,7 +29,10 @@ const verify = (emailAddress, password, done) => {
         })
         .catch(() => {
           done(null, false, {
-            message: 'The email address and password you entered did not match an account in our records.'
+            message: [
+              'The email address and password you entered',
+              'did not match an account in our records.'
+            ].join(' ')
           })
         });
     })

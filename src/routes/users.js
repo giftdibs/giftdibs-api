@@ -96,9 +96,10 @@ const updateUser = [
     }
 
     const user = req.user;
+    const emailAddress = req.body.emailAddress;
 
     // If the email address is being changed, need to re-verify.
-    if (req.body.emailAddress && (user.emailAddress !== req.body.emailAddress)) {
+    if (emailAddress && (user.emailAddress !== emailAddress)) {
       user.resetEmailAddressVerification();
     }
 
@@ -131,7 +132,11 @@ const deleteUser = [
   (req, res, next) => {
     User
       .remove({ _id: req.params.userId })
-      .then(() => res.json({ message: 'Your account was successfully deleted. Goodbye!' }))
+      .then(() => {
+        return res.json({
+          message: 'Your account was successfully deleted. Goodbye!'
+        });
+      })
       .catch(next);
   }
 ];

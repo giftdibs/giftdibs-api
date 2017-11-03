@@ -56,7 +56,8 @@ describe('Dib schema', () => {
     const dib = new Dib(_dibDefinition);
     const err = dib.validateSync();
     expect(err.errors.quantity.properties.type).toEqual('required');
-    expect(err.errors.quantity.message).toEqual('The dib\'s quantity must be provided.');
+    expect(err.errors.quantity.message)
+      .toEqual('The dib\'s quantity must be provided.');
   });
 
   it('should fail if the pricePaid is less than zero', () => {
@@ -64,7 +65,8 @@ describe('Dib schema', () => {
     const dib = new Dib(_dibDefinition);
     const err = dib.validateSync();
     expect(err.errors.pricePaid.properties.type).toEqual('min');
-    expect(err.errors.pricePaid.message).toEqual('The price paid must be at least zero.');
+    expect(err.errors.pricePaid.message)
+      .toEqual('The price paid must be at least zero.');
   });
 
   it('should fail if the pricePaid is greater than one trillion', () => {
@@ -72,7 +74,8 @@ describe('Dib schema', () => {
     const dib = new Dib(_dibDefinition);
     const err = dib.validateSync();
     expect(err.errors.pricePaid.properties.type).toEqual('max');
-    expect(err.errors.pricePaid.message).toEqual('The price paid must be less than 1,000,000,000,000.');
+    expect(err.errors.pricePaid.message)
+      .toEqual('The price paid must be less than 1,000,000,000,000.');
   });
 
   it('should fail if the quantity is less than one', () => {
@@ -80,7 +83,8 @@ describe('Dib schema', () => {
     const dib = new Dib(_dibDefinition);
     const err = dib.validateSync();
     expect(err.errors.quantity.properties.type).toEqual('min');
-    expect(err.errors.quantity.message).toEqual('The dib\'s quantity must be at least 1.');
+    expect(err.errors.quantity.message)
+      .toEqual('The dib\'s quantity must be at least 1.');
   });
 
   it('should fail if the quantity is greater than one trillion', () => {
@@ -88,7 +92,8 @@ describe('Dib schema', () => {
     const dib = new Dib(_dibDefinition);
     const err = dib.validateSync();
     expect(err.errors.quantity.properties.type).toEqual('max');
-    expect(err.errors.quantity.message).toEqual('The dib\'s quantity must be less than 1,000,000,000,000.');
+    expect(err.errors.quantity.message)
+      .toEqual('The dib\'s quantity must be less than 1,000,000,000,000.');
   });
 
   it('should generate timestamps automatically', () => {
