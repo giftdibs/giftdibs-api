@@ -1,3 +1,19 @@
+function ResetPasswordTokenValidationError() {
+  this.name = 'ResetPasswordTokenValidationError';
+  this.message = 'The reset password token is invalid.';
+  this.code = 106;
+  this.status = 400;
+}
+ResetPasswordTokenValidationError.prototype = Error.prototype;
+
+function ResetPasswordValidationError(message) {
+  this.name = 'ResetPasswordValidationError';
+  this.message = message || 'Reset password validation failed.';
+  this.code = 107;
+  this.status = 400;
+}
+ResetPasswordValidationError.prototype = Error.prototype;
+
 function UserNotFoundError() {
   this.name = 'UserNotFoundError';
   this.message = 'User not found.';
@@ -119,6 +135,9 @@ function FriendshipPermissionError() {
 FriendshipPermissionError.prototype = Error.prototype;
 
 module.exports = {
+  ResetPasswordTokenValidationError,
+  ResetPasswordValidationError,
+
   UserNotFoundError,
   UserValidationError,
   UserPermissionError,
@@ -137,5 +156,5 @@ module.exports = {
 
   FriendshipNotFoundError,
   FriendshipValidationError,
-  FriendshipPermissionError,
+  FriendshipPermissionError
 };

@@ -1,11 +1,10 @@
 const mock = require('mock-require');
 
-describe('/auth', () => {
+describe('Auth router', () => {
   let passport;
 
   beforeEach(() => {
     passport = mock.reRequire('passport');
-    // mock('../middleware/auth-response', function authResponse() {});
   });
 
   afterEach(() => {
@@ -314,254 +313,251 @@ describe('/auth', () => {
     });
   });
 
-  it('reset-password - should reset a password', (done) => {
-    const auth = mock.reRequire('./auth');
-    const resetPassword = auth.middleware.resetPassword;
-    const req = {
-      body: {
-        password: ''
-      },
-      user: {
-        setPassword: () => Promise.resolve(),
-        save: () => Promise.resolve(),
-        unsetResetPasswordToken: () => {}
-      }
-    };
-    const res = {
-      json: () => {
-        expect(req.user.unsetResetPasswordToken).toHaveBeenCalledWith();
-        done();
-      }
-    };
-    spyOn(req.user, 'unsetResetPasswordToken').and.callThrough();
-    resetPassword[3](req, res, () => {});
-  });
+  describe('/auth/reset-password', () => {
+    let _req;
+    let _user;
 
-  it('reset-password - should validate a token before resetting the password', (done) => {
-    mock('../database/models/user', {
-      User: {
-        find: () => {
-          return {
-            limit: () => Promise.resolve([{ firstName: 'Foo' }])
-          };
-        }
-      }
+    beforeEach(() => {
+      passport = mock.reRequire('passport');
+      _user = {
+        setPassword: () => Promise.resolve(_req.user),
+        save: () => Promise.resolve(),
+        unsetResetPasswordToken: () => {},
+        validateNewPassword: () => Promise.resolve()
+      };
+      _req = {
+        body: {},
+        user: _user
+      };
     });
-    const auth = mock.reRequire('./auth');
-    const resetPassword = auth.middleware.resetPassword;
-    const req = {
-      body: {
+
+    afterEach(() => {
+      mock.stopAll();
+    });
+
+    it('should reset a password', (done) => {
+      mock('../database/models/user', {
+        User: {
+          find: () => {
+            return {
+              limit: () => Promise.resolve([_user])
+            };
+          }
+        }
+      });
+
+      const auth = mock.reRequire('./auth');
+      const resetPassword = auth.middleware.resetPassword;
+      const unsetTokenSpy = spyOn(_req.user, 'unsetResetPasswordToken').and.callThrough();
+      const validateNewPasswordSpy = spyOn(_req.user, 'validateNewPassword').and.callThrough();
+      const setPasswordSpy = spyOn(_req.user, 'setPassword').and.callThrough();
+
+      _req.body.currentPassword = 'oldpassword';
+      _req.body.password = 'newpassword';
+
+      const res = {
+        json: () => {
+          expect(unsetTokenSpy).toHaveBeenCalledWith();
+          expect(validateNewPasswordSpy).toHaveBeenCalledWith(_req.body.currentPassword);
+          expect(setPasswordSpy).toHaveBeenCalledWith(_req.body.password);
+          done();
+        }
+      };
+
+      resetPassword[2](_req, res, () => { });
+    });
+
+    it('should validate a token before resetting the password', (done) => {
+      let _query;
+
+      const MockUser = {
+        User: {
+          find: (query) => {
+            _query = query;
+            return {
+              limit: () => Promise.resolve([_user])
+            };
+          }
+        }
+      };
+
+      mock('../database/models/user', MockUser);
+
+      const auth = mock.reRequire('./auth');
+      const resetPassword = auth.middleware.resetPassword;
+
+      _req.body = {
         resetPasswordToken: 'abc123',
         resetPasswordExpires: 0
-      }
-    };
-    resetPassword[2](req, {}, (err) => {
-      expect(err).toBeUndefined();
-      expect(req.user).toBeDefined();
-      expect(req.user.firstName).toEqual('Foo');
-      done();
-    });
-  });
+      };
 
-  it('reset-password - should skip validation of token if user already set in the session', (done) => {
-    const auth = mock.reRequire('./auth');
-    const resetPassword = auth.middleware.resetPassword;
-    const req = {
-      user: {
-        validatePassword: () => Promise.resolve()
-      },
-      body: {}
-    };
-    resetPassword[2](req, {}, (err) => {
-      expect(err).toBeUndefined();
-      expect(req.user).toBeDefined();
-      done();
-    });
-  });
+      const res = {
+        json: () => {
+          expect(_query.resetPasswordToken).toEqual(_req.body.resetPasswordToken);
+          expect(_query.resetPasswordExpires).toBeDefined();
+          done();
+        }
+      };
 
-  it('reset-password - should validate a jwt before resetting the password', (done) => {
-    mock('../middleware/authenticate-jwt', (req, res, next) => {
-      next();
+      resetPassword[2](_req, res, () => { });
     });
-    const auth = mock.reRequire('./auth');
-    const resetPassword = auth.middleware.resetPassword;
-    const req = {
-      headers: {
-        authorization: 'JWT abc123'
-      }
-    };
-    resetPassword[1](req, {}, (err) => {
-      expect(err).toBeUndefined();
-      done();
-    });
-  });
 
-  it('reset-password - should skip validate a jwt before resetting the password if headers not set', (done) => {
-    const auth = mock.reRequire('./auth');
-    const resetPassword = auth.middleware.resetPassword;
-    const req = {
-      headers: {
-        authorization: ''
-      }
-    };
-    resetPassword[1](req, {}, (err) => {
-      expect(err).toBeUndefined();
-      done();
-    });
-  });
+    it('should validate a jwt before resetting the password (if token not set)', (done) => {
+      let authJwtCalled = false;
 
-  it('reset-password - should check if the password is empty, or does not match, before a reset password request', () => {
-    const auth = mock.reRequire('./auth');
-    const resetPassword = auth.middleware.resetPassword;
-    const req = {
-      body: {
+      mock('../middleware/authenticate-jwt', (req, res, next) => {
+        authJwtCalled = true;
+        next();
+      });
+
+      const auth = mock.reRequire('./auth');
+      const resetPassword = auth.middleware.resetPassword;
+
+      resetPassword[1](_req, {}, (err) => {
+        expect(err).toBeUndefined();
+        expect(authJwtCalled).toEqual(true);
+        done();
+      });
+    });
+
+    it('should not validate jwt if reset password token set', (done) => {
+      let authJwtCalled = false;
+
+      mock('../middleware/authenticate-jwt', (req, res, next) => {
+        authJwtCalled = true;
+        next();
+      });
+
+      const auth = mock.reRequire('./auth');
+      const resetPassword = auth.middleware.resetPassword;
+
+      _req.body.resetPasswordToken = 'token';
+
+      resetPassword[1](_req, {}, (err) => {
+        expect(err).toBeUndefined();
+        expect(authJwtCalled).toEqual(false);
+        done();
+      });
+    });
+
+    it('should check if the password is empty, or does not match, before a reset password request', () => {
+      const auth = mock.reRequire('./auth');
+      const resetPassword = auth.middleware.resetPassword;
+
+      _req.body = {
         resetPasswordToken: 'abc123',
         password: 'foo',
         passwordAgain: 'foo'
-      }
-    };
-    resetPassword[0](req, {}, (err) => {
-      expect(err).toBeUndefined();
-    });
-  });
+      };
 
-  it('reset-password - should fail reset password if password is empty', () => {
-    const auth = mock.reRequire('./auth');
-    const resetPassword = auth.middleware.resetPassword;
-    const req = {
-      body: {}
-    };
-    resetPassword[0](req, {}, (err) => {
-      expect(err.status).toEqual(400);
-      expect(err.code).toEqual(107);
+      resetPassword[0](_req, {}, (err) => {
+        expect(err).toBeUndefined();
+      });
     });
-  });
 
-  it('reset-password - should fail reset password if passwords do not match', () => {
-    const auth = mock.reRequire('./auth');
-    const resetPassword = auth.middleware.resetPassword;
-    const req = {
-      body: {
+    it('should fail if password is empty', () => {
+      const auth = mock.reRequire('./auth');
+      const resetPassword = auth.middleware.resetPassword;
+
+      resetPassword[0](_req, {}, (err) => {
+        expect(err.name).toEqual('ResetPasswordValidationError');
+        expect(err.message).toEqual('Please provide your current password.');
+      });
+    });
+
+    it('should fail if passwords do not match', () => {
+      const auth = mock.reRequire('./auth');
+      const resetPassword = auth.middleware.resetPassword;
+
+      _req.body = {
         resetPasswordToken: 'abc123',
         password: 'foo',
         passwordAgain: 'bar'
-      }
-    };
-    resetPassword[0](req, {}, (err) => {
-      expect(err.status).toEqual(400);
-      expect(err.code).toEqual(105);
-    });
-  });
+      };
 
-  it('reset-password - should fail if password fields are empty', () => {
-    const auth = mock.reRequire('./auth');
-    const resetPassword = auth.middleware.resetPassword;
-    const req = {
-      body: {
+      resetPassword[0](_req, {}, (err) => {
+        expect(err.name).toEqual('ResetPasswordValidationError');
+        expect(err.message).toEqual('The passwords you typed do not match.');
+      });
+    });
+
+    it('should fail if password fields are empty', () => {
+      const auth = mock.reRequire('./auth');
+      const resetPassword = auth.middleware.resetPassword;
+      _req.body = {
         resetPasswordToken: 'abc123',
         password: '',
         passwordAgain: ''
-      }
-    };
-    resetPassword[0](req, {}, (err) => {
-      expect(err.status).toEqual(400);
-      expect(err.code).toEqual(107);
-    });
-  });
-
-  it('reset-password - should fail reset password if the jwt is invalid', (done) => {
-    spyOn(passport, 'authenticate').and.callFake((hook, options) => {
-      return (req, res, next) => {
-        next(new Error());
       };
+      resetPassword[0](_req, {}, (err) => {
+        expect(err.name).toEqual('ResetPasswordValidationError');
+        expect(err.message).toEqual('Please provide a new password.');
+      });
     });
-    const auth = mock.reRequire('./auth');
-    const resetPassword = auth.middleware.resetPassword;
-    const req = {
-      headers: {
+
+    it('should fail if the jwt is invalid', (done) => {
+      spyOn(passport, 'authenticate').and.callFake((hook, options) => {
+        return (req, res, next) => {
+          next(new Error());
+        };
+      });
+
+      const auth = mock.reRequire('./auth');
+      const resetPassword = auth.middleware.resetPassword;
+
+      _req.headers = {
         authorization: 'JWT abc123'
-      }
-    };
-    resetPassword[1](req, {}, (err) => {
-      expect(err).toBeDefined();
-      done();
-    });
-  });
+      };
 
-  it('reset-password - should fail reset password if the token is not sent with the request', (done) => {
-    const auth = mock.reRequire('./auth');
-    const resetPassword = auth.middleware.resetPassword;
-    const req = {
-      body: {}
-    };
-    resetPassword[2](req, {}, (err) => {
-      expect(err.status).toEqual(400);
-      expect(err.code).toEqual(106);
-      done();
+      resetPassword[1](_req, {}, (err) => {
+        expect(err).toBeDefined();
+        done();
+      });
     });
-  });
 
-  it('reset-password - should fail reset password if the token is not found on a user record', (done) => {
-    mock('../database/models/user', {
-      User: {
-        find: () => {
-          return {
-            limit: () => Promise.resolve([])
-          };
+    it('should fail if the token is not found on a user record', (done) => {
+      mock('../database/models/user', {
+        User: {
+          find: () => {
+            return {
+              limit: () => Promise.resolve([])
+            };
+          }
         }
-      }
-    });
-    const auth = mock.reRequire('./auth');
-    const resetPassword = auth.middleware.resetPassword;
-    const req = {
-      body: {
+      });
+
+      const auth = mock.reRequire('./auth');
+      const resetPassword = auth.middleware.resetPassword;
+
+      _req.body = {
         resetPasswordToken: 'abc123',
         resetPasswordExpires: 0
-      }
-    };
-    resetPassword[2](req, {}, (err) => {
-      expect(err.status).toEqual(400);
-      expect(err.code).toEqual(106);
-      done();
-    });
-  });
+      };
 
-  it('reset-password - should fail reset password if the new password fails validation', (done) => {
-    const auth = mock.reRequire('./auth');
-    const resetPassword = auth.middleware.resetPassword;
-    const req = {
-      body: {
-        password: ''
-      },
-      user: {
-        setPassword: () => {
-          const err = new Error();
-          err.name = 'ValidationError';
-          return Promise.reject(err);
-        }
-      }
-    };
-    resetPassword[3](req, {}, (err) => {
-      expect(err).toBeDefined();
-      expect(err.code).toEqual(107);
-      done();
+      resetPassword[2](_req, {}, (err) => {
+        expect(err.name).toEqual('ResetPasswordTokenValidationError');
+        done();
+      });
     });
-  });
 
-  it('reset-password - should fail reset password if any other errors are thrown', (done) => {
-    const auth = mock.reRequire('./auth');
-    const resetPassword = auth.middleware.resetPassword;
-    const req = {
-      body: {
+    it('should fail reset password if the new password fails validation', (done) => {
+      const auth = mock.reRequire('./auth');
+      const resetPassword = auth.middleware.resetPassword;
+
+      _req.body = {
         password: ''
-      },
-      user: {
-        setPassword: () => Promise.reject(new Error())
-      }
-    };
-    resetPassword[3](req, {}, (err) => {
-      expect(err).toBeDefined();
-      done();
+      };
+
+      _req.user.setPassword = () => {
+        const err = new Error();
+        err.name = 'ValidationError';
+        return Promise.reject(err);
+      };
+
+      resetPassword[2](_req, {}, (err) => {
+        expect(err.name).toEqual('ResetPasswordValidationError');
+        done();
+      });
     });
   });
 

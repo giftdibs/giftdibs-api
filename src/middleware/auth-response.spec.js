@@ -1,3 +1,4 @@
+const mock = require('mock-require');
 const jwt = require('jsonwebtoken');
 
 describe('auth response middleware', () => {
@@ -9,7 +10,8 @@ describe('auth response middleware', () => {
 
   it('should send a jwt with the request', () => {
     spyOn(jwt, 'sign').and.returnValue('token');
-    const middleware = require('./auth-response');
+
+    const middleware = mock.reRequire('./auth-response');
     const req = {
       user: {
         _id: 0
@@ -22,6 +24,7 @@ describe('auth response middleware', () => {
       }
     };
     const next = () => {};
+
     middleware()(req, res, next);
   });
 
@@ -31,8 +34,10 @@ describe('auth response middleware', () => {
       expect(secret).toEqual('secret');
       expect(options.expiresIn).toEqual('15m');
     });
+
     process.env.JWT_SECRET = 'secret';
-    const middleware = require('./auth-response');
+
+    const middleware = mock.reRequire('./auth-response');
     const req = {
       user: { _id: 0 }
     };
@@ -40,16 +45,18 @@ describe('auth response middleware', () => {
       json: () => {}
     };
     const next = () => {};
+
     middleware()(req, res, next);
   });
 
-  it('should pass an error into the callback if the user is not attached to the session', () => {
-    const middleware = require('./auth-response');
+  it('should not attach auth information to the response if the session user does not exist', () => {
+    const middleware = mock.reRequire('./auth-response');
     const req = {};
-    const next = (err) => {
-      expect(err).toBeDefined();
-      expect(err.status).toEqual(400);
-    };
-    middleware()(req, null, next);
+    const next = () => {};
+    middleware()(req, {
+      json: (obj) => {
+        expect(obj.authResponse).toBeUndefined();
+      }
+    }, next);
   });
 });

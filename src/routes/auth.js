@@ -5,6 +5,56 @@ const { User } = require('../database/models/user');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 
+const {
+  ResetPasswordTokenValidationError,
+  ResetPasswordValidationError
+} = require('../shared/errors');
+
+function handleError(err, next) {
+  if (err.name === 'ValidationError') {
+    const error = new ResetPasswordValidationError();
+    error.errors = err.errors;
+    next(error);
+    return;
+  }
+
+  next(err);
+}
+
+function updatePasswordForUser(user) {
+  return (req, res, next) => {
+    return user
+      .setPassword(req.body.password)
+      .then((user) => {
+        user.unsetResetPasswordToken();
+        return user.save();
+      })
+      .then(() => {
+        authResponse({
+          message: 'Your password was successfully reset.'
+        })(req, res, next);
+      })
+  };
+}
+
+function getUserByResetPasswordToken(resetPasswordToken) {
+  return User
+    .find({
+      resetPasswordToken,
+      resetPasswordExpires: { $gt: Date.now() }
+    })
+    .limit(1)
+    .then(docs => {
+      const user = docs[0];
+
+      if (!user) {
+        return Promise.reject(new ResetPasswordTokenValidationError());
+      }
+
+      return user;
+    });
+}
+
 const register = [
   function checkSpamBot(req, res, next) {
     if (req.body.gdNickname) {
@@ -118,6 +168,7 @@ const forgotten = [
         }
 
         user.setResetPasswordToken();
+
         return user.save();
       })
       .then(() => {
@@ -132,102 +183,44 @@ const forgotten = [
 ];
 
 const resetPassword = [
-  function validatePassword(req, res, next) {
+  function checkPasswordFields(req, res, next) {
     if (!req.body.resetPasswordToken && !req.body.currentPassword) {
-      const error = new Error('Please provide your current password.');
-      error.status = 400;
-      error.code = 107;
-      next(error);
+      next(new ResetPasswordValidationError('Please provide your current password.'));
       return;
     }
 
     if (!req.body.password || !req.body.passwordAgain) {
-      const error = new Error('Please provide a new password.');
-      error.status = 400;
-      error.code = 107;
-      next(error);
+      next(new ResetPasswordValidationError('Please provide a new password.'));
       return;
     }
 
     if (req.body.password !== req.body.passwordAgain) {
-      const error = new Error('The passwords you typed do not match.');
-      error.status = 400;
-      error.code = 105;
-      next(error);
+      next(new ResetPasswordValidationError('The passwords you typed do not match.'));
       return;
     }
 
     next();
   },
 
-  function validateResetPasswordJwt(req, res, next) {
-    if (req.headers.authorization && !req.body.resetPasswordToken) {
-      authenticateJwt(req, res, next);
+  function checkJwtNeeded(req, res, next) {
+    if (req.body.resetPasswordToken) {
+      next();
       return;
     }
 
-    next();
-  },
-
-  function validateResetPasswordToken(req, res, next) {
-    if (!req.body.resetPasswordToken) {
-      // User passed the JWT authentication, check for current password.
-      if (req.user) {
-        req.user
-          .validatePassword(req.body.currentPassword)
-          .then(() => next())
-          .catch(next);
-
-        return;
-      }
-
-      const error = new Error('The reset password token is invalid.');
-      error.status = 400;
-      error.code = 106;
-      next(error);
-      return;
-    }
-
-    User
-      .find({
-        resetPasswordToken: req.body.resetPasswordToken,
-        resetPasswordExpires: { $gt: Date.now() }
-      })
-      .limit(1)
-      .then(docs => {
-        const user = docs[0];
-
-        if (!user) {
-          const error = new Error('The reset password token is invalid.');
-          error.status = 400;
-          error.code = 106;
-          return Promise.reject(error);
-        }
-
-        req.user = user;
-        next();
-      })
-      .catch(next);
+    authenticateJwt(req, res, next);
   },
 
   function resetPassword(req, res, next) {
-    const user = req.user;
-
-    return user
-      .setPassword(req.body.password)
-      .then(() => {
-        user.unsetResetPasswordToken();
-        return user.save();
-      })
-      .then(() => authResponse({ message: 'Your password was successfully reset.' })(req, res, next))
-      .catch(err => {
-        if (err.name === 'ValidationError') {
-          err.code = 107;
-          err.message = 'Reset password validation failed.';
-        }
-
-        next(err);
-      });
+    if (req.body.resetPasswordToken) {
+      getUserByResetPasswordToken(req.body.resetPasswordToken)
+        .then((user) => updatePasswordForUser(user)(req, res, next))
+        .catch((err) => handleError(err, next));
+    } else {
+      req.user.validateNewPassword(req.body.currentPassword)
+        .then((user) => updatePasswordForUser(req.user)(req, res, next))
+        .catch((err) => handleError(err, next));
+    }
   }
 ];
 

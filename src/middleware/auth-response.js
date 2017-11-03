@@ -1,15 +1,14 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = (data) => {
+  const response = data || {};
+
   const authResponse = (req, res, next) => {
     if (req.user === undefined) {
-      const err = new Error('A token cannot be created without an authenticated user.');
-      err.status = 400;
-      next(err);
+      res.json(response);
       return;
     }
 
-    const response = data || {};
     const payload = { id: req.user._id };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
 

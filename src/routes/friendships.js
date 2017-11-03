@@ -113,6 +113,10 @@ router.route('/friendships/:friendshipId')
   .delete(deleteFriendship);
 
 module.exports = {
-  middleware: {},
+  middleware: {
+    getFriendships,
+    createFriendship,
+    deleteFriendship
+  },
   router
 };

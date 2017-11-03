@@ -20,7 +20,7 @@ const verify = (emailAddress, password, done) => {
       }
 
       user
-        .validatePassword(password)
+        .validateNewPassword(password)
         .then(() => {
           user.dateLastLoggedIn = new Date();
           user

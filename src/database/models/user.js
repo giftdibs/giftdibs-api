@@ -89,7 +89,7 @@ const userSchema = new Schema({
   }
 });
 
-userSchema.methods.validatePassword = function (password) {
+userSchema.methods.validateNewPassword = function (password) {
   return new Promise((resolve, reject) => {
     bcrypt
       .compare(password, this.password)
@@ -136,6 +136,7 @@ userSchema.methods.setPassword = function (password) {
     .hash(password, saltRounds)
     .then(hash => {
       this.password = hash;
+      return this;
     });
 };
 

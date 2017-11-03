@@ -70,7 +70,7 @@ describe('confirm user owns gift', () => {
     confirmUserOwnsGift(_req, null, next);
   });
 
-  it('should handle wish list not found error', (done) => {
+  it('should handle gift not found error', (done) => {
     const { confirmUserOwnsGift } = mock.reRequire('./confirm-user-owns-gift');
 
     MockGift.overrides.find.returnWith = () => Promise.resolve([]);
@@ -83,7 +83,7 @@ describe('confirm user owns gift', () => {
     confirmUserOwnsGift(_req, null, next);
   });
 
-  it('should pass an error to the callback if the wish list ID is not provided', () => {
+  it('should pass an error to the callback if the gift ID is not provided', () => {
     const { confirmUserOwnsGift } = mock.reRequire('./confirm-user-owns-gift');
 
     _req.params.giftId = undefined;
