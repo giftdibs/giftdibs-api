@@ -165,7 +165,7 @@ describe('User schema', () => {
       dateLastLoggedIn: new Date()
     });
     user.setPassword('1234567').then(() => {
-      user.validateNewPassword('1234567').then(() => {
+      user.confirmPassword('1234567').then(() => {
         expect(user.password).not.toEqual('1234567');
         done();
       });
@@ -228,7 +228,7 @@ describe('User schema', () => {
     });
 
     user.setPassword('1234567')
-      .then(() => user.validateNewPassword('abc'))
+      .then(() => user.confirmPassword('abc'))
       .catch(err => {
         expect(err.message).toEqual('Password invalid.');
         done();

@@ -31,7 +31,7 @@ describe('local passport strategy', () => {
 
   it('should pass if the email address and password match a record', (done) => {
     const mockUser = {
-      validateNewPassword: () => Promise.resolve(),
+      confirmPassword: () => Promise.resolve(),
       save: () => Promise.resolve()
     };
     mock('passport-local', {
@@ -65,7 +65,7 @@ describe('local passport strategy', () => {
 
   it('should fail if the password is invalid', (done) => {
     const mockUser = {
-      validateNewPassword: () => Promise.reject(new Error()),
+      confirmPassword: () => Promise.reject(new Error()),
       save: () => Promise.resolve()
     };
     mock('passport-local', {

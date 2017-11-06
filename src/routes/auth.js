@@ -227,7 +227,7 @@ const resetPassword = [
         .then((user) => updatePasswordForUser(user)(req, res, next))
         .catch((err) => handleError(err, next));
     } else {
-      req.user.validateNewPassword(req.body.currentPassword)
+      req.user.confirmPassword(req.body.currentPassword)
         .then((user) => updatePasswordForUser(req.user)(req, res, next))
         .catch((err) => handleError(err, next));
     }
