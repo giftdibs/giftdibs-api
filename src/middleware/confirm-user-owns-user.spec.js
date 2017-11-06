@@ -1,6 +1,6 @@
 const mock = require('mock-require');
 
-describe('confirm user owns User object middleware', () => {
+describe('Confirm user owns User object middleware', () => {
   let _req;
 
   beforeEach(() => {
@@ -18,7 +18,7 @@ describe('confirm user owns User object middleware', () => {
     mock.stopAll();
   });
 
-  it('should pass an error to the callback if the session does not own the resource', () => {
+  it('should fail if the session does not own the resource', () => {
     const middleware = mock.reRequire('./confirm-user-owns-user');
     const next = (err) => {
       expect(err.name).toEqual('UserPermissionError');
@@ -29,7 +29,7 @@ describe('confirm user owns User object middleware', () => {
     middleware(_req, null, next);
   });
 
-  it('should pass an error to the callback if the session does not include a user', () => {
+  it('should fail if the session does not include a user', () => {
     const middleware = mock.reRequire('./confirm-user-owns-user');
     const next = (err) => {
       expect(err.name).toEqual('UserPermissionError');

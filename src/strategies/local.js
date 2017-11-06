@@ -20,7 +20,7 @@ const verify = (emailAddress, password, done) => {
       }
 
       user
-        .validatePassword(password)
+        .validateNewPassword(password)
         .then(() => {
           user.dateLastLoggedIn = new Date();
           user
@@ -29,7 +29,10 @@ const verify = (emailAddress, password, done) => {
         })
         .catch(() => {
           done(null, false, {
-            message: 'The email address and password you entered did not match an account in our records.'
+            message: [
+              'The email address and password you entered',
+              'did not match an account in our records.'
+            ].join(' ')
           })
         });
     })

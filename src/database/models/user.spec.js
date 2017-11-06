@@ -32,7 +32,7 @@ describe('User schema', () => {
     expect(err).toBeUndefined();
   });
 
-  it('should be invalid if firstName is empty', () => {
+  it('should fail if firstName is empty', () => {
     let user = new User();
     let err = user.validateSync();
     expect(err.errors.firstName.properties.type).toEqual('required');
@@ -42,19 +42,21 @@ describe('User schema', () => {
     expect(err.errors.firstName.properties.type).toEqual('required');
   });
 
-  it('should be invalid if firstName is not between 1 and 50 characters', () => {
-    let user = new User({ firstName: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' });
+  it('should fail if firstName is not between 1 and 50 characters', () => {
+    const user = new User({
+      firstName: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+    });
     const err = user.validateSync()
     expect(err.errors.firstName.properties.type).toEqual('maxlength');
   });
 
-  it('should be invalid if firstName contains duplicate characters', () => {
+  it('should fail if firstName contains duplicate characters', () => {
     let user = new User({ firstName: 'aaa' });
     const err = user.validateSync()
     expect(err.errors.firstName.properties.type).toEqual('hasDuplicateChars');
   });
 
-  it('should be invalid if firstName contains symbols or numbers', () => {
+  it('should fail if firstName contains symbols or numbers', () => {
     let user = new User({ firstName: 'abc-abc' });
     let err = user.validateSync()
     expect(err.errors.firstName.properties.type).toEqual('isAlpha');
@@ -64,7 +66,7 @@ describe('User schema', () => {
     expect(err.errors.firstName.properties.type).toEqual('isAlpha');
   });
 
-  it('should be invalid if lastName is empty', () => {
+  it('should fail if lastName is empty', () => {
     let user = new User();
     let err = user.validateSync();
     expect(err.errors.lastName.properties.type).toEqual('required');
@@ -74,19 +76,21 @@ describe('User schema', () => {
     expect(err.errors.lastName.properties.type).toEqual('required');
   });
 
-  it('should be invalid if lastName is not between 1 and 50 characters', () => {
-    let user = new User({ lastName: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' });
+  it('should fail if lastName is not between 1 and 50 characters', () => {
+    const user = new User({
+      lastName: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+    });
     const err = user.validateSync();
     expect(err.errors.lastName.properties.type).toEqual('maxlength');
   });
 
-  it('should be invalid if lastName contains duplicate characters', () => {
+  it('should fail if lastName contains duplicate characters', () => {
     let user = new User({ lastName: 'aaa' });
     const err = user.validateSync();
     expect(err.errors.lastName.properties.type).toEqual('hasDuplicateChars');
   });
 
-  it('should be invalid if lastName contains symbols or numbers', () => {
+  it('should fail if lastName contains symbols or numbers', () => {
     let user = new User({ lastName: 'abc-abc' });
     let err = user.validateSync();
     expect(err.errors.lastName.properties.type).toEqual('isAlpha');
@@ -96,7 +100,7 @@ describe('User schema', () => {
     expect(err.errors.lastName.properties.type).toEqual('isAlpha');
   });
 
-  it('should be invalid if emailAddress is empty', () => {
+  it('should fail if emailAddress is empty', () => {
     let user = new User();
     let err = user.validateSync();
     expect(err.errors.emailAddress.properties.type).toEqual('required');
@@ -106,7 +110,7 @@ describe('User schema', () => {
     expect(err.errors.emailAddress.properties.type).toEqual('required');
   });
 
-  it('should be invalid if emailAddress is not formatted correctly', (done) => {
+  it('should fail if emailAddress is not formatted correctly', (done) => {
     let user = new User({ emailAddress: 'invalid.email' });
     user.validate().catch(err => {
       expect(err.errors.emailAddress.properties.type).toEqual('isEmail');
@@ -133,7 +137,7 @@ describe('User schema', () => {
     expect(found).toBeDefined();
   });
 
-  it('should trim whitespace from firstName, lastName, and emailAddress', () => {
+  it('should trim whitespace from fields', () => {
     let user = new User({
       firstName: ' Foo ',
       lastName: ' Bar   ',
@@ -161,7 +165,7 @@ describe('User schema', () => {
       dateLastLoggedIn: new Date()
     });
     user.setPassword('1234567').then(() => {
-      user.validatePassword('1234567').then(() => {
+      user.validateNewPassword('1234567').then(() => {
         expect(user.password).not.toEqual('1234567');
         done();
       });
@@ -191,7 +195,8 @@ describe('User schema', () => {
       dateLastLoggedIn: new Date()
     });
     user.setPassword('abc').catch((err) => {
-      expect(err.errors.password.message).toEqual('Your password must be between 7 and 50 characters long.');
+      expect(err.errors.password.message)
+        .toEqual('Your password must be between 7 and 50 characters long.');
       done();
     });
   });
@@ -204,10 +209,13 @@ describe('User schema', () => {
       password: 'foo',
       dateLastLoggedIn: new Date()
     });
-    user.setPassword('1234512345123451234512345123451234512345123451234512345').catch((err) => {
-      expect(err.errors.password.message).toEqual('Your password must be between 7 and 50 characters long.');
-      done();
-    });
+    user
+      .setPassword('1234512345123451234512345123451234512345123451234512345')
+      .catch((err) => {
+        expect(err.errors.password.message)
+          .toEqual('Your password must be between 7 and 50 characters long.');
+        done();
+      });
   });
 
   it('should throw an error if the password is invalid', (done) => {
@@ -220,7 +228,7 @@ describe('User schema', () => {
     });
 
     user.setPassword('1234567')
-      .then(() => user.validatePassword('abc'))
+      .then(() => user.validateNewPassword('abc'))
       .catch(err => {
         expect(err.message).toEqual('Password invalid.');
         done();

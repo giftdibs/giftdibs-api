@@ -8,7 +8,7 @@ const {
   tick
 } = require('../shared/testing');
 
-describe('Wish list router', () => {
+describe('Wish lists router', () => {
   let _req;
   let _res;
 
@@ -77,13 +77,16 @@ describe('Wish list router', () => {
       getWishLists(_req, _res, () => {});
 
       tick(() => {
-        expect(MockWishList.populatedFields['_user']).toEqual('firstName lastName');
+        expect(MockWishList.populatedFields['_user'])
+          .toEqual('firstName lastName');
         done();
       });
     });
 
     it('should handle mongoose errors', (done) => {
-      MockWishList.overrides.find.returnWith = () => Promise.reject(new Error());
+      MockWishList.overrides.find.returnWith = () => {
+        return Promise.reject(new Error());
+      };
 
       const wishLists = mock.reRequire('./wish-lists');
       const getWishLists = wishLists.middleware.getWishLists[0];
@@ -129,7 +132,8 @@ describe('Wish list router', () => {
       getWishList(_req, _res, () => {});
 
       tick(() => {
-        expect(MockWishList.populatedFields['_user']).toEqual('firstName lastName');
+        expect(MockWishList.populatedFields['_user'])
+          .toEqual('firstName lastName');
         done();
       });
     });
@@ -147,7 +151,9 @@ describe('Wish list router', () => {
     });
 
     it('should handle mongoose errors', (done) => {
-      MockWishList.overrides.find.returnWith = () => Promise.reject(new Error());
+      MockWishList.overrides.find.returnWith = () => {
+        return Promise.reject(new Error());
+      };
 
       const wishLists = mock.reRequire('./wish-lists');
       const getWishList = wishLists.middleware.getWishList[0];
@@ -175,7 +181,8 @@ describe('Wish list router', () => {
 
       tick(() => {
         expect(_res.json.output.wishListId).toBeDefined();
-        expect(_res.json.output.message).toEqual('Wish list successfully created.');
+        expect(_res.json.output.message)
+          .toEqual('Wish list successfully created.');
         expect(_res.json.output.authResponse).toBeDefined();
         expect(MockWishList.lastTouched._user).toEqual('userid');
         expect(MockWishList.lastTouched.name).toEqual('New wish list');
@@ -184,7 +191,9 @@ describe('Wish list router', () => {
     });
 
     it('should handle schema validation errors', (done) => {
-      MockWishList.overrides.save.returnWith = () => Promise.reject(new Error());
+      MockWishList.overrides.save.returnWith = () => {
+        return Promise.reject(new Error());
+      };
 
       const wishLists = mock.reRequire('./wish-lists');
       const createWishList = wishLists.middleware.createWishList[0];
@@ -231,9 +240,10 @@ describe('Wish list router', () => {
       });
     });
 
-    it('should only update a document if it is owned by the session user', () => {
+    it('should only update a document if owned by the session user', () => {
       const wishLists = mock.reRequire('./wish-lists');
-      expect(wishLists.middleware.updateWishList[0].name).toEqual('confirmUserOwnsWishList');
+      expect(wishLists.middleware.updateWishList[0].name)
+        .toEqual('confirmUserOwnsWishList');
     });
 
     it('should handle a schema validation error', (done) => {
@@ -271,9 +281,10 @@ describe('Wish list router', () => {
       });
     });
 
-    it('should only remove a document if it is owned by the session user', () => {
+    it('should only remove a document if owned by the session user', () => {
       const wishLists = mock.reRequire('./wish-lists');
-      expect(wishLists.middleware.deleteWishList[0].name).toEqual('confirmUserOwnsWishList');
+      expect(wishLists.middleware.deleteWishList[0].name)
+        .toEqual('confirmUserOwnsWishList');
     });
   });
 });

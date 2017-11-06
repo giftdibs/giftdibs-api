@@ -2,8 +2,11 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const randomstring = require('randomstring');
 const { isEmail, isAlpha } = require('validator');
-const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
 const { updateDocument } = require('../utils/update-document');
+
+const {
+  MongoDbErrorHandlerPlugin
+} = require('../plugins/mongodb-error-handler');
 
 const hasDuplicateChars = (str) => {
   let regex = /(.)\1{2,}/;
@@ -22,7 +25,10 @@ const userSchema = new Schema({
       {
         type: 'hasDuplicateChars',
         validator: hasDuplicateChars,
-        message: 'Your first name cannot contain characters that repeat more than three (3) times.'
+        message: [
+          'Your first name cannot contain characters',
+          'that repeat more than three (3) times.'
+        ].join(' ')
       },
       {
         type: 'isAlpha',
@@ -42,7 +48,10 @@ const userSchema = new Schema({
       {
         type: 'hasDuplicateChars',
         validator: hasDuplicateChars,
-        message: 'Your last name cannot contain characters that repeat more than three (3) times.'
+        message: [
+          'Your last name cannot contain characters',
+          'that repeat more than three (3) times.'
+        ].join(' ')
       },
       {
         type: 'isAlpha',
@@ -89,7 +98,7 @@ const userSchema = new Schema({
   }
 });
 
-userSchema.methods.validatePassword = function (password) {
+userSchema.methods.validateNewPassword = function (password) {
   return new Promise((resolve, reject) => {
     bcrypt
       .compare(password, this.password)
@@ -127,8 +136,14 @@ userSchema.methods.setPassword = function (password) {
     return Promise.reject(error);
   }
 
-  if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
-    error.errors.password.message = `Your password must be between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters long.`;
+  if (
+    password.length < PASSWORD_MIN_LENGTH ||
+    password.length > PASSWORD_MAX_LENGTH
+  ) {
+    error.errors.password.message = [
+      `Your password must be between ${PASSWORD_MIN_LENGTH}`,
+      `and ${PASSWORD_MAX_LENGTH} characters long.`
+    ].join(' ');
     return Promise.reject(error);
   }
 
@@ -136,6 +151,7 @@ userSchema.methods.setPassword = function (password) {
     .hash(password, saltRounds)
     .then(hash => {
       this.password = hash;
+      return this;
     });
 };
 
@@ -143,7 +159,10 @@ userSchema.methods.setResetPasswordToken = function () {
   this.resetPasswordToken = randomstring.generate();
   this.resetPasswordExpires = Date.now() + 3600000; // 1 hour
   // TODO: Remove this after implementing email service.
-  console.log(`Reset password here: http://localhost:4200/reset-password/${this.resetPasswordToken}`);
+  console.log([
+    'Reset password here:',
+    `http://localhost:4200/reset-password/${this.resetPasswordToken}`
+  ].join(' '));
 };
 
 userSchema.methods.unsetResetPasswordToken = function () {
@@ -155,7 +174,10 @@ userSchema.methods.resetEmailAddressVerification = function () {
   this.emailAddressVerified = false;
   this.emailAddressVerificationToken = randomstring.generate();
   // TODO: Send email with token.
-  console.log(`Verify email here: http://localhost:4200/verify-email/${this.emailAddressVerificationToken}`);
+  console.log([
+    'Verify email here:',
+    `http://localhost:4200/verify-email/${this.emailAddressVerificationToken}`
+  ].join(' '));
 };
 
 userSchema.methods.verifyEmailAddress = function (token) {

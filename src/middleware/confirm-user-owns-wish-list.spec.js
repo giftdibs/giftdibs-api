@@ -1,7 +1,7 @@
 const mock = require('mock-require');
 const { MockWishList, MockRequest } = require('../shared/testing');
 
-describe('confirm user owns wishlist middleware', () => {
+describe('Confirm user owns wish list middleware', () => {
   let _req;
 
   beforeEach(() => {
@@ -23,8 +23,10 @@ describe('confirm user owns wishlist middleware', () => {
     mock.stopAll();
   });
 
-  it('should pass an error to the callback if the session does not own the resource', () => {
-    const { confirmUserOwnsWishList } = mock.reRequire('./confirm-user-owns-wish-list');
+  it('should fail if session doesn\'t own resource', () => {
+    const {
+      confirmUserOwnsWishList
+    } = mock.reRequire('./confirm-user-owns-wish-list');
 
     MockWishList.overrides.find.returnWith = () => Promise.resolve([{
       _user: 'baz'
@@ -38,7 +40,9 @@ describe('confirm user owns wishlist middleware', () => {
   });
 
   it('should continue if the session does own the resource', (done) => {
-    const { confirmUserOwnsWishList } = mock.reRequire('./confirm-user-owns-wish-list');
+    const {
+      confirmUserOwnsWishList
+    } = mock.reRequire('./confirm-user-owns-wish-list');
 
     MockWishList.overrides.find.returnWith = () => Promise.resolve([{
       _user: 'userid'
@@ -53,7 +57,9 @@ describe('confirm user owns wishlist middleware', () => {
   });
 
   it('should handle errors', (done) => {
-    const { confirmUserOwnsWishList } = mock.reRequire('./confirm-user-owns-wish-list');
+    const {
+      confirmUserOwnsWishList
+    } = mock.reRequire('./confirm-user-owns-wish-list');
 
     MockWishList.overrides.find.returnWith = () => Promise.reject(new Error());
 
@@ -66,7 +72,9 @@ describe('confirm user owns wishlist middleware', () => {
   });
 
   it('should handle wish list not found error', (done) => {
-    const { confirmUserOwnsWishList } = mock.reRequire('./confirm-user-owns-wish-list');
+    const {
+      confirmUserOwnsWishList
+    } = mock.reRequire('./confirm-user-owns-wish-list');
 
     MockWishList.overrides.find.returnWith = () => Promise.resolve([]);
 
@@ -78,8 +86,10 @@ describe('confirm user owns wishlist middleware', () => {
     confirmUserOwnsWishList(_req, null, next);
   });
 
-  it('should pass an error to the callback if the wish list ID is not provided', () => {
-    const { confirmUserOwnsWishList } = mock.reRequire('./confirm-user-owns-wish-list');
+  it('should fail if the wish list ID is not provided', () => {
+    const {
+      confirmUserOwnsWishList
+    } = mock.reRequire('./confirm-user-owns-wish-list');
 
     _req.params.wishListId = undefined;
     _req.body._wishList = undefined;

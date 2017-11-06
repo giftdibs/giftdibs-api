@@ -1,4 +1,4 @@
-describe('format schema validation error', () => {
+describe('Format schema validation error middleware', () => {
   it('should format schema validation errors', () => {
     const error = new Error();
     error.name = 'ValidationError';

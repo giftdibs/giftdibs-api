@@ -1,4 +1,4 @@
-describe('format schema cast error', () => {
+describe('Format schema cast error middleware', () => {
   it('should format ObjectId cast errors', () => {
     const error = new Error();
     error.message = '';
@@ -7,7 +7,8 @@ describe('format schema cast error', () => {
     const middleware = require('./format-schema-cast-error');
     middleware(error, {}, {}, (err) => {
       expect(err.status).toEqual(400);
-      expect(err.message).toEqual('The ID provided is not formatted correctly.');
+      expect(err.message)
+        .toEqual('The ID provided is not formatted correctly.');
       expect(err.code).toEqual(1);
     });
   });

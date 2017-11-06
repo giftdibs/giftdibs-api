@@ -1,6 +1,6 @@
 const mock = require('mock-require');
 
-describe('lib facebook', () => {
+describe('Facebook service', () => {
   beforeEach(() => {
   });
 
@@ -28,7 +28,7 @@ describe('lib facebook', () => {
     expect(_opts.qs.fields).toEqual('email,first_name,last_name');
   });
 
-  it('should should make a request to verify a facebook user access token', (done) => {
+  it('should make a request to verify a facebook user access token', (done) => {
     let _opts = [];
     mock('request-promise', (opts) => {
       _opts.push(opts);

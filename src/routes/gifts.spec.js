@@ -44,12 +44,12 @@ describe('Gifts router', () => {
     expect(routeDefinition.router.stack[0].name).toEqual('authenticateJwt');
   });
 
-  it('should require the user owns the gift and wish list for all routes', () => {
-    const routeDefinition = mock.reRequire('./gifts');
-    expect(routeDefinition.middleware.addGift[0].name).toEqual('confirmUserOwnsWishList');
-    expect(routeDefinition.middleware.deleteGift[0].name).toEqual('confirmUserOwnsGift');
-    expect(routeDefinition.middleware.updateGift[0].name).toEqual('confirmUserOwnsGift');
-    expect(routeDefinition.middleware.updateGift[1].name).toEqual('confirmUserOwnsWishList');
+  it('should require user owns the gift and wish list for all routes', () => {
+    const middleware = mock.reRequire('./gifts').middleware;
+    expect(middleware.addGift[0].name).toEqual('confirmUserOwnsWishList');
+    expect(middleware.deleteGift[0].name).toEqual('confirmUserOwnsGift');
+    expect(middleware.updateGift[0].name).toEqual('confirmUserOwnsGift');
+    expect(middleware.updateGift[1].name).toEqual('confirmUserOwnsWishList');
   });
 
   describe('GET /gifts', () => {

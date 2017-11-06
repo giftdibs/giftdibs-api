@@ -9,7 +9,11 @@ describe('MongoDbErrorHandlerPlugin', () => {
     plugin = mock.reRequire('./mongodb-error-handler');
 
     mongoError = new Error();
-    mongoError.message = 'E11000 duplicate key error collection: api.User index: emailAddress_1 dup key: { : "foo@bar.com" } emailAddress_1 dup key: { : "foo@bar.com" }';
+    mongoError.message = [
+      'E11000 duplicate key error collection:',
+      'api.User index: emailAddress_1 dup key: { : "foo@bar.com" }',
+      'emailAddress_1 dup key: { : "foo@bar.com" }'
+    ].join(' ');
     mongoError.name = 'MongoError';
     mongoError.code = 11000;
 
@@ -39,7 +43,10 @@ describe('MongoDbErrorHandlerPlugin', () => {
     });
   });
 
-  it('should pass the original error to the callback if type errors are encountered', () => {
+  it([
+    'should pass the original error to the callback',
+    'if type errors are encountered'
+  ].join(' '), () => {
     mongoError.message = '';
     let _callback;
     mockSchema.post = (hook, cb) => {
@@ -85,7 +92,9 @@ describe('MongoDbErrorHandlerPlugin', () => {
     };
     plugin.MongoDbErrorHandlerPlugin(mockSchema);
     _callback.call({ schema: mockSchema }, mongoError, {}, (err) => {
-      const isDefaultMessage = (err.errors.emailAddress.message.indexOf('is expected to be unique') > -1);
+      const isDefaultMessage = (
+        err.errors.emailAddress.message.indexOf('is expected to be unique') > -1
+      );
       expect(isDefaultMessage).toEqual(true);
     });
   });

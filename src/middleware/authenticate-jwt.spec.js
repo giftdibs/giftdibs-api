@@ -1,6 +1,6 @@
 const mock = require('mock-require');
 
-describe('authenticate-jwt middleware', () => {
+describe('Authenticate JWT middleware', () => {
   afterEach(() => {
     mock.stopAll();
   });

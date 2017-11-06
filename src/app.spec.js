@@ -1,6 +1,6 @@
 const mock = require('mock-require');
 
-describe('app', () => {
+describe('App', () => {
   beforeEach(() => {
     mock('./environment', () => {});
     mock('express', () => {

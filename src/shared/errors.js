@@ -1,3 +1,19 @@
+function ResetPasswordTokenValidationError() {
+  this.name = 'ResetPasswordTokenValidationError';
+  this.message = 'The reset password token is invalid.';
+  this.code = 106;
+  this.status = 400;
+}
+ResetPasswordTokenValidationError.prototype = Error.prototype;
+
+function ResetPasswordValidationError(message) {
+  this.name = 'ResetPasswordValidationError';
+  this.message = message || 'Reset password validation failed.';
+  this.code = 107;
+  this.status = 400;
+}
+ResetPasswordValidationError.prototype = Error.prototype;
+
 function UserNotFoundError() {
   this.name = 'UserNotFoundError';
   this.message = 'User not found.';
@@ -94,7 +110,34 @@ function DibPermissionError() {
 }
 DibPermissionError.prototype = Error.prototype;
 
+function FriendshipNotFoundError() {
+  this.name = 'FriendshipNotFoundError';
+  this.message = 'Friendship not found.';
+  this.code = 600;
+  this.status = 400;
+}
+FriendshipNotFoundError.prototype = Error.prototype;
+
+function FriendshipValidationError(message) {
+  this.name = 'FriendshipValidationError';
+  this.message = message || 'Friendship validation failed.';
+  this.code = 601;
+  this.status = 400;
+}
+FriendshipValidationError.prototype = Error.prototype;
+
+function FriendshipPermissionError() {
+  this.name = 'FriendshipPermissionError';
+  this.message = 'Permission denied to modify friendship.';
+  this.code = 602;
+  this.status = 403;
+}
+FriendshipPermissionError.prototype = Error.prototype;
+
 module.exports = {
+  ResetPasswordTokenValidationError,
+  ResetPasswordValidationError,
+
   UserNotFoundError,
   UserValidationError,
   UserPermissionError,
@@ -109,5 +152,9 @@ module.exports = {
 
   DibNotFoundError,
   DibValidationError,
-  DibPermissionError
+  DibPermissionError,
+
+  FriendshipNotFoundError,
+  FriendshipValidationError,
+  FriendshipPermissionError
 };

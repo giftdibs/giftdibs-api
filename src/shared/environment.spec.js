@@ -23,6 +23,9 @@ describe('environment', () => {
     });
     const environment = require('./environment');
     environment();
-    expect(logger.info).toHaveBeenCalledWith('Environment configuration could not be parsed from config.env.');
+    expect(logger.info)
+      .toHaveBeenCalledWith(
+        'Environment configuration could not be parsed from config.env.'
+      );
   });
 });

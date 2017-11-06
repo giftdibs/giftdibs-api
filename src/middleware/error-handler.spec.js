@@ -1,6 +1,8 @@
-describe('error handler middleware', () => {
+const mock = require('mock-require');
+
+describe('Error handler middleware', () => {
   it('should send an error as a json response', () => {
-    const middleware = require('./error-handler');
+    const middleware = mock.reRequire('./error-handler');
     const err = new Error('invalid');
     err.status = 403;
     const res = {
@@ -18,7 +20,7 @@ describe('error handler middleware', () => {
   });
 
   it('should send multiple errors', () => {
-    const middleware = require('./error-handler');
+    const middleware = mock.reRequire('./error-handler');
     const err = new Error('invalid');
     err.errors = [];
     const res = {
@@ -34,7 +36,7 @@ describe('error handler middleware', () => {
   });
 
   it('should default the error status to 404', () => {
-    const middleware = require('./error-handler');
+    const middleware = mock.reRequire('./error-handler');
     const err = new Error('invalid');
     const res = {
       status: (statusCode) => {

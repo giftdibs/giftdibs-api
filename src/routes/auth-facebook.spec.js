@@ -1,6 +1,6 @@
 const mock = require('mock-require');
 
-describe('/auth-facebook', () => {
+describe('Auth Facebook router', () => {
   let _findCallback;
   let facebook;
 

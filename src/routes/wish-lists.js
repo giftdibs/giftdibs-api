@@ -2,7 +2,10 @@ const express = require('express');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 const { WishList } = require('../database/models/wish-list');
-const { confirmUserOwnsWishList } = require('../middleware/confirm-user-owns-wish-list');
+
+const {
+  confirmUserOwnsWishList
+} = require('../middleware/confirm-user-owns-wish-list');
 
 const {
   WishListNotFoundError,

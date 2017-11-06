@@ -171,7 +171,7 @@ describe('Dibs router', () => {
 
     afterEach(afterEachCallback);
 
-    it('should get an array of all dibs belonging to user, formatted', (done) => {
+    it('should get formatted array of all dibs belonging to user', (done) => {
       MockDib.overrides.find.returnWith = () => {
         return Promise.resolve([
           new MockDib({
@@ -275,7 +275,8 @@ describe('Dibs router', () => {
 
     it('should require the user owns the dib', () => {
       const routeDefinition = mock.reRequire('./dibs');
-      expect(routeDefinition.middleware.deleteDib[0].name).toEqual('confirmUserOwnsDib');
+      expect(routeDefinition.middleware.deleteDib[0].name)
+        .toEqual('confirmUserOwnsDib');
     });
 
     it('should delete a dib', (done) => {
@@ -295,7 +296,10 @@ describe('Dibs router', () => {
     });
 
     it('should handle errors', (done) => {
-      spyOn(MockDib, 'remove').and.returnValue(Promise.reject(new Error('Some error')));
+      spyOn(MockDib, 'remove').and.returnValue(
+        Promise.reject(new Error('Some error'))
+      );
+
       const routeDefinition = mock.reRequire('./dibs');
       const deleteDib = routeDefinition.middleware.deleteDib[1];
 
@@ -313,7 +317,8 @@ describe('Dibs router', () => {
 
     it('should require the user owns the dib', () => {
       const routeDefinition = mock.reRequire('./dibs');
-      expect(routeDefinition.middleware.updateDib[0].name).toEqual('confirmUserOwnsDib');
+      expect(routeDefinition.middleware.updateDib[0].name)
+        .toEqual('confirmUserOwnsDib');
     });
 
     it('should update a dib', (done) => {
@@ -410,7 +415,11 @@ describe('Dibs router', () => {
 
       updateDib(_req, _res, (err) => {
         expect(err.name).toEqual('DibValidationError');
-        expect(err.errors[0].message).toEqual('Dib quantity is more than are available. Please choose a smaller amount.');
+        expect(err.errors[0].message)
+          .toEqual([
+            'Dib quantity is more than are available.',
+            'Please choose a smaller amount.'
+          ].join(' '));
         done();
       });
     });
@@ -525,7 +534,7 @@ describe('Dibs router', () => {
       });
     });
 
-    it('should handle errors when preventing user from creating a dib on their own gift', (done) => {
+    it('should handle errors when creating a dib on user\'s gift', (done) => {
       MockGift.overrides.find.returnWith = () => {
         return Promise.reject(new Error('Some error'));
       };
@@ -551,7 +560,7 @@ describe('Dibs router', () => {
       });
     });
 
-    it('should prevent user from creating a dib twice on the same gift', (done) => {
+    it('should prevent user from creating a dib twice on a gift', (done) => {
       MockDib.overrides.find.returnWith = () => {
         return Promise.resolve([new MockDib()]);
       };
@@ -566,7 +575,7 @@ describe('Dibs router', () => {
       });
     });
 
-    it('should handle errors when a user attempts to dib a gift twice', (done) => {
+    it('should handle errors when a user dibs a gift twice', (done) => {
       MockDib.overrides.find.returnWith = () => {
         return Promise.reject(new Error('Some error'));
       };

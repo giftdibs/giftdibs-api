@@ -10,7 +10,7 @@ function assignSave(model) {
 }
 
 function assignFind(model) {
-  model.find = function () {
+  model.find = function (query) {
     const promise = model.overrides.find.returnWith();
 
     const lean = () => {
@@ -20,7 +20,7 @@ function assignFind(model) {
     const populate = (field, subFields) => {
       model.populatedFields[field] = subFields;
 
-      return { lean };
+      return { lean, populate };
     };
 
     const limit = () => {
@@ -34,6 +34,9 @@ function assignFind(model) {
         populate
       };
     };
+
+    // Save the query to be used by specs.
+    model.overrides.find.lastQuery = query;
 
     return {
       limit,
@@ -85,7 +88,12 @@ class MockWishList extends MockDocument {
 
     const defaults = {};
 
-    Object.assign(this, defaults, definition, MockWishList.overrides.constructorDefinition);
+    Object.assign(
+      this,
+      defaults,
+      definition,
+      MockWishList.overrides.constructorDefinition
+    );
 
     this.set = () => {};
   }
@@ -117,7 +125,27 @@ class MockDib extends MockDocument {
 
     const defaults = {};
 
-    Object.assign(this, defaults, definition, MockDib.overrides.constructorDefinition);
+    Object.assign(
+      this,
+      defaults,
+      definition,
+      MockDib.overrides.constructorDefinition
+    );
+  }
+}
+
+class MockFriendship extends MockDocument {
+  constructor(definition = {}) {
+    super();
+
+    const defaults = {};
+
+    Object.assign(
+      this,
+      defaults,
+      definition,
+      MockFriendship.overrides.constructorDefinition
+    );
   }
 }
 
@@ -138,18 +166,22 @@ function MockResponse() {
 assignFind(MockWishList);
 assignFind(MockGift);
 assignFind(MockDib);
+assignFind(MockFriendship);
 
 assignSave(MockWishList);
 assignSave(MockGift);
 assignSave(MockDib);
+assignSave(MockFriendship);
 
 assignReset(MockWishList);
 assignReset(MockGift);
 assignReset(MockDib);
+assignReset(MockFriendship);
 
 module.exports = {
   tick,
   MockDib,
+  MockFriendship,
   MockGift,
   MockWishList,
   MockExternalUrl,

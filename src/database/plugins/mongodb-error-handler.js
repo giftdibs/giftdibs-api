@@ -18,7 +18,8 @@ function errorHandler(err, doc, next) {
     if (schema.paths[pathKey].options.unique[1]) {
       errorMessage = schema.paths[pathKey].options.unique[1];
     } else {
-      errorMessage = 'The field, {0}, is expected to be unique.'.replace('{0}', pathKey);
+      errorMessage = 'The field, {0}, is expected to be unique.'
+        .replace('{0}', pathKey);
     }
 
     validationError.errors[pathKey] = validationError.errors[pathKey] || {};

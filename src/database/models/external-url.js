@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
-const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
+
+const {
+  MongoDbErrorHandlerPlugin
+} = require('../plugins/mongodb-error-handler');
+
 const { updateDocument } = require('../utils/update-document');
 
 const Schema = mongoose.Schema;
@@ -12,7 +16,10 @@ const externalUrlSchema = new Schema({
   },
   price: {
     type: Number,
-    maxlength: [13, 'The external URL\'s product price must be less than 1,000,000,000,000.']
+    maxlength: [
+      13,
+      'The external URL\'s product price must be less than 1,000,000,000,000.'
+    ]
   },
   dateScraped: Date
 }, {

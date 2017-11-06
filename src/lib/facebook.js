@@ -16,7 +16,8 @@ const verifyUserAccessToken = (userAccessToken) => {
 
   return request(requestOptions)
     .then((response) => {
-      // Then, use the app access token to verify that the user access token and ID is valid.
+      // Then, use the app access token to verify that the user access token
+      // and ID is valid.
       // https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow#checktoken
       return request({
         method: 'GET',

@@ -1,7 +1,7 @@
 const logger = require('winston');
 const mock = require('mock-require');
 
-describe('database service', () => {
+describe('Database service', () => {
   let originalDatabaseUri = process.env.DATABASE_URI;
 
   afterEach(() => {
@@ -50,7 +50,8 @@ describe('database service', () => {
     });
     const db = mock.reRequire('./index');
     db.connect().then(() => {
-      expect(logger.error).toHaveBeenCalledWith('Database connection error: Invalid.');
+      expect(logger.error)
+        .toHaveBeenCalledWith('Database connection error: Invalid.');
       done();
     });
   });

@@ -29,9 +29,9 @@ describe('local passport strategy', () => {
     expect(_config.usernameField).toEqual('emailAddress');
   });
 
-  it('should pass if the email address and password match a record in the database', (done) => {
+  it('should pass if the email address and password match a record', (done) => {
     const mockUser = {
-      validatePassword: () => Promise.resolve(),
+      validateNewPassword: () => Promise.resolve(),
       save: () => Promise.resolve()
     };
     mock('passport-local', {
@@ -53,7 +53,8 @@ describe('local passport strategy', () => {
         verify('', '', (err, user, info) => {
           expect(err).toEqual(null);
           expect(user).toEqual(false);
-          expect(info.message).toEqual('A user with that email address was not found.');
+          expect(info.message)
+            .toEqual('A user with that email address was not found.');
           done();
         });
       }
@@ -64,7 +65,7 @@ describe('local passport strategy', () => {
 
   it('should fail if the password is invalid', (done) => {
     const mockUser = {
-      validatePassword: () => Promise.reject(new Error()),
+      validateNewPassword: () => Promise.reject(new Error()),
       save: () => Promise.resolve()
     };
     mock('passport-local', {
@@ -72,7 +73,11 @@ describe('local passport strategy', () => {
         verify('', '', (err, user, info) => {
           expect(err).toEqual(null);
           expect(user).toEqual(false);
-          expect(info.message).toEqual('The email address and password you entered did not match an account in our records.');
+          expect(info.message)
+            .toEqual([
+              'The email address and password you entered',
+              'did not match an account in our records.'
+            ].join(' '));
           done();
         });
       }
