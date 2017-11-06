@@ -98,7 +98,7 @@ const userSchema = new Schema({
   }
 });
 
-userSchema.methods.validateNewPassword = function (password) {
+userSchema.methods.confirmPassword = function (password) {
   return new Promise((resolve, reject) => {
     bcrypt
       .compare(password, this.password)

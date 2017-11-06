@@ -431,7 +431,7 @@ describe('Auth router', () => {
         setPassword: () => Promise.resolve(_req.user),
         save: () => Promise.resolve(),
         unsetResetPasswordToken: () => {},
-        validateNewPassword: () => Promise.resolve()
+        confirmPassword: () => Promise.resolve()
       };
       _req = {
         body: {},
@@ -458,7 +458,7 @@ describe('Auth router', () => {
       const resetPassword = auth.middleware.resetPassword;
       const unsetTokenSpy = spyOn(_req.user, 'unsetResetPasswordToken')
         .and.callThrough();
-      const validateNewPasswordSpy = spyOn(_req.user, 'validateNewPassword')
+      const confirmPasswordSpy = spyOn(_req.user, 'confirmPassword')
         .and.callThrough();
       const setPasswordSpy = spyOn(_req.user, 'setPassword')
         .and.callThrough();
@@ -469,7 +469,7 @@ describe('Auth router', () => {
       const res = {
         json: () => {
           expect(unsetTokenSpy).toHaveBeenCalledWith();
-          expect(validateNewPasswordSpy)
+          expect(confirmPasswordSpy)
             .toHaveBeenCalledWith(_req.body.currentPassword);
           expect(setPasswordSpy).toHaveBeenCalledWith(_req.body.password);
           done();
