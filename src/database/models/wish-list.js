@@ -20,6 +20,13 @@ const wishListSchema = new Schema({
       100,
       'The wish list\'s name cannot be longer than 100 characters.'
     ]
+  },
+  privacy: {
+    _allow: [],
+    value: {
+      type: String,
+      enum: ['everyone', 'me', 'followers', 'custom']
+    }
   }
 }, {
   collection: 'wishlist',

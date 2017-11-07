@@ -30,7 +30,7 @@ const authenticateJwt = (req, res, next) => {
       return;
     }
 
-    // Add the found user record to the request to 
+    // Add the found user record to the request to
     // allow other middlewares to access it.
     req.user = user;
 
