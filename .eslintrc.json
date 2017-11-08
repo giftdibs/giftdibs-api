@@ -14,7 +14,8 @@
     "max-len": ["error", {
       "code": 80,
       "tabWidth": 2,
-      "ignoreUrls": true
+      "ignoreUrls": true,
+      "ignoreStrings": true
     }],
     "jasmine/new-line-before-expect": 0,
     "jasmine/no-spec-dupes": [1, "branch"],

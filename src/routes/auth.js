@@ -7,7 +7,8 @@ const authenticateJwt = require('../middleware/authenticate-jwt');
 
 const {
   ResetPasswordTokenValidationError,
-  ResetPasswordValidationError
+  ResetPasswordValidationError,
+  EmailVerificationTokenValidationError
 } = require('../shared/errors');
 
 function handleError(err, next) {
@@ -259,6 +260,13 @@ const verifyEmailAddress = [
   authenticateJwt,
 
   function checkEmailAddressVerificationToken(req, res, next) {
+    if (!req.body.emailAddressVerificationToken) {
+      next(new EmailVerificationTokenValidationError(
+        'Please provide an email address verification token.'
+      ));
+      return;
+    }
+
     const isVerified = req.user.verifyEmailAddress(
       req.body.emailAddressVerificationToken
     );
@@ -275,12 +283,7 @@ const verifyEmailAddress = [
       return;
     }
 
-    const err = new Error(
-      'The email verification token is invalid or has expired.'
-    );
-    err.status = 400;
-    err.code = 109;
-    next(err);
+    next(new EmailVerificationTokenValidationError());
   }
 ];
 

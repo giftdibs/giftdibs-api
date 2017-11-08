@@ -98,6 +98,7 @@ const deleteGift = [
     Gift
       .remove({ _id: req.params.giftId })
       .then(() => {
+        // TODO: Remove any dibs associated with this gift.
         authResponse({
           message: 'Gift successfully deleted.'
         })(req, res, next);

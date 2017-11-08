@@ -414,8 +414,10 @@ describe('Auth router', () => {
       const res = {};
       spyOn(req.user, 'verifyEmailAddress').and.callThrough();
       verifyEmailAddress[1](req, res, (err) => {
-        expect(err.status).toEqual(400);
-        expect(err.code).toEqual(109);
+        expect(err.name).toEqual('EmailVerificationTokenValidationError');
+        expect(err.message).toEqual(
+          'The email address verification token is invalid or has expired.'
+        );
         done();
       });
     });

@@ -1,6 +1,6 @@
 function ResetPasswordTokenValidationError() {
   this.name = 'ResetPasswordTokenValidationError';
-  this.message = 'The reset password token is invalid.';
+  this.message = 'The email address verification token is invalid or has expired.';
   this.code = 106;
   this.status = 400;
 }
@@ -13,6 +13,14 @@ function ResetPasswordValidationError(message) {
   this.status = 400;
 }
 ResetPasswordValidationError.prototype = Error.prototype;
+
+function EmailVerificationTokenValidationError(message) {
+  this.name = 'EmailVerificationTokenValidationError';
+  this.message = message || 'The reset password token is invalid.';
+  this.code = 109;
+  this.status = 400;
+}
+EmailVerificationTokenValidationError.prototype = Error.prototype;
 
 function UserNotFoundError() {
   this.name = 'UserNotFoundError';
@@ -137,6 +145,7 @@ FriendshipPermissionError.prototype = Error.prototype;
 module.exports = {
   ResetPasswordTokenValidationError,
   ResetPasswordValidationError,
+  EmailVerificationTokenValidationError,
 
   UserNotFoundError,
   UserValidationError,

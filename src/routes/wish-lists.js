@@ -116,6 +116,7 @@ const deleteWishList = [
     WishList
       .remove({ _id: req.params.wishListId })
       .then(() => {
+        // TODO: Remove gifts that reference this wish list.
         authResponse({
           message: 'Wish list successfully deleted.'
         })(req, res, next);

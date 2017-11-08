@@ -133,6 +133,7 @@ const deleteUser = [
     User
       .remove({ _id: req.params.userId })
       .then(() => {
+        // TODO: Remove wish lists, gifts, dibs, friendships owned by this user.
         return res.json({
           message: 'Your account was successfully deleted. Goodbye!'
         });
