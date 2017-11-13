@@ -41,7 +41,7 @@ const dibSchema = new Schema({
   }
 });
 
-dibSchema.methods.update = function (values) {
+dibSchema.methods.updateSync = function (values) {
   const fields = ['pricePaid', 'quantity'];
 
   // Update the date delivered if user marks the dib as delivered
@@ -53,6 +53,8 @@ dibSchema.methods.update = function (values) {
   }
 
   updateDocument(this, fields, values);
+
+  return this;
 };
 
 dibSchema.plugin(MongoDbErrorHandlerPlugin);

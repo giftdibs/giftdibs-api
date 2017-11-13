@@ -29,7 +29,7 @@ const externalUrlSchema = new Schema({
   }
 });
 
-externalUrlSchema.methods.update = function (values) {
+externalUrlSchema.methods.updateSync = function (values) {
   const fields = ['url', 'price', 'dateScraped'];
 
   // Reset the date scraped if the URL has changed.
@@ -38,6 +38,8 @@ externalUrlSchema.methods.update = function (values) {
   }
 
   updateDocument(this, fields, values);
+
+  return this;
 };
 
 externalUrlSchema.plugin(MongoDbErrorHandlerPlugin);

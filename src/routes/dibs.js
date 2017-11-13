@@ -228,7 +228,7 @@ const updateDib = [
           return;
         }
 
-        dib.update(req.body);
+        dib.updateSync(req.body);
 
         return dib.save();
       })

@@ -322,7 +322,7 @@ describe('User schema', () => {
       firstName: 'Test'
     };
 
-    user.update(formData);
+    user.updateSync(formData);
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       user,

@@ -1,13 +1,10 @@
 const express = require('express');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
-const { Gift } = require('../database/models/gift');
-const { confirmUserOwnsGift } = require('../middleware/confirm-user-owns-gift');
-const { GiftValidationError } = require('../shared/errors');
 
-const {
-  confirmUserOwnsWishList
-} = require('../middleware/confirm-user-owns-wish-list');
+const { Gift } = require('../database/models/gift');
+const { WishList } = require('../database/models/wish-list');
+const { GiftValidationError } = require('../shared/errors');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
@@ -42,94 +39,84 @@ function sortByOrder(gifts) {
   });
 }
 
-const getGifts = [
-  (req, res, next) => {
-    const query = {};
-    const wishListId = req.query.wishListId;
+function getGifts(req, res, next) {
+  const query = {};
+  const wishListId = req.query.wishListId;
 
-    if (wishListId) {
-      query._wishList = wishListId;
-    }
-
-    Gift
-      .find(query)
-      .lean()
-      .then((gifts) => {
-        if (wishListId) {
-          sortByOrder(gifts);
-        }
-
-        authResponse({
-          gifts
-        })(req, res, next);
-      })
-      .catch(next);
+  if (wishListId) {
+    query._wishList = wishListId;
   }
-];
 
-const addGift = [
-  confirmUserOwnsWishList,
+  Gift
+    .find(query)
+    .lean()
+    .then((gifts) => {
+      if (wishListId) {
+        sortByOrder(gifts);
+      }
 
-  (req, res, next) => {
-    const gift = new Gift({
-      _user: req.user._id,
-      _wishList: req.body._wishList,
-      budget: req.body.budget,
-      externalUrls: req.body.externalUrls,
-      name: req.body.name
-    });
+      authResponse({
+        gifts
+      })(req, res, next);
+    })
+    .catch(next);
+}
 
-    gift
-      .save()
-      .then((newGift) => {
-        authResponse({
-          giftId: newGift._id,
-          message: 'Gift successfully created.'
-        })(req, res, next);
-      })
-      .catch((err) => handleError(err, next));
-  }
-];
+function addGift(req, res, next) {
+  WishList
+    .confirmUserOwnership(req.body._wishList, req.user._id)
+    .then(() => {
+      const gift = new Gift({
+        _user: req.user._id,
+        _wishList: req.body._wishList,
+        budget: req.body.budget,
+        externalUrls: req.body.externalUrls,
+        name: req.body.name
+      });
 
-const deleteGift = [
-  confirmUserOwnsGift,
+      return gift.save();
+    })
+    .then((gift) => {
+      authResponse({
+        giftId: gift._id,
+        message: 'Gift successfully created.'
+      })(req, res, next);
+    })
+    .catch((err) => handleError(err, next));
+}
 
-  (req, res, next) => {
-    Gift
-      .remove({ _id: req.params.giftId })
-      .then(() => {
-        // TODO: Remove any dibs associated with this gift.
-        authResponse({
-          message: 'Gift successfully deleted.'
-        })(req, res, next);
-      })
-      .catch(next);
-  }
-];
+function deleteGift(req, res, next) {
+  Gift
+    .confirmUserOwnership(req.params.giftId, req.user._id)
+    .then(() => Gift.remove({ _id: req.params.giftId }))
+    .then(() => {
+      // TODO: Remove any dibs associated with this gift.
+      authResponse({
+        message: 'Gift successfully deleted.'
+      })(req, res, next);
+    })
+    .catch(next);
+}
 
-const updateGift = [
-  confirmUserOwnsGift,
-  confirmUserOwnsWishList,
-
-  (req, res, next) => {
-    Gift
-      .find({
-        _id: req.params.giftId
-      })
-      .limit(1)
-      .then((docs) => {
-        const gift = docs[0];
-        gift.update(req.body);
-        return gift.save();
-      })
-      .then(() => {
-        authResponse({
-          message: 'Gift successfully updated.'
-        })(req, res, next);
-      })
-      .catch((err) => handleError(err, next));
-  }
-];
+function updateGift(req, res, next) {
+  Gift
+    .confirmUserOwnership(req.params.giftId, req.user._id)
+    .then((gift) => {
+      return WishList
+        .confirmUserOwnership(gift._wishList, req.user._id)
+        .then(() => gift);
+    })
+    .then((gift) => {
+      gift.updateSync(req.body);
+      return gift.save();
+    })
+    .then(() => {
+      authResponse({
+        message: 'Gift successfully updated.'
+      })(req, res, next);
+    })
+    .catch((err) => handleError(err, next));
+}
 
 const router = express.Router();
 router.use(authenticateJwt);

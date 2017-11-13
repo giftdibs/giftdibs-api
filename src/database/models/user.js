@@ -1,8 +1,21 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const randomstring = require('randomstring');
-const { isEmail, isAlpha } = require('validator');
-const { updateDocument } = require('../utils/update-document');
+
+const {
+  isEmail,
+  isAlpha
+} = require('validator');
+
+const {
+  updateDocument
+} = require('../utils/update-document');
+
+const {
+  UserNotFoundError,
+  UserPermissionError,
+  UserValidationError
+} = require('../../shared/errors');
 
 const {
   MongoDbErrorHandlerPlugin
@@ -98,6 +111,31 @@ const userSchema = new Schema({
   }
 });
 
+userSchema.statics.confirmOwnership = function (docId, userId) {
+  if (!docId) {
+    return Promise.reject(
+      new UserValidationError('Please provide a user ID.')
+    );
+  }
+
+  return this
+    .find({ _id: docId })
+    .limit(1)
+    .then((docs) => {
+      const doc = docs[0];
+
+      if (!doc) {
+        return Promise.reject(new UserNotFoundError());
+      }
+
+      if (userId.toString() !== doc._id.toString()) {
+        return Promise.reject(new UserPermissionError());
+      }
+
+      return doc;
+    });
+};
+
 userSchema.methods.confirmPassword = function (password) {
   return new Promise((resolve, reject) => {
     bcrypt
@@ -190,14 +228,17 @@ userSchema.methods.verifyEmailAddress = function (token) {
   return false;
 };
 
-userSchema.methods.update = function (values) {
+userSchema.methods.updateSync = function (values) {
   const fields = [
     'firstName',
     'lastName',
     'emailAddress',
     'facebookId'
   ];
+
   updateDocument(this, fields, values);
+
+  return this;
 };
 
 userSchema.plugin(MongoDbErrorHandlerPlugin);

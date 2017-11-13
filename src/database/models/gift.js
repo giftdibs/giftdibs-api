@@ -3,6 +3,12 @@ const { externalUrlSchema } = require('./external-url');
 const { updateDocument } = require('../utils/update-document');
 
 const {
+  GiftNotFoundError,
+  GiftPermissionError,
+  GiftValidationError
+} = require('../../shared/errors');
+
+const {
   MongoDbErrorHandlerPlugin
 } = require('../plugins/mongodb-error-handler');
 
@@ -64,7 +70,32 @@ const giftSchema = new Schema({
   }
 });
 
-giftSchema.methods.update = function (values) {
+giftSchema.statics.confirmUserOwnership = function (giftId, userId) {
+  if (!giftId) {
+    return Promise.reject(
+      new GiftValidationError('Please provide a gift ID.')
+    );
+  }
+
+  return this
+    .find({ _id: giftId })
+    .limit(1)
+    .then((docs) => {
+      const gift = docs[0];
+
+      if (!gift) {
+        return Promise.reject(new GiftNotFoundError());
+      }
+
+      if (userId.toString() !== gift._user.toString()) {
+        return Promise.reject(new GiftPermissionError());
+      }
+
+      return gift;
+    });
+};
+
+giftSchema.methods.updateSync = function (values) {
   const fields = [
     '_wishList',
     'budget',
@@ -74,7 +105,10 @@ giftSchema.methods.update = function (values) {
     'priority',
     'quantity'
   ];
+
   updateDocument(this, fields, values);
+
+  return this;
 };
 
 giftSchema.plugin(MongoDbErrorHandlerPlugin);

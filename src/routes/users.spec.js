@@ -252,7 +252,7 @@ describe('Users router', () => {
     _req.body = { firstName: 'NewName' };
     spyOn(_req.user, 'update');
     updateUser[2](_req, {}, () => {
-      expect(_req.user.update).toHaveBeenCalledWith(_req.body);
+      expect(_req.user.updateSync).toHaveBeenCalledWith(_req.body);
       done();
     });
   });

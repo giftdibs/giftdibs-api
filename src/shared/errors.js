@@ -1,6 +1,6 @@
-function ResetPasswordTokenValidationError() {
+function ResetPasswordTokenValidationError(message) {
   this.name = 'ResetPasswordTokenValidationError';
-  this.message = 'The email address verification token is invalid or has expired.';
+  this.message = message || 'The email address verification token is invalid or has expired.';
   this.code = 106;
   this.status = 400;
 }
@@ -22,81 +22,81 @@ function EmailVerificationTokenValidationError(message) {
 }
 EmailVerificationTokenValidationError.prototype = Error.prototype;
 
-function UserNotFoundError() {
+function UserNotFoundError(message) {
   this.name = 'UserNotFoundError';
-  this.message = 'User not found.';
+  this.message = message || 'User not found.';
   this.code = 200;
   this.status = 400;
 }
 UserNotFoundError.prototype = Error.prototype;
 
-function UserValidationError() {
+function UserValidationError(message) {
   this.name = 'UserValidationError';
-  this.message = 'User validation failed.';
+  this.message = message || 'User validation failed.';
   this.code = 201;
   this.status = 400;
 }
 UserValidationError.prototype = Error.prototype;
 
-function UserPermissionError() {
+function UserPermissionError(message) {
   this.name = 'UserPermissionError';
-  this.message = 'Permission denied to modify user.';
+  this.message = message || 'Permission denied to modify user.';
   this.code = 202;
   this.status = 403;
 }
 UserPermissionError.prototype = Error.prototype;
 
-function WishListNotFoundError() {
+function WishListNotFoundError(message) {
   this.name = 'WishListNotFoundError';
-  this.message = 'Wish list not found.';
+  this.message = message || 'Wish list not found.';
   this.code = 300;
   this.status = 400;
 }
 WishListNotFoundError.prototype = Error.prototype;
 
-function WishListValidationError() {
+function WishListValidationError(message) {
   this.name = 'WishListValidationError';
-  this.message = 'Wish list validation failed.';
+  this.message = message || 'Wish list validation failed.';
   this.code = 301;
   this.status = 400;
 }
 WishListValidationError.prototype = Error.prototype;
 
-function WishListPermissionError() {
+function WishListPermissionError(message) {
   this.name = 'WishListPermissionError';
-  this.message = 'Permission denied to modify wish list.';
+  this.message = message || 'Permission denied to modify wish list.';
   this.code = 302;
   this.status = 403;
 }
 WishListPermissionError.prototype = Error.prototype;
 
-function GiftNotFoundError() {
+function GiftNotFoundError(message) {
   this.name = 'GiftNotFoundError';
-  this.message = 'Gift not found.';
+  this.message = message || 'Gift not found.';
   this.code = 400;
   this.status = 400;
 }
 GiftNotFoundError.prototype = Error.prototype;
 
-function GiftValidationError() {
+function GiftValidationError(message) {
   this.name = 'GiftValidationError';
-  this.message = 'Gift validation failed.';
+  this.message = message || 'Gift validation failed.';
   this.code = 401;
   this.status = 400;
 }
 GiftValidationError.prototype = Error.prototype;
 
-function GiftPermissionError() {
+function GiftPermissionError(message) {
   this.name = 'GiftPermissionError';
-  this.message = 'Permission denied to modify gift.';
+  this.message = message || 'Permission denied to modify gift.';
   this.code = 402;
   this.status = 403;
 }
 GiftPermissionError.prototype = Error.prototype;
 
-function DibNotFoundError() {
+function DibNotFoundError(message) {
   this.name = 'DibNotFoundError';
-  this.message = 'Dib not found.';
+  this.message = message || 'Dib not found.';
   this.code = 500;
   this.status = 400;
 }
@@ -110,17 +110,17 @@ function DibValidationError(message) {
 }
 DibValidationError.prototype = Error.prototype;
 
-function DibPermissionError() {
+function DibPermissionError(message) {
   this.name = 'DibPermissionError';
-  this.message = 'Permission denied to modify dib.';
+  this.message = message || 'Permission denied to modify dib.';
   this.code = 502;
   this.status = 403;
 }
 DibPermissionError.prototype = Error.prototype;
 
-function FriendshipNotFoundError() {
+function FriendshipNotFoundError(message) {
   this.name = 'FriendshipNotFoundError';
-  this.message = 'Friendship not found.';
+  this.message = message || 'Friendship not found.';
   this.code = 600;
   this.status = 400;
 }
@@ -134,9 +134,9 @@ function FriendshipValidationError(message) {
 }
 FriendshipValidationError.prototype = Error.prototype;
 
-function FriendshipPermissionError() {
+function FriendshipPermissionError(message) {
   this.name = 'FriendshipPermissionError';
-  this.message = 'Permission denied to modify friendship.';
+  this.message = message || 'Permission denied to modify friendship.';
   this.code = 602;
   this.status = 403;
 }
