@@ -71,7 +71,7 @@ describe('WishList schema', () => {
   });
 
   it('should beautify native mongo errors', () => {
-    let found = WishList.schema.plugins.filter(plugin => {
+    let found = WishList.schema.plugins.filter((plugin) => {
       return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
     })[0];
     expect(found).toBeDefined();

@@ -13,7 +13,7 @@ const verify = (req, payload, done) => {
   User
     .find({ _id: payload.id })
     .limit(1)
-    .then(results => {
+    .then((results) => {
       const user = results[0];
 
       if (!user) {
@@ -27,7 +27,7 @@ const verify = (req, payload, done) => {
 
       done(undefined, user);
     })
-    .catch(err => done(err, false));
+    .catch((err) => done(err, false));
 };
 
 const strategy = new JwtStrategy(strategyConfig, verify);

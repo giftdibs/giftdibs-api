@@ -1,10 +1,8 @@
 const express = require('express');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
-const { confirmUserOwnsDib } = require('../middleware/confirm-user-owns-dib');
 
 const {
-  DibNotFoundError,
   DibValidationError,
   GiftNotFoundError
 } = require('../shared/errors');
@@ -25,7 +23,7 @@ function handleError(err, next) {
 
 function checkAlreadyDibbed(req, res, next) {
   // Fail if the current user has already dibbed this gift.
-  Dib
+  return Dib
     .find({
       _gift: req.body._gift,
       _user: req.user._id
@@ -35,14 +33,14 @@ function checkAlreadyDibbed(req, res, next) {
     .then((docs) => {
       const dib = docs[0];
 
-      if (dib) {
-        next(new DibValidationError('You have already dibbed that gift.'));
+      if (!dib) {
         return;
       }
 
-      next();
-    })
-    .catch(next);
+      return Promise.reject(
+        new DibValidationError('You have already dibbed that gift.')
+      );
+    });
 }
 
 function validateDibQuantity(req) {
@@ -95,23 +93,25 @@ function validateDibQuantity(req) {
     });
 }
 
-function confirmUserDoesNotOwnGift(req, res, next) {
+function confirmUserDoesNotOwnGift(giftId, userId) {
   // Do not allow owner to dib their own gift.
-  Gift
+  return Gift
     .find({
-      _id: req.body._gift,
-      _user: req.user._id
+      _id: giftId,
+      _user: userId
     })
     .lean()
     .then((docs) => {
-      if (docs[0]) {
-        next(new DibValidationError('You cannot dib your own gift.'));
+      // Gift not owned by current user, so it's a pass!
+      if (!docs[0]) {
         return;
       }
 
-      next();
-    })
-    .catch(next);
+      // User owns the gift; invalidated the request.
+      return Promise.reject(
+        new DibValidationError('You cannot dib your own gift.')
+      );
+    });
 }
 
 function getSumBudget(recipient) {
@@ -132,178 +132,149 @@ function getSumBudget(recipient) {
   recipient.budget = total;
 }
 
-const getDibsRecipients = [
-  (req, res, next) => {
-    Dib
-      .find({ _user: req.user._id })
-      .lean()
-      .then((dibs) => {
-        const giftIds = dibs.map((dib) => dib._gift.toString());
-        const recipients = [];
+function getDibsRecipients(req, res, next) {
+  Dib
+    .find({ _user: req.user._id })
+    .lean()
+    .then((dibs) => {
+      const giftIds = dibs.map((dib) => dib._gift.toString());
+      const recipients = [];
 
-        return Gift
-          .find({})
-          .where('_id')
-          .in(giftIds)
-          .populate('_user _wishList')
-          .lean()
-          .then((gifts) => {
-            gifts.forEach((gift) => {
-              // Match the specific dib to the gift.
-              dibs.forEach((dib) => {
-                if (dib._gift.toString() === gift._id.toString()) {
-                  gift._dib = dib;
-                }
-              });
-
-              const recipient = recipients.filter((recipient) => {
-                return (recipient._id.toString() === gift._user._id.toString());
-              })[0];
-
-              if (recipient) {
-                recipient.gifts.push(gift);
-                return;
+      return Gift
+        .find({})
+        .where('_id')
+        .in(giftIds)
+        .populate('_user _wishList')
+        .lean()
+        .then((gifts) => {
+          gifts.forEach((gift) => {
+            // Match the specific dib to the gift.
+            dibs.forEach((dib) => {
+              if (dib._gift.toString() === gift._id.toString()) {
+                gift._dib = dib;
               }
-
-              // Add a new recipient.
-              recipients.push({
-                _id: gift._user._id,
-                firstName: gift._user.firstName,
-                lastName: gift._user.lastName,
-                gifts: [gift]
-              });
             });
 
-            recipients.forEach(getSumBudget);
+            const recipient = recipients.filter((recipient) => {
+              return (recipient._id.toString() === gift._user._id.toString());
+            })[0];
 
-            authResponse({
-              recipients
-            })(req, res, next);
+            if (recipient) {
+              recipient.gifts.push(gift);
+              return;
+            }
+
+            // Add a new recipient.
+            recipients.push({
+              _id: gift._user._id,
+              firstName: gift._user.firstName,
+              lastName: gift._user.lastName,
+              gifts: [gift]
+            });
           });
-      })
-      .catch(next);
-  }
-];
 
-const createDib = [
-  confirmUserDoesNotOwnGift,
-  checkAlreadyDibbed,
+          recipients.forEach(getSumBudget);
 
-  (req, res, next) => {
-    validateDibQuantity(req)
-      .then(() => {
-        const dib = new Dib({
-          _gift: req.body._gift,
-          _user: req.user._id,
-          quantity: req.body.quantity
+          authResponse({
+            recipients
+          })(req, res, next);
         });
+    })
+    .catch(next);
+}
 
-        return dib.save();
-      })
-      .then((doc) => {
-        authResponse({
-          dibId: doc._id,
-          message: 'Gift successfully dibbed!'
-        })(req, res, next);
-      })
-      .catch((err) => handleError(err, next));
+function createDib(req, res, next) {
+  const giftId = req.body._gift;
+  const userId = req.user._id;
+
+  confirmUserDoesNotOwnGift(giftId, userId)
+    .then(() => checkAlreadyDibbed(giftId, userId))
+    .then(() => validateDibQuantity(req))
+    .then(() => {
+      const dib = new Dib({
+        _gift: req.body._gift,
+        _user: req.user._id,
+        quantity: req.body.quantity
+      });
+
+      return dib.save();
+    })
+    .then((dib) => {
+      authResponse({
+        dibId: dib._id,
+        message: 'Gift successfully dibbed!'
+      })(req, res, next);
+    })
+    .catch((err) => handleError(err, next));
+}
+
+function updateDib(req, res, next) {
+  Dib
+    .confirmUserOwnership(req.params.dibId, req.user._id)
+    .then((dib) => validateDibQuantity(req).then(() => dib))
+    .then((dib) => {
+      dib.updateSync(req.body);
+      return dib.save();
+    })
+    .then(() => {
+      authResponse({
+        message: 'Dib successfully updated.'
+      })(req, res, next);
+    })
+    .catch((err) => handleError(err, next));
+}
+
+function deleteDib(req, res, next) {
+  Dib
+    .confirmUserOwnership(req.params.dibId, req.user._id)
+    .then(() => Dib.remove({ _id: req.params.dibId }))
+    .then(() => {
+      authResponse({
+        message: 'Dib successfully removed.'
+      })(req, res, next);
+    })
+    .catch(next);
+}
+
+// TODO: Make sure user has permission to retrieve dibs from this wish list,
+// once we've established wish list privacy.
+function getDibs(req, res, next) {
+  if (!req.query.wishListId) {
+    next(
+      new DibValidationError('Please provide a wish list ID.')
+    );
+
+    return;
   }
-];
 
-const updateDib = [
-  confirmUserOwnsDib,
+  // User wishes to retrieve all dibs for a given wish list.
+  // (If the user owns the wish list, do not retrieve any dib information!)
 
-  (req, res, next) => {
-    validateDibQuantity(req)
-      .then(() => {
-        return Dib
-          .find({ _id: req.params.dibId })
-          .limit(1);
-      })
-      .then((docs) => {
-        const dib = docs[0];
+  // Get all gifts in a wish list, not owned by current user.
+  // (we don't want to retrieve dibs for current user)
+  Gift
+    .find({
+      _wishList: req.query.wishListId,
+      _user: { $ne: req.user._id }
+    })
+    .lean()
+    .then((gifts) => {
+      const giftIds = gifts.map((gift) => gift._id);
 
-        if (!dib) {
-          next(new DibNotFoundError());
-          return;
-        }
-
-        dib.updateSync(req.body);
-
-        return dib.save();
-      })
-      .then(() => {
-        authResponse({
-          message: 'Dib successfully updated.'
-        })(req, res, next);
-      })
-      .catch((err) => handleError(err, next));
-  }
-];
-
-const deleteDib = [
-  confirmUserOwnsDib,
-
-  (req, res, next) => {
-    Dib
-      .remove({ _id: req.params.dibId })
-      .then(() => {
-        authResponse({
-          message: 'Dib successfully removed.'
-        })(req, res, next);
-      })
-      .catch(next);
-  }
-];
-
-const getDibs = [
-  (req, res, next) => {
-    if (req.query.wishListId) {
-      next();
-      return;
-    }
-
-    Dib
-      .find({ _user: req.user._id })
-      .lean()
-      .then((dibs) => {
-        authResponse({
-          dibs
-        })(req, res, next);
-      })
-      .catch(next);
-  },
-
-  // TODO: Make sure user has permission to retrieve dibs from this wish list,
-  // once we've established wish list privacy.
-
-  (req, res, next) => {
-    Gift
-      // get all gifts in a wish list, not owned by current user.
-      // (we don't want to retrieve dibs for current user)
-      .find({
-        _wishList: req.query.wishListId,
-        _user: { $ne: req.user._id }
-      })
-      .lean()
-      .then((gifts) => {
-        const giftIds = gifts.map(gift => gift._id);
-
-        return Dib
-          .find({})
-          .where('_gift')
-          .in(giftIds)
-          .populate('_user', 'firstName lastName')
-          .lean();
-      })
-      .then((dibs) => {
-        authResponse({
-          dibs
-        })(req, res, next);
-      })
-      .catch(next);
-  }
-];
+      return Dib
+        .find({})
+        .where('_gift')
+        .in(giftIds)
+        .populate('_user', 'firstName lastName')
+        .lean();
+    })
+    .then((dibs) => {
+      authResponse({
+        dibs
+      })(req, res, next);
+    })
+    .catch(next);
+}
 
 const router = express.Router();
 router.use(authenticateJwt);
@@ -313,7 +284,7 @@ router.route('/dibs')
 router.route('/dibs/:dibId')
   .patch(updateDib)
   .delete(deleteDib);
-router.route('/dibs-recipients')
+router.route('/dibs/recipients')
   .get(getDibsRecipients);
 
 module.exports = {

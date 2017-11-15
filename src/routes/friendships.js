@@ -4,17 +4,14 @@ const authenticateJwt = require('../middleware/authenticate-jwt');
 const { Friendship } = require('../database/models/friendship');
 const { FriendshipValidationError } = require('../shared/errors');
 
-const {
-  confirmUserOwnsFriendship
-} = require('../middleware/confirm-user-owns-friendship');
-
 function validateFriendRequest(req, res, next) {
   if (req.user._id.toString() === req.body._friend) {
-    next(new FriendshipValidationError('You cannot follow yourself.'));
-    return;
+    return Promise.reject(
+      new FriendshipValidationError('You cannot follow yourself.')
+    );
   }
 
-  Friendship
+  return Friendship
     .find({
       _user: req.user._id,
       _friend: req.body._friend
@@ -23,16 +20,17 @@ function validateFriendRequest(req, res, next) {
     .lean()
     .then((docs) => {
       const friend = docs[0];
+
       if (!friend) {
-        next();
         return;
       }
 
-      next(
-        new FriendshipValidationError('You are already following that person.')
+      const err = new FriendshipValidationError(
+        'You are already following that person.'
       );
-    })
-    .catch(next);
+
+      return Promise.reject(err);
+    });
 }
 
 function handleError(err, next) {
@@ -46,68 +44,61 @@ function handleError(err, next) {
   next(err);
 }
 
-const getFriendships = [
-  (req, res, next) => {
-    const query = {};
-    const userId = req.query.userId;
+function getFriendships(req, res, next) {
+  const query = {};
+  const userId = req.query.userId;
 
-    if (userId) {
-      query.$or = [{
-        _user: userId
-      }, {
-        _friend: userId
-      }];
-    }
-
-    Friendship
-      .find(query)
-      .populate('_friend', 'firstName lastName')
-      .populate('_user', 'firstName lastName')
-      .lean()
-      .then((friendships) => {
-        authResponse({
-          friendships
-        })(req, res, next);
-      })
-      .catch(next);
+  if (userId) {
+    query.$or = [{
+      _user: userId
+    }, {
+      _friend: userId
+    }];
   }
-];
 
-const createFriendship = [
-  validateFriendRequest,
+  Friendship
+    .find(query)
+    .populate('_friend', 'firstName lastName')
+    .populate('_user', 'firstName lastName')
+    .lean()
+    .then((friendships) => {
+      authResponse({
+        friendships
+      })(req, res, next);
+    })
+    .catch(next);
+}
 
-  (req, res, next) => {
-    const friendship = new Friendship({
-      _user: req.user._id,
-      _friend: req.body._friend
-    });
+function createFriendship(req, res, next) {
+  validateFriendRequest()
+    .then(() => {
+      const friendship = new Friendship({
+        _user: req.user._id,
+        _friend: req.body._friend
+      });
 
-    friendship
-      .save()
-      .then((newFriendship) => {
-        authResponse({
-          friendshipId: newFriendship._id,
-          message: 'Friendship successfully created.'
-        })(req, res, next);
-      })
-      .catch((err) => handleError(err, next));
-  }
-];
+      return friendship.save();
+    })
+    .then((friendship) => {
+      authResponse({
+        friendshipId: friendship._id,
+        message: 'Friendship successfully created.'
+      })(req, res, next);
+    })
+    .catch((err) => handleError(err, next));
+}
 
-const deleteFriendship = [
-  confirmUserOwnsFriendship,
-
-  (req, res, next) => {
-    Friendship
-      .remove({ _id: req.params.friendshipId })
-      .then(() => {
-        authResponse({
-          message: 'Friendship successfully deleted.'
-        })(req, res, next);
-      })
-      .catch(next);
-  }
-];
+function deleteFriendship(req, res, next) {
+  Friendship
+    .confirmUserOwnership(req.params.friendshipId, req.user._id)
+    .then(() => Friendship.remove({ _id: req.params.friendshipId }))
+    .then(() => {
+      authResponse({
+        message: 'Friendship successfully deleted.'
+      })(req, res, next);
+    })
+    .catch(next);
+}
 
 const router = express.Router();
 router.use(authenticateJwt);

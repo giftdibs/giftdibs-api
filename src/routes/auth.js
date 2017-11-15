@@ -8,10 +8,14 @@ const authenticateJwt = require('../middleware/authenticate-jwt');
 const {
   ResetPasswordTokenValidationError,
   ResetPasswordValidationError,
-  EmailVerificationTokenValidationError
+  EmailVerificationTokenValidationError,
+  RegistrationValidationError,
+  LoginNotFoundError,
+  LoginValidationError,
+  ForgottenPasswordValidationError
 } = require('../shared/errors');
 
-function handleError(err, next) {
+function handleResetPasswordError(err, next) {
   if (err.name === 'ValidationError') {
     const error = new ResetPasswordValidationError();
     error.errors = err.errors;
@@ -39,17 +43,20 @@ function updatePasswordForUser(user) {
 }
 
 function getUserByResetPasswordToken(resetPasswordToken) {
+  // Get a user with a non-expired reset token.
   return User
     .find({
       resetPasswordToken,
       resetPasswordExpires: { $gt: Date.now() }
     })
     .limit(1)
-    .then(docs => {
+    .then((docs) => {
       const user = docs[0];
 
       if (!user) {
-        return Promise.reject(new ResetPasswordTokenValidationError());
+        return Promise.reject(
+          new ResetPasswordTokenValidationError()
+        );
       }
 
       return user;
@@ -58,11 +65,8 @@ function getUserByResetPasswordToken(resetPasswordToken) {
 
 const register = [
   function checkSpamBot(req, res, next) {
-    if (req.body.gdNickname) {
-      const err = new Error('You are a spam bot. Goodbye!');
-      err.status = 400;
-      err.code = 108;
-      next(err);
+    if (req.body.gdNickname !== undefined) {
+      next(new RegistrationValidationError());
       return;
     }
 
@@ -70,7 +74,7 @@ const register = [
   },
 
   function registerUser(req, res, next) {
-    let user = new User({
+    const user = new User({
       emailAddress: req.body.emailAddress,
       firstName: req.body.firstName,
       lastName: req.body.lastName,
@@ -83,7 +87,7 @@ const register = [
         user.resetEmailAddressVerification();
         return user.save();
       })
-      .then(doc => {
+      .then((doc) => {
         // TODO: Send verification email.
         // TODO: Send welcome email.
         res.json({
@@ -91,10 +95,11 @@ const register = [
           message: 'Registration successful! Please log in below.'
         });
       })
-      .catch(err => {
+      .catch((err) => {
         if (err.name === 'ValidationError') {
-          err.code = 102;
-          err.message = 'Registration validation failed.';
+          const error = new RegistrationValidationError();
+          error.errors = err.errors;
+          next(error);
         }
 
         next(err);
@@ -109,9 +114,7 @@ const login = [
       return;
     }
 
-    const error = new Error('Please provide an email address and password.');
-    error.status = 400;
-    error.code = 100;
+    const error = new LoginValidationError('Please provide an email address and password.');
     next(error);
   },
 
@@ -123,9 +126,7 @@ const login = [
       }
 
       if (!user) {
-        const error = new Error(info.message);
-        error.status = 400;
-        error.code = 101;
+        const error = new LoginNotFoundError(info.message);
         next(error);
         return;
       }
@@ -148,9 +149,7 @@ const forgotten = [
       return;
     }
 
-    const error = new Error('Please provide an email address.');
-    error.status = 400;
-    error.code = 104;
+    const error = new ForgottenPasswordValidationError('Please provide an email address.');
     next(error);
   },
 
@@ -161,6 +160,10 @@ const forgotten = [
       .then((docs) => {
         const user = docs[0];
 
+        // TODO: Don't show this message to the end user
+        // (for privacy considerations).
+        // Instead, tell the user that "if" this email address is valid, a link
+        // to reset their password was sent.
         if (!user) {
           const err = new Error([
             `The email address "${req.body.emailAddress}"`,
@@ -177,7 +180,6 @@ const forgotten = [
       })
       .then(() => {
         // TODO: Send an email, here.
-
         return res.json({
           message: [
             'Email sent. Please check your spam folder if it does not appear',
@@ -199,7 +201,9 @@ const resetPassword = [
     }
 
     if (!req.body.password || !req.body.passwordAgain) {
-      next(new ResetPasswordValidationError('Please provide a new password.'));
+      next(new ResetPasswordValidationError(
+        'Please provide a new password.'
+      ));
       return;
     }
 
@@ -226,11 +230,11 @@ const resetPassword = [
     if (req.body.resetPasswordToken) {
       getUserByResetPasswordToken(req.body.resetPasswordToken)
         .then((user) => updatePasswordForUser(user)(req, res, next))
-        .catch((err) => handleError(err, next));
+        .catch((err) => handleResetPasswordError(err, next));
     } else {
       req.user.confirmPassword(req.body.currentPassword)
         .then((user) => updatePasswordForUser(req.user)(req, res, next))
-        .catch((err) => handleError(err, next));
+        .catch((err) => handleResetPasswordError(err, next));
     }
   }
 ];

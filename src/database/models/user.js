@@ -21,6 +21,10 @@ const {
   MongoDbErrorHandlerPlugin
 } = require('../plugins/mongodb-error-handler');
 
+const {
+  ConfirmUserOwnershipPlugin
+} = require('../plugins/confirm-user-ownership');
+
 const hasDuplicateChars = (str) => {
   let regex = /(.)\1{2,}/;
   return !regex.test(str);
@@ -111,36 +115,11 @@ const userSchema = new Schema({
   }
 });
 
-userSchema.statics.confirmOwnership = function (docId, userId) {
-  if (!docId) {
-    return Promise.reject(
-      new UserValidationError('Please provide a user ID.')
-    );
-  }
-
-  return this
-    .find({ _id: docId })
-    .limit(1)
-    .then((docs) => {
-      const doc = docs[0];
-
-      if (!doc) {
-        return Promise.reject(new UserNotFoundError());
-      }
-
-      if (userId.toString() !== doc._id.toString()) {
-        return Promise.reject(new UserPermissionError());
-      }
-
-      return doc;
-    });
-};
-
 userSchema.methods.confirmPassword = function (password) {
   return new Promise((resolve, reject) => {
     bcrypt
       .compare(password, this.password)
-      .then(valid => {
+      .then((valid) => {
         if (valid) {
           resolve();
         } else {
@@ -187,7 +166,7 @@ userSchema.methods.setPassword = function (password) {
 
   return bcrypt
     .hash(password, saltRounds)
-    .then(hash => {
+    .then((hash) => {
       this.password = hash;
       return this;
     });
@@ -242,6 +221,13 @@ userSchema.methods.updateSync = function (values) {
 };
 
 userSchema.plugin(MongoDbErrorHandlerPlugin);
+userSchema.plugin(ConfirmUserOwnershipPlugin, {
+  errors: {
+    validation: new UserValidationError('Please provide a user ID.'),
+    notFound: new UserNotFoundError(),
+    permission: new UserPermissionError()
+  }
+});
 
 const User = mongoose.model('User', userSchema);
 

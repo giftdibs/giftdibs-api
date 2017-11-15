@@ -51,7 +51,7 @@ const updateSubDocuments = (doc, values) => {
 function updateDocument(doc, fields, values) {
   const changes = {};
 
-  fields.forEach(field => {
+  fields.forEach((field) => {
     if (values[field] === undefined) {
       return;
     }

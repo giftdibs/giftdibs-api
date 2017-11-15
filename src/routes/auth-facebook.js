@@ -38,56 +38,54 @@ function updateOrCreateUserWithFacebookProfile(user, facebookProfile) {
     .then(() => newUser);
 }
 
-const loginFacebook = [
-  (req, res, next) => {
-    facebook
-      .verifyUserAccessToken(req.body.facebookUserAccessToken)
-      .then((fbResponse) => findUserByFacebookId(fbResponse.data.user_id))
-      .then((user) => {
-        if (user) {
-          return user;
-        }
+function loginWithFacebook(req, res, next) {
+  facebook
+    .verifyUserAccessToken(req.body.facebookUserAccessToken)
+    .then((fbResponse) => findUserByFacebookId(fbResponse.data.user_id))
+    .then((user) => {
+      if (user) {
+        return user;
+      }
 
-        // Attempt to find or register a user with
-        // the Facebook profile information.
-        return facebook
-          .getProfile(req.body.facebookUserAccessToken)
-          .then((profile) => {
-            return findUserByEmailAddress(profile.email)
-              .then((user) => {
-                return updateOrCreateUserWithFacebookProfile(user, profile);
-              });
-          });
-      })
-      .then((user) => {
-        // TODO: Send welcome email if registering.
-        user.dateLastLoggedIn = new Date();
-        return user.save().then(() => user);
-      })
-      .then((user) => {
-        req.user = user;
-        authResponse({
-          message: `Welcome, ${req.user.firstName}!`
-        })(req, res, next);
-      })
-      .catch(err => {
-        if (err.name === 'ValidationError') {
-          err.code = 110;
-          err.status = 400;
-          err.message = 'Registration validation failed.';
-        }
+      // Attempt to find or register a user with
+      // the Facebook profile information.
+      return facebook
+        .getProfile(req.body.facebookUserAccessToken)
+        .then((profile) => {
+          return findUserByEmailAddress(profile.email)
+            .then((user) => {
+              return updateOrCreateUserWithFacebookProfile(user, profile);
+            });
+        });
+    })
+    .then((user) => {
+      // TODO: Send welcome email if registering.
+      user.dateLastLoggedIn = new Date();
+      return user.save().then(() => user);
+    })
+    .then((user) => {
+      req.user = user;
+      authResponse({
+        message: `Welcome, ${req.user.firstName}!`
+      })(req, res, next);
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        err.code = 110;
+        err.status = 400;
+        err.message = 'Registration validation failed.';
+      }
 
-        next(err);
-      });
-  }
-];
+      next(err);
+    });
+}
 
 const router = express.Router();
-router.post('/auth/login-facebook', loginFacebook);
+router.post('/auth/login-facebook', loginWithFacebook);
 
 module.exports = {
   middleware: {
-    loginFacebook
+    loginWithFacebook
   },
   router
 };

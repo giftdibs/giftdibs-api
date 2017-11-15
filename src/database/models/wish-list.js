@@ -11,6 +11,10 @@ const {
   MongoDbErrorHandlerPlugin
 } = require('../plugins/mongodb-error-handler');
 
+const {
+  ConfirmUserOwnershipPlugin
+} = require('../plugins/confirm-user-ownership');
+
 const Schema = mongoose.Schema;
 const wishListSchema = new Schema({
   _user: {
@@ -35,31 +39,6 @@ const wishListSchema = new Schema({
   }
 });
 
-wishListSchema.statics.confirmUserOwnership = function (wishListId, userId) {
-  if (!wishListId) {
-    return Promise.reject(
-      new WishListValidationError('Please provide a wish list ID.')
-    );
-  }
-
-  return this
-    .find({ _id: wishListId })
-    .limit(1)
-    .then((docs) => {
-      const wishList = docs[0];
-
-      if (!wishList) {
-        return Promise.reject(new WishListNotFoundError());
-      }
-
-      if (userId.toString() !== wishList._user.toString()) {
-        return Promise.reject(new WishListPermissionError());
-      }
-
-      return wishList;
-    });
-};
-
 wishListSchema.methods.updateSync = function (values) {
   const fields = ['name'];
 
@@ -69,6 +48,13 @@ wishListSchema.methods.updateSync = function (values) {
 };
 
 wishListSchema.plugin(MongoDbErrorHandlerPlugin);
+wishListSchema.plugin(ConfirmUserOwnershipPlugin, {
+  errors: {
+    validation: new WishListValidationError('Please provide a wish list ID.'),
+    notFound: new WishListNotFoundError(),
+    permission: new WishListPermissionError()
+  }
+});
 
 const WishList = mongoose.model('WishList', wishListSchema);
 

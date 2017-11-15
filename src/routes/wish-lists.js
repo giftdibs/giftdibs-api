@@ -73,7 +73,7 @@ function getWishLists(req, res, next) {
     .find(query)
     .populate('_user', 'firstName lastName')
     .lean()
-    .then(wishLists => {
+    .then((wishLists) => {
       authResponse({
         wishLists
       })(req, res, next);

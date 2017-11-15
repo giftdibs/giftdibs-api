@@ -93,7 +93,7 @@ function getUsers(req, res, next) {
     .find({})
     .select(selectFields)
     .lean()
-    .then(users => {
+    .then((users) => {
       authResponse({
         users
       })(req, res, next);

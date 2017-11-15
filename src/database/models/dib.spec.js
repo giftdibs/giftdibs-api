@@ -102,7 +102,7 @@ describe('Dib schema', () => {
   });
 
   it('should beautify native mongo errors', () => {
-    const found = Dib.schema.plugins.filter(plugin => {
+    const found = Dib.schema.plugins.filter((plugin) => {
       return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
     })[0];
     expect(found).toBeDefined();

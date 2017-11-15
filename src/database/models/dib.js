@@ -1,8 +1,18 @@
 const mongoose = require('mongoose');
 
 const {
+  DibNotFoundError,
+  DibPermissionError,
+  DibValidationError
+} = require('../../shared/errors');
+
+const {
   MongoDbErrorHandlerPlugin
 } = require('../plugins/mongodb-error-handler');
+
+const {
+  ConfirmUserOwnershipPlugin
+} = require('../plugins/confirm-user-ownership');
 
 const { updateDocument } = require('../utils/update-document');
 
@@ -58,6 +68,13 @@ dibSchema.methods.updateSync = function (values) {
 };
 
 dibSchema.plugin(MongoDbErrorHandlerPlugin);
+dibSchema.plugin(ConfirmUserOwnershipPlugin, {
+  errors: {
+    validation: new DibValidationError('Please provide a friendship ID.'),
+    notFound: new DibNotFoundError(),
+    permission: new DibPermissionError()
+  }
+});
 
 const Dib = mongoose.model('Dib', dibSchema);
 

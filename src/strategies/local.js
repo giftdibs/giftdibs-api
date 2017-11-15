@@ -9,7 +9,7 @@ const verify = (emailAddress, password, done) => {
   User
     .find({ emailAddress })
     .limit(1)
-    .then(results => {
+    .then((results) => {
       const user = results[0];
 
       if (!user) {
@@ -36,7 +36,7 @@ const verify = (emailAddress, password, done) => {
           })
         });
     })
-    .catch(err => done(err));
+    .catch((err) => done(err));
 };
 
 const strategy = new LocalStrategy(strategyConfig, verify);

@@ -4,7 +4,10 @@ const authenticateJwt = require('../middleware/authenticate-jwt');
 
 const { Gift } = require('../database/models/gift');
 const { WishList } = require('../database/models/wish-list');
-const { GiftValidationError } = require('../shared/errors');
+const {
+  GiftValidationError,
+  WishListNotFoundError
+} = require('../shared/errors');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
@@ -43,13 +46,27 @@ function getGifts(req, res, next) {
   const query = {};
   const wishListId = req.query.wishListId;
 
+  let promise = Promise.resolve();
+
+  // If wish list ID set, verify that the wish list exists.
   if (wishListId) {
     query._wishList = wishListId;
+    promise = WishList
+      .find({ _id: wishListId })
+      .limit(1)
+      .lean()
+      .then((docs) => {
+        const wishList = docs[0];
+
+        if (!wishList) {
+          return Promise.reject(new WishListNotFoundError());
+        }
+      });
   }
 
-  Gift
-    .find(query)
-    .lean()
+  // Get all gifts based on revised query:
+  promise
+    .then(() => Gift.find(query).lean())
     .then((gifts) => {
       if (wishListId) {
         sortByOrder(gifts);

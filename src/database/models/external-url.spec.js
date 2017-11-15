@@ -64,7 +64,7 @@ describe('ExternalUrl schema', () => {
   });
 
   it('should beautify native mongo errors', () => {
-    let found = ExternalUrl.schema.plugins.filter(plugin => {
+    let found = ExternalUrl.schema.plugins.filter((plugin) => {
       return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
     })[0];
     expect(found).toBeDefined();
