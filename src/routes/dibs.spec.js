@@ -330,7 +330,7 @@ describe('Dibs router', () => {
         quantity: 1
       });
 
-      const updateSpy = spyOn(dib, 'update');
+      const updateSpy = spyOn(dib, 'updateSync');
       const saveSpy = spyOn(dib, 'save');
 
       MockDib.overrides.find.returnWith = () => Promise.resolve([dib]);

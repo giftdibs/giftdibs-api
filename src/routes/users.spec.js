@@ -250,7 +250,7 @@ describe('Users router', () => {
     const users = mock.reRequire('./users');
     const updateUser = users.middleware.updateUser;
     _req.body = { firstName: 'NewName' };
-    spyOn(_req.user, 'update');
+    spyOn(_req.user, 'updateSync');
     updateUser[2](_req, {}, () => {
       expect(_req.user.updateSync).toHaveBeenCalledWith(_req.body);
       done();

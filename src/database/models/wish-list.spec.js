@@ -81,7 +81,7 @@ describe('WishList schema', () => {
     const wishList = new WishList(_wishListDefinition);
     const formData = {};
 
-    wishList.update(formData);
+    wishList.updateSync(formData);
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       wishList,

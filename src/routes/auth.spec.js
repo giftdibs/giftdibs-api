@@ -57,6 +57,7 @@ describe('Auth router', () => {
           emailAddress: 'a',
           password: 'b'
         };
+
         auth.middleware.login[0]({ body }, {}, (err) => {
           expect(err).toBeUndefined();
           done();

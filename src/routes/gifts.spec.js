@@ -245,7 +245,7 @@ describe('Gifts router', () => {
         _id: 'giftid'
       });
 
-      const updateSpy = spyOn(gift, 'update');
+      const updateSpy = spyOn(gift, 'updateSync');
       const saveSpy = spyOn(gift, 'save');
 
       spyOn(MockGift, 'find').and.returnValue({

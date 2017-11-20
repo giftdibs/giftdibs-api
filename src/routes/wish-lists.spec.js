@@ -216,7 +216,7 @@ describe('Wish lists router', () => {
         _id: 'wishlistid'
       });
 
-      const updateSpy = spyOn(wishList, 'update');
+      const updateSpy = spyOn(wishList, 'updateSync');
       const saveSpy = spyOn(wishList, 'save');
 
       spyOn(MockWishList, 'find').and.returnValue({

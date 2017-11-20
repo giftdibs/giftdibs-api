@@ -90,7 +90,7 @@ describe('Gift schema', () => {
     const gift = new Gift(_giftDefinition);
     const formData = {};
 
-    gift.update(formData);
+    gift.updateSync(formData);
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       gift,

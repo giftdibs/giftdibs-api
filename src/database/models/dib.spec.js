@@ -112,7 +112,7 @@ describe('Dib schema', () => {
     const dib = new Dib(_dibDefinition);
     const formData = {};
 
-    dib.update(formData);
+    dib.updateSync(formData);
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       dib,
@@ -129,11 +129,11 @@ describe('Dib schema', () => {
     const formData = {};
 
     formData.isDelivered = true;
-    dib.update(formData);
+    dib.updateSync(formData);
     expect(dib.dateDelivered instanceof Date).toEqual(true);
 
     formData.isDelivered = false;
-    dib.update(formData);
+    dib.updateSync(formData);
     expect(dib.dateDelivered).toBeUndefined();
   });
 });

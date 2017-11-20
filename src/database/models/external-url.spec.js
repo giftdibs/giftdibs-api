@@ -74,7 +74,7 @@ describe('ExternalUrl schema', () => {
     const externalUrl = new ExternalUrl(_externalUrlDefinition);
     const formData = {};
 
-    externalUrl.update(formData);
+    externalUrl.updateSync(formData);
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       externalUrl,
@@ -89,7 +89,7 @@ describe('ExternalUrl schema', () => {
       url: 'new'
     };
 
-    externalUrl.update(formData);
+    externalUrl.updateSync(formData);
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       externalUrl,
