@@ -91,6 +91,7 @@ giftSchema.methods.updateSync = function (values) {
 };
 
 giftSchema.plugin(MongoDbErrorHandlerPlugin);
+
 giftSchema.plugin(ConfirmUserOwnershipPlugin, {
   errors: {
     validation: new GiftValidationError('Please provide a gift ID.'),

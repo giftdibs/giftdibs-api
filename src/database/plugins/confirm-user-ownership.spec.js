@@ -6,9 +6,21 @@ describe('ConfirmUserOwnershipPlugin', () => {
   let MockNotFoundError;
   let MockValidationError;
   let _docUserId;
+  let _context;
 
   beforeEach(() => {
     _docUserId = 'userid';
+    _context = {
+      find() {
+        return {
+          limit: () => {
+            return Promise.resolve([
+              new MockSchema()
+            ])
+          }
+        };
+      }
+    };
 
     MockPermissionError = function () {};
     MockNotFoundError = function () {};
@@ -19,15 +31,6 @@ describe('ConfirmUserOwnershipPlugin', () => {
     };
 
     MockSchema.statics = {};
-    MockSchema.find = () => {
-      return {
-        limit: () => {
-          return Promise.resolve([
-            new MockSchema()
-          ])
-        }
-      };
-    };
   });
 
   afterEach(() => {
@@ -53,7 +56,7 @@ describe('ConfirmUserOwnershipPlugin', () => {
     });
 
     MockSchema.statics
-      .confirmUserOwnership('docid', 'userid')
+      .confirmUserOwnership.apply(_context, ['docid', 'userid'])
       .catch((err) => {
         expect(plugin).toBeDefined();
         expect(err instanceof MockPermissionError).toEqual(true);
@@ -66,7 +69,7 @@ describe('ConfirmUserOwnershipPlugin', () => {
     const plugin = new ConfirmUserOwnershipPlugin(MockSchema, {});
 
     MockSchema.statics
-      .confirmUserOwnership('docid', 'userid')
+      .confirmUserOwnership.apply(_context, ['docid', 'userid'])
       .then((doc) => {
         expect(plugin).toBeDefined();
         expect(doc._user).toEqual('userid');
@@ -75,7 +78,7 @@ describe('ConfirmUserOwnershipPlugin', () => {
   });
 
   it('should handle errors', (done) => {
-    spyOn(MockSchema, 'find').and.returnValue({
+    spyOn(_context, 'find').and.returnValue({
       limit: () => {
         return Promise.reject(
           new Error('Some error')
@@ -88,7 +91,7 @@ describe('ConfirmUserOwnershipPlugin', () => {
     const plugin = new ConfirmUserOwnershipPlugin(MockSchema, { });
 
     MockSchema.statics
-      .confirmUserOwnership('docid', 'userid')
+      .confirmUserOwnership.apply(_context, ['docid', 'userid'])
       .catch((err) => {
         expect(plugin).toBeDefined();
         expect(err.message).toEqual('Some error');
@@ -97,7 +100,7 @@ describe('ConfirmUserOwnershipPlugin', () => {
   });
 
   it('should handle resource not found error', (done) => {
-    spyOn(MockSchema, 'find').and.returnValue({
+    spyOn(_context, 'find').and.returnValue({
       limit: () => {
         return Promise.resolve([])
       }
@@ -112,7 +115,7 @@ describe('ConfirmUserOwnershipPlugin', () => {
     });
 
     MockSchema.statics
-      .confirmUserOwnership('docid', 'userid')
+      .confirmUserOwnership.apply(_context, ['docid', 'userid'])
       .catch((err) => {
         expect(plugin).toBeDefined();
         expect(err instanceof MockNotFoundError).toEqual(true);
@@ -130,7 +133,7 @@ describe('ConfirmUserOwnershipPlugin', () => {
     });
 
     MockSchema.statics
-      .confirmUserOwnership(undefined, 'userid')
+      .confirmUserOwnership.apply(_context, [undefined, 'userid'])
       .catch((err) => {
         expect(plugin).toBeDefined();
         expect(err instanceof MockValidationError).toEqual(true);

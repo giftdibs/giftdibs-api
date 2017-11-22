@@ -4,7 +4,9 @@ function ConfirmUserOwnershipPlugin(schema, options) {
       return Promise.reject(options.errors.validation);
     }
 
-    return schema
+    const model = this;
+
+    return model
       .find({ _id: docId })
       .limit(1)
       .then((docs) => {
