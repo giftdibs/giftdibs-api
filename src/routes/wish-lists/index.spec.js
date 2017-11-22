@@ -57,9 +57,7 @@ describe('Wish lists router', () => {
     it('should get an array of all documents', (done) => {
       const { getWishLists } = mock.reRequire('./get');
 
-      getWishLists(_req, _res, (err) => {
-        console.log('err', err);
-      });
+      getWishLists(_req, _res, () => { });
 
       tick(() => {
         expect(Array.isArray(_res.json.output.wishLists)).toEqual(true);
