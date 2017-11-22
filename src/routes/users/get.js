@@ -11,7 +11,7 @@ const {
 function getSelectFields(req) {
   let selectFields;
 
-  if (req.user._id.equals(req.params.userId)) {
+  if (req.user._id.toString() === req.params.userId) {
     selectFields = [
       'facebookId',
       'firstName',

@@ -1,30 +1,30 @@
 const mock = require('mock-require');
 
+const {
+  tick,
+  MockUser,
+  MockRequest,
+  MockResponse
+} = require('../../shared/testing');
+
 describe('Users router', () => {
   let _req;
+  let _res;
 
   const beforeEachCallback = () => {
-    _req = {
+    MockUser.reset();
+
+    _req = new MockRequest({
       user: {
-        _id: {
-          equals: () => {
-            return false;
-          }
-        },
-        set(key, value) {
-          this[key] = value;
-        },
-        save() {
-          return Promise.resolve();
-        },
-        updateSync() {},
-        resetEmailAddressVerification() {}
+        _id: 'userid'
       },
       params: {
-        userId: 0
-      },
-      body: {}
-    };
+        userId: 'userid'
+      }
+    });
+    _res = new MockResponse();
+
+    mock('../../database/models/user', { User: MockUser });
 
     mock('../../middleware/auth-response', function authResponse(data) {
       return (req, res, next) => {
@@ -53,230 +53,153 @@ describe('Users router', () => {
     afterEach(afterEachCallback);
 
     it('should GET an array of all documents', (done) => {
-      const User = {
-        find: () => {
-          return {
-            select: () => {
-              return {
-                lean: () => Promise.resolve([])
-              };
-            }
-          };
-        }
+      MockUser.overrides.find.returnWith = () => {
+        return Promise.resolve([
+          new MockUser()
+        ]);
       };
-
-      mock('../../database/models/user', { User });
 
       const { getUsers } = mock.reRequire('./get');
 
-      getUsers(_req, {
-        json: (docs) => {
-          expect(Array.isArray(docs.users)).toEqual(true);
-          done();
-        }
-      }, () => { });
+      getUsers(_req, _res, () => { });
+
+      tick(() => {
+        expect(Array.isArray(_res.json.output.users)).toEqual(true);
+        done();
+      });
     });
 
-    it('should GET an array of all documents with certain fields', (done) => {
-      let _fields;
-      const User = {
-        find: () => {
-          return {
-            select: (fields) => {
-              _fields = fields;
-              return {
-                lean: () => Promise.resolve([])
-              };
-            }
-          };
-        }
+    it('should populate different fields if not the current user', (done) => {
+      MockUser.overrides.find.returnWith = () => {
+        return Promise.resolve([
+          new MockUser()
+        ]);
       };
-
-      mock('../../database/models/user', { User });
 
       const { getUsers } = mock.reRequire('./get');
 
-      getUsers(_req, {
-        json: (docs) => {
-          expect(_fields).toEqual('firstName lastName emailAddressVerified');
-          done();
-        }
-      }, () => {});
+      _req.params.userId = 'diffuserid';
+
+      getUsers(_req, _req, () => {});
+
+      tick(() => {
+        expect(MockUser.selectedFields)
+          .toEqual('firstName lastName emailAddressVerified');
+        done();
+      });
     });
 
-    it('should handle a mongoose error with GET /users', (done) => {
-      const User = {
-        find: () => {
-          return {
-            select: () => {
-              return {
-                lean: () => {
-                  return Promise.reject(new Error('Some error'));
-                }
-              };
-            }
-          };
-        }
+    it('should populate different fields if current user', (done) => {
+      MockUser.overrides.find.returnWith = () => {
+        return Promise.resolve([
+          new MockUser()
+        ]);
       };
-
-      mock('../../database/models/user', { User });
 
       const { getUsers } = mock.reRequire('./get');
 
-      getUsers(_req, {}, (err) => {
+      getUsers(_req, _req, () => {});
+
+      tick(() => {
+        expect(MockUser.selectedFields)
+          .toEqual(
+            'facebookId firstName lastName emailAddress emailAddressVerified'
+          );
+        done();
+      });
+    });
+
+    it('should handle errors', (done) => {
+      MockUser.overrides.find.returnWith = () => {
+        return Promise.reject(new Error('Some error'));
+      };
+
+      const { getUsers } = mock.reRequire('./get');
+
+      getUsers(_req, _req, (err) => {
         expect(err.message).toEqual('Some error');
         done();
       });
     });
 
     it('should GET a single document', (done) => {
-      const User = {
-        find: () => {
-          return {
-            limit: () => {
-              return {
-                select: () => {
-                  return {
-                    lean: () => Promise.resolve([{}])
-                  };
-                }
-              };
-            }
-          };
-        }
+      MockUser.overrides.find.returnWith = () => {
+        return Promise.resolve([
+          new MockUser({
+            firstName: 'John'
+          })
+        ]);
       };
-
-      mock('../../database/models/user', { User });
 
       const { getUser } = mock.reRequire('./get');
 
-      getUser(_req, {
-        json: (doc) => {
-          expect(doc.user).toBeDefined();
-          done();
-        }
-      }, () => {});
+      getUser(_req, _res, () => { });
+
+      tick(() => {
+        expect(_res.json.output.user.firstName).toEqual('John');
+        done();
+      });
     });
 
     it('should GET a single document with certain fields', (done) => {
-      let _fields;
-      const User = {
-        find: () => {
-          return {
-            limit: () => {
-              return {
-                select: (fields) => {
-                  _fields = fields;
-                  return {
-                    lean: () => Promise.resolve([{}])
-                  };
-                }
-              };
-            }
-          };
-        }
+      MockUser.overrides.find.returnWith = () => {
+        return Promise.resolve([
+          new MockUser()
+        ]);
       };
-
-      mock('../../database/models/user', { User });
 
       const { getUser } = mock.reRequire('./get');
 
-      getUser(_req, {
-        json: (doc) => {
-          expect(_fields).toEqual('firstName lastName emailAddressVerified');
-          done();
-        }
-      }, () => {});
+      _req.params.userId = 'diffuserid';
+
+      getUser(_req, _res, () => {});
+
+      tick(() => {
+        expect(MockUser.selectedFields)
+          .toEqual('firstName lastName emailAddressVerified');
+        done();
+      });
     });
 
     it('should return different fields if the user owns the resource', (done) => {
-      let _fields;
-      const User = {
-        find: () => {
-          return {
-            limit: () => {
-              return {
-                select: (fields) => {
-                  _fields = fields;
-                  return {
-                    lean: () => Promise.resolve([{}])
-                  };
-                }
-              };
-            }
-          };
-        }
+      MockUser.overrides.find.returnWith = () => {
+        return Promise.resolve([
+          new MockUser()
+        ]);
       };
-
-      mock('../../database/models/user', { User });
 
       const { getUser } = mock.reRequire('./get');
 
-      _req.user._id.equals = () => true;
-      getUser(_req, {
-        json: (doc) => {
-          expect(_fields)
-            .toEqual(
-              'facebookId firstName lastName emailAddress emailAddressVerified'
-            );
-          done();
-        }
-      }, () => {});
+      getUser(_req, _res, () => {});
+
+      tick(() => {
+        expect(MockUser.selectedFields)
+          .toEqual('facebookId firstName lastName emailAddress emailAddressVerified');
+        done();
+      });
     });
 
     it('should return a status 400 if the user cannot be found', (done) => {
-      const User = {
-        find: () => {
-          return {
-            limit: () => {
-              return {
-                select: () => {
-                  return {
-                    lean: () => Promise.resolve([])
-                  };
-                }
-              };
-            }
-          };
-        }
+      MockUser.overrides.find.returnWith = () => {
+        return Promise.resolve([]);
       };
-
-      mock('../../database/models/user', { User });
 
       const { getUser } = mock.reRequire('./get');
 
       getUser(_req, {}, (err) => {
         expect(err.name).toEqual('UserNotFoundError');
-        expect(err.code).toEqual(200);
-        expect(err.status).toEqual(400);
         done();
       });
     });
 
     it('should handle a mongoose error with GET /users/:id', (done) => {
-      const User = {
-        find: () => {
-          return {
-            limit: () => {
-              return {
-                select: () => {
-                  return {
-                    lean: () => {
-                      return Promise.reject(new Error('Some error'));
-                    }
-                  };
-                }
-              };
-            }
-          };
-        }
+      MockUser.overrides.find.returnWith = () => {
+        return Promise.reject(new Error('Some error'));
       };
-
-      mock('../../database/models/user', { User });
 
       const { getUser } = mock.reRequire('./get');
 
-      getUser(_req, {}, (err) => {
+      getUser(_req, _res, (err) => {
         expect(err.message).toEqual('Some error');
         done();
       });
@@ -289,42 +212,25 @@ describe('Users router', () => {
     afterEach(afterEachCallback);
 
     it('should DELETE a document', (done) => {
-      const User = {
-        remove: () => Promise.resolve(),
-        confirmUserOwnership: () => {
-          return Promise.resolve({});
-        }
-      };
-
-      mock('../../database/models/user', { User });
-
       const { deleteUser } = mock.reRequire('./delete');
 
-      const res = {
-        json: (result) => {
-          expect(result.message).toEqual('Your account was successfully deleted. Goodbye!');
-          done();
-        }
-      };
+      deleteUser(_req, _res, () => {});
 
-      deleteUser(_req, res, () => {});
+      tick(() => {
+        expect(_res.json.output.message)
+          .toEqual('Your account was successfully deleted. Goodbye!');
+        done();
+      });
     });
 
-    it('should handle a mongoose error with DELETE /users/:id', (done) => {
-      const User = {
-        confirmUserOwnership: () => {
-          return Promise.resolve({});
-        },
-        remove: () => {
-          return Promise.reject(new Error('Some error'));
-        }
-      };
-
-      mock('../../database/models/user', { User });
+    it('should handle mongoose errors', (done) => {
+      spyOn(MockUser, 'remove').and.returnValue(
+        Promise.reject(new Error('Some error'))
+      );
 
       const { deleteUser } = mock.reRequire('./delete');
 
-      deleteUser(_req, {}, (err) => {
+      deleteUser(_req, _res, (err) => {
         expect(err.message).toEqual('Some error');
         done();
       });
@@ -332,46 +238,21 @@ describe('Users router', () => {
   });
 
   describe('PATCH /users/:user', () => {
-    let _user;
-    let MockUser;
-
-    beforeEach(() => {
-      beforeEachCallback();
-
-      _user = {
-        save() {},
-        updateSync() {
-          return _user;
-        },
-        resetEmailAddressVerification() {}
-      };
-
-      MockUser = {
-        confirmUserOwnership: () => {
-          return Promise.resolve(_user);
-        },
-        find: () => {
-          return {
-            select: () => {
-              return {
-                lean: () => Promise.resolve([])
-              };
-            }
-          };
-        }
-      };
-
-      mock('../../database/models/user', { User: MockUser });
-    });
+    beforeEach(beforeEachCallback);
 
     afterEach(afterEachCallback);
 
-    it('should PATCH a document', (done) => {
+    it('should update a document', (done) => {
+      const user = new MockUser();
+
+      const spy = spyOn(user, 'updateSync');
       const { updateUser } = mock.reRequire('./patch');
 
       _req.body = { firstName: 'NewName' };
 
-      const spy = spyOn(_user, 'updateSync');
+      spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(user)
+      );
 
       updateUser(_req, {}, () => {
         expect(spy).toHaveBeenCalledWith(_req.body);
@@ -379,25 +260,39 @@ describe('Users router', () => {
       });
     });
 
-    it('should skip PATCH of form data if fb access token is set', (done) => {
-      const { updateUser } = mock.reRequire('./patch');
+    it('should not update using form data if fb access token is set',
+      (done) => {
+        const user = new MockUser();
+        const spy = spyOn(user, 'updateSync');
 
-      _req.body = {
-        facebookUserAccessToken: 'fbtoken',
-        firstName: 'NewName'
-      };
+        spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
+          Promise.resolve(user)
+        );
 
-      const spy = spyOn(_user, 'updateSync');
+        const { updateUser } = mock.reRequire('./patch');
 
-      updateUser(_req, {}, () => {
-        expect(spy).not.toHaveBeenCalled();
-        done();
+        _req.body = {
+          facebookUserAccessToken: 'fbtoken',
+          firstName: 'NewName'
+        };
+
+        updateUser(_req, _res, () => { });
+
+        tick(() => {
+          expect(spy).not.toHaveBeenCalled();
+          done();
+        });
       });
-    });
 
-    it('should PATCH a user if facebook access token is set', (done) => {
+    it('should update a user if facebook access token is set', (done) => {
+      const user = new MockUser();
+
+      spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(user)
+      );
+
       mock('../../lib/facebook', {
-        verifyUserAccessToken: () => Promise.resolve(),
+        verifyUserAccessToken: () => Promise.resolve(user),
         getProfile: () => Promise.resolve({
           first_name: 'Foo',
           last_name: 'Bar',
@@ -412,41 +307,39 @@ describe('Users router', () => {
         facebookUserAccessToken: 'abc123'
       };
 
-      updateUser(_req, {}, () => {
-        expect(_user.firstName).toEqual('Foo');
-        expect(_user.lastName).toEqual('Bar');
-        expect(_user.emailAddress).toEqual('foo@bar.com');
-        expect(_user.facebookId).toEqual('0');
-        expect(_user.emailAddressVerified).toEqual(true);
+      updateUser(_req, _res, () => { });
+
+      tick(() => {
+        expect(user.firstName).toEqual('Foo');
+        expect(user.lastName).toEqual('Bar');
+        expect(user.emailAddress).toEqual('foo@bar.com');
+        expect(user.facebookId).toEqual('0');
+        expect(user.emailAddressVerified).toEqual(true);
         done();
       });
     });
 
-    it('should skip PATCH if facebook access token is not set', (done) => {
-      const facebook = mock.reRequire('../../lib/facebook');
-
-      spyOn(facebook, 'verifyUserAccessToken').and.returnValue(Promise.resolve());
-
-      const { updateUser } = mock.reRequire('./patch');
-
-      _req.body = {};
-
-      updateUser(_req, {}, () => {
-        expect(facebook.verifyUserAccessToken).not.toHaveBeenCalled();
-        done();
-      });
-    });
-
-    it('should issue a new email verification token if the email address changes',
+    it('should issue new email verification token if the email address changes',
       (done) => {
+        const user = new MockUser({
+          emailAddress: 'my@email.com'
+        });
+
         const { updateUser } = mock.reRequire('./patch');
 
-        _user.emailAddress = 'my@email.com';
-        _req.body = { emailAddress: 'new@email.com' };
+        spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
+          Promise.resolve(user)
+        );
 
-        const spy = spyOn(_user, 'resetEmailAddressVerification');
+        _req.body = {
+          emailAddress: 'new@email.com'
+        };
 
-        updateUser(_req, {}, () => {
+        const spy = spyOn(user, 'resetEmailAddressVerification');
+
+        updateUser(_req, _res, () => {});
+
+        tick(() => {
           expect(spy).toHaveBeenCalledWith();
           done();
         });
@@ -460,27 +353,32 @@ describe('Users router', () => {
         Promise.reject(new Error('Some error'))
       );
 
-      updateUser(_req, {}, (err) => {
+      updateUser(_req, _res, (err) => {
         expect(err.message).toEqual('Some error');
         done();
       });
     });
 
-    it('should handle schema validation error with PATCH /users/:id', (done) => {
+    it('should handle schema validation errors', (done) => {
+      const user = new MockUser();
+      const error = new Error();
+      error.name = 'ValidationError';
+
+      spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(user)
+      );
+
+      spyOn(user, 'updateSync').and.returnValue(
+        Promise.resolve(user)
+      );
+
+      spyOn(user, 'save').and.returnValue(
+        Promise.reject(error)
+      );
+
       const { updateUser } = mock.reRequire('./patch');
 
-      _user.save = () => {
-        const error = new Error();
-        error.name = 'ValidationError';
-        return Promise.reject(error);
-      };
-
-      mock('../../lib/facebook', {
-        verifyUserAccessToken: () => Promise.resolve(_user),
-        getProfile: () => Promise.resolve()
-      });
-
-      updateUser(_req, {}, (err) => {
+      updateUser(_req, _res, (err) => {
         expect(err.name).toEqual('UserValidationError');
         done();
       });

@@ -25,6 +25,7 @@ function assignFind(model) {
 
     const limit = () => {
       promise.lean = lean;
+      promise.select = select;
       promise.populate = populate;
       return promise;
     };
@@ -39,6 +40,13 @@ function assignFind(model) {
       };
     };
 
+    const select = (fields) => {
+      model.selectedFields = fields;
+      return {
+        lean
+      };
+    };
+
     // Save the query to be used by specs.
     model.overrides.find.lastQuery = query;
 
@@ -46,6 +54,7 @@ function assignFind(model) {
       limit,
       lean,
       populate,
+      select,
       where
     };
   }
@@ -159,6 +168,23 @@ class MockFriendship extends MockDocument {
   }
 }
 
+class MockUser extends MockDocument {
+  constructor(definition = {}) {
+    super();
+
+    const defaults = {};
+
+    this.resetEmailAddressVerification = {};
+
+    Object.assign(
+      this,
+      defaults,
+      definition,
+      MockUser.overrides.constructorDefinition
+    );
+  }
+}
+
 function MockRequest(options = {}) {
   return Object.assign({}, {
     body: {},
@@ -177,21 +203,25 @@ assignFind(MockWishList);
 assignFind(MockGift);
 assignFind(MockDib);
 assignFind(MockFriendship);
+assignFind(MockUser);
 
 assignSave(MockWishList);
 assignSave(MockGift);
 assignSave(MockDib);
 assignSave(MockFriendship);
+assignSave(MockUser);
 
 assignReset(MockWishList);
 assignReset(MockGift);
 assignReset(MockDib);
 assignReset(MockFriendship);
+assignReset(MockUser);
 
 assignConfirmUserOwnership(MockWishList);
 assignConfirmUserOwnership(MockGift);
 assignConfirmUserOwnership(MockDib);
 assignConfirmUserOwnership(MockFriendship);
+assignConfirmUserOwnership(MockUser);
 
 module.exports = {
   tick,
@@ -200,6 +230,7 @@ module.exports = {
   MockGift,
   MockWishList,
   MockExternalUrl,
+  MockUser,
   MockRequest,
   MockResponse
 };
