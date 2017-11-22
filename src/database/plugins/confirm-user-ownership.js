@@ -1,4 +1,8 @@
 function ConfirmUserOwnershipPlugin(schema, options) {
+  if (!options.userIdField) {
+    options.userIdField = '_user';
+  }
+
   schema.statics.confirmUserOwnership = function (docId, userId) {
     if (!docId) {
       return Promise.reject(options.errors.validation);
@@ -16,7 +20,7 @@ function ConfirmUserOwnershipPlugin(schema, options) {
           return Promise.reject(options.errors.notFound);
         }
 
-        if (userId.toString() !== doc._user.toString()) {
+        if (userId.toString() !== doc[options.userIdField].toString()) {
           return Promise.reject(options.errors.permission);
         }
 

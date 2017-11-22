@@ -221,12 +221,14 @@ userSchema.methods.updateSync = function (values) {
 };
 
 userSchema.plugin(MongoDbErrorHandlerPlugin);
+
 userSchema.plugin(ConfirmUserOwnershipPlugin, {
   errors: {
     validation: new UserValidationError('Please provide a user ID.'),
     notFound: new UserNotFoundError(),
     permission: new UserPermissionError()
-  }
+  },
+  userIdField: '_id'
 });
 
 const User = mongoose.model('User', userSchema);

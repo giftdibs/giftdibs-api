@@ -77,6 +77,26 @@ describe('ConfirmUserOwnershipPlugin', () => {
       });
   });
 
+  it('should allow different field names for the user ID', (done) => {
+    MockSchema = function () {
+      this._somefield = 'userid';
+    };
+    MockSchema.statics = {};
+
+    const { ConfirmUserOwnershipPlugin } = mock.reRequire('./confirm-user-ownership');
+    const plugin = new ConfirmUserOwnershipPlugin(MockSchema, {
+      userIdField: '_somefield'
+    });
+
+    MockSchema.statics
+      .confirmUserOwnership.apply(_context, ['docid', 'userid'])
+      .then((doc) => {
+        expect(plugin).toBeDefined();
+        expect(doc._somefield).toEqual('userid');
+        done();
+      });
+  });
+
   it('should handle errors', (done) => {
     spyOn(_context, 'find').and.returnValue({
       limit: () => {
