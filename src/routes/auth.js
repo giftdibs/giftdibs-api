@@ -100,6 +100,7 @@ const register = [
           const error = new RegistrationValidationError();
           error.errors = err.errors;
           next(error);
+          return;
         }
 
         next(err);
@@ -287,7 +288,8 @@ const verifyEmailAddress = [
       return;
     }
 
-    next(new EmailVerificationTokenValidationError());
+    const error = new EmailVerificationTokenValidationError();
+    next(error);
   }
 ];
 

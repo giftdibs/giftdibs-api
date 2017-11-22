@@ -2,20 +2,29 @@ const mock = require('mock-require');
 
 const {
   MockDib,
+  MockWishList,
   MockRequest,
   MockResponse,
-  MockWishList,
   tick
-} = require('../shared/testing');
+} = require('../../shared/testing');
 
 describe('Wish lists router', () => {
   let _req;
   let _res;
 
   const beforeEachCallback = () => {
+    MockDib.reset();
     MockWishList.reset();
-    mock('../database/models/wish-list', { WishList: MockWishList });
-    mock('../database/models/dib', { Dib: MockDib });
+
+    mock('../../database/models/wish-list', { WishList: MockWishList });
+    mock('../../database/models/dib', { Dib: MockDib });
+
+    mock('../../middleware/auth-response', function authResponse(data) {
+      return (req, res, next) => {
+        data.authResponse = {};
+        res.json(data);
+      }
+    });
 
     _req = new MockRequest({
       user: {},
@@ -23,6 +32,7 @@ describe('Wish lists router', () => {
         wishListId: 0
       }
     });
+
     _res = new MockResponse();
   };
 
@@ -35,7 +45,7 @@ describe('Wish lists router', () => {
   afterEach(afterEachCallback);
 
   it('should require a jwt for all routes', () => {
-    const wishLists = mock.reRequire('./wish-lists');
+    const wishLists = mock.reRequire('./index');
     expect(wishLists.router.stack[0].name).toEqual('authenticateJwt');
   });
 
@@ -45,10 +55,11 @@ describe('Wish lists router', () => {
     afterEach(afterEachCallback);
 
     it('should get an array of all documents', (done) => {
-      const wishLists = mock.reRequire('./wish-lists');
-      const getWishLists = wishLists.middleware.getWishLists[0];
+      const { getWishLists } = mock.reRequire('./get');
 
-      getWishLists(_req, _res, () => {});
+      getWishLists(_req, _res, (err) => {
+        console.log('err', err);
+      });
 
       tick(() => {
         expect(Array.isArray(_res.json.output.wishLists)).toEqual(true);
@@ -57,8 +68,7 @@ describe('Wish lists router', () => {
     });
 
     it('should get an array of all wish lists belonging to a user', (done) => {
-      const wishLists = mock.reRequire('./wish-lists');
-      const getWishLists = wishLists.middleware.getWishLists[0];
+      const { getWishLists } = mock.reRequire('./get');
 
       _req.query.userId = 'abc123';
 
@@ -71,8 +81,7 @@ describe('Wish lists router', () => {
     });
 
     it('should only populate certain fields', (done) => {
-      const wishLists = mock.reRequire('./wish-lists');
-      const getWishLists = wishLists.middleware.getWishLists[0];
+      const { getWishLists } = mock.reRequire('./get');
 
       getWishLists(_req, _res, () => {});
 
@@ -88,8 +97,7 @@ describe('Wish lists router', () => {
         return Promise.reject(new Error());
       };
 
-      const wishLists = mock.reRequire('./wish-lists');
-      const getWishLists = wishLists.middleware.getWishLists[0];
+      const { getWishLists } = mock.reRequire('./get');
 
       getWishLists(_req, _res, (err) => {
         expect(err).toBeDefined();
@@ -104,8 +112,7 @@ describe('Wish lists router', () => {
     afterEach(afterEachCallback);
 
     it('should get a single document', (done) => {
-      const wishLists = mock.reRequire('./wish-lists');
-      const getWishList = wishLists.middleware.getWishList[0];
+      const { getWishList } = mock.reRequire('./get');
 
       _req.user = {
         _id: 'abc'
@@ -126,8 +133,7 @@ describe('Wish lists router', () => {
     });
 
     it('should only populate certain fields', (done) => {
-      const wishLists = mock.reRequire('./wish-lists');
-      const getWishList = wishLists.middleware.getWishList[0];
+      const { getWishList } = mock.reRequire('./get');
 
       getWishList(_req, _res, () => {});
 
@@ -141,8 +147,7 @@ describe('Wish lists router', () => {
     it('should handle wish list not found', (done) => {
       MockWishList.overrides.find.returnWith = () => Promise.resolve([]);
 
-      const wishLists = mock.reRequire('./wish-lists');
-      const getWishList = wishLists.middleware.getWishList[0];
+      const { getWishList } = mock.reRequire('./get');
 
       getWishList(_req, _res, (err) => {
         expect(err.name).toEqual('WishListNotFoundError');
@@ -155,8 +160,7 @@ describe('Wish lists router', () => {
         return Promise.reject(new Error());
       };
 
-      const wishLists = mock.reRequire('./wish-lists');
-      const getWishList = wishLists.middleware.getWishList[0];
+      const { getWishList } = mock.reRequire('./get');
 
       getWishList(_req, _res, (err) => {
         expect(err).toBeDefined();
@@ -171,8 +175,7 @@ describe('Wish lists router', () => {
     afterEach(afterEachCallback);
 
     it('should create new wish lists', (done) => {
-      const wishLists = mock.reRequire('./wish-lists');
-      const createWishList = wishLists.middleware.createWishList[0];
+      const { createWishList } = mock.reRequire('./post');
 
       _req.user._id = 'userid';
       _req.body.name = 'New wish list';
@@ -195,8 +198,7 @@ describe('Wish lists router', () => {
         return Promise.reject(new Error());
       };
 
-      const wishLists = mock.reRequire('./wish-lists');
-      const createWishList = wishLists.middleware.createWishList[0];
+      const { createWishList } = mock.reRequire('./post');
 
       createWishList(_req, _res, (err) => {
         expect(err).toBeDefined();
@@ -219,17 +221,14 @@ describe('Wish lists router', () => {
       const updateSpy = spyOn(wishList, 'updateSync');
       const saveSpy = spyOn(wishList, 'save');
 
-      spyOn(MockWishList, 'find').and.returnValue({
-        limit: () => {
-          return Promise.resolve([wishList]);
-        }
-      });
+      spyOn(MockWishList, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(wishList)
+      );
 
       _req.params.wishListId = 'wishlistid';
       _req.body.name = 'Updated name';
 
-      const routeDefinition = mock.reRequire('./wish-lists');
-      const updateWishList = routeDefinition.middleware.updateWishList[1];
+      const { updateWishList } = mock.reRequire('./patch');
 
       updateWishList(_req, _res, () => {});
 
@@ -238,12 +237,6 @@ describe('Wish lists router', () => {
         expect(saveSpy).toHaveBeenCalledWith();
         done();
       });
-    });
-
-    it('should only update a document if owned by the session user', () => {
-      const wishLists = mock.reRequire('./wish-lists');
-      expect(wishLists.middleware.updateWishList[0].name)
-        .toEqual('confirmUserOwnsWishList');
     });
 
     it('should handle a schema validation error', (done) => {
@@ -255,8 +248,7 @@ describe('Wish lists router', () => {
 
       _req.body = { invalidField: 'foobar' };
 
-      const wishLists = mock.reRequire('./wish-lists');
-      const updateWishList = wishLists.middleware.updateWishList[1];
+      const { updateWishList } = mock.reRequire('./patch');
 
       updateWishList(_req, _res, (err) => {
         expect(err.name).toEqual('WishListValidationError');
@@ -271,20 +263,14 @@ describe('Wish lists router', () => {
     afterEach(afterEachCallback);
 
     it('should remove a document', (done) => {
-      const wishLists = mock.reRequire('./wish-lists');
-      const deleteWishList = wishLists.middleware.deleteWishList[1];
+      const { deleteWishList } = mock.reRequire('./delete');
+
       deleteWishList(_req, _res, () => {});
 
       tick(() => {
         expect(_res.json.output.message).toBeDefined();
         done();
       });
-    });
-
-    it('should only remove a document if owned by the session user', () => {
-      const wishLists = mock.reRequire('./wish-lists');
-      expect(wishLists.middleware.deleteWishList[0].name)
-        .toEqual('confirmUserOwnsWishList');
     });
   });
 });

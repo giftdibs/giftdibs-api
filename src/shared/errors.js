@@ -1,20 +1,21 @@
 let errorConstructors = {};
 
 function generateErrorConstructor(options) {
-  const f = function (message) {
+  function F(message) {
     this.message = message || options.message;
     this.code = options.code;
     this.status = options.status;
+    this.name = options.name;
   };
 
-  f.prototype = Error.prototype;
+  F.prototype = Error.prototype;
 
-  Object.defineProperty(f, 'name', {
+  Object.defineProperty(F, 'name', {
     value: options.name,
     writable: false
   });
 
-  errorConstructors[options.name] = f;
+  errorConstructors[options.name] = F;
 }
 
 const definitions = [

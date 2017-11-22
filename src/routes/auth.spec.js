@@ -4,6 +4,13 @@ describe('Auth router', () => {
   let passport;
 
   const beforeEachCallback = () => {
+    mock('../middleware/auth-response', (data) => {
+      return (req, res, next) => {
+        data.authResponse = {};
+        res.json(data);
+      }
+    });
+
     passport = mock.reRequire('passport');
   };
 
@@ -30,6 +37,7 @@ describe('Auth router', () => {
       });
 
       const auth = mock.reRequire('./auth');
+
       expect(auth.middleware.login[0].name).toEqual('checkEmptyCredentials');
       expect(auth.middleware.login[1].name).toEqual('authenticate');
 
@@ -38,8 +46,6 @@ describe('Auth router', () => {
           expect(passport.authenticate)
             .toHaveBeenCalledWith('local', jasmine.any(Function));
           expect(data.authResponse).toBeDefined();
-          expect(data.authResponse.token).toBeDefined();
-          expect(data.authResponse.user).toBeDefined();
           done();
         }
       };
@@ -49,6 +55,7 @@ describe('Auth router', () => {
 
     it('should fail login if credentials are empty', (done) => {
       const auth = mock.reRequire('./auth');
+
       auth.middleware.login[0]({ body: {} }, {}, (err) => {
         expect(err.status).toEqual(400);
         expect(err.code).toEqual(100);
@@ -230,7 +237,7 @@ describe('Auth router', () => {
       };
       register[0](req, {}, (err) => {
         expect(err).toBeDefined();
-        expect(err.code).toEqual(108);
+        expect(err.code).toEqual(102);
         expect(err.status).toEqual(400);
         done();
       });
@@ -398,6 +405,26 @@ describe('Auth router', () => {
       };
       spyOn(req.user, 'verifyEmailAddress').and.callThrough();
       verifyEmailAddress[1](req, res, () => {});
+    });
+
+    it('should handle empty token', (done) => {
+      const auth = mock.reRequire('./auth');
+      const verifyEmailAddress = auth.middleware.verifyEmailAddress;
+
+      const req = {
+        user: {},
+        body: {
+          emailAddressVerificationToken: undefined
+        }
+      };
+
+      const res = {};
+
+      verifyEmailAddress[1](req, res, (err) => {
+        expect(err.name).toEqual('EmailVerificationTokenValidationError');
+        expect(err.message).toEqual('Please provide an email address verification token.');
+        done();
+      });
     });
 
     it('should handle unverified email address', (done) => {

@@ -5,7 +5,7 @@ const {
   MockRequest,
   MockResponse,
   tick
-} = require('../shared/testing');
+} = require('../../shared/testing');
 
 describe('Friendships router', () => {
   let _req;
@@ -25,13 +25,14 @@ describe('Friendships router', () => {
 
     _res = new MockResponse();
 
-    mock('../middleware/auth-response', function authResponse(data) {
+    mock('../../middleware/auth-response', function authResponse(data) {
       return (req, res, next) => {
         data.authResponse = {};
         res.json(data);
       }
     });
-    mock('../database/models/friendship', { Friendship: MockFriendship });
+
+    mock('../../database/models/friendship', { Friendship: MockFriendship });
   };
 
   const afterEachCallback = () => {
@@ -43,7 +44,7 @@ describe('Friendships router', () => {
   afterEach(afterEachCallback);
 
   it('should require a jwt for all routes', () => {
-    const routeDefinition = mock.reRequire('./friendships');
+    const routeDefinition = mock.reRequire('./index');
     expect(routeDefinition.router.stack[0].name).toEqual('authenticateJwt');
   });
 
@@ -53,8 +54,7 @@ describe('Friendships router', () => {
     afterEach(afterEachCallback);
 
     it('should get an array of all friendships', (done) => {
-      const friendships = mock.reRequire('./friendships');
-      const getFriendships = friendships.middleware.getFriendships[0];
+      const { getFriendships } = mock.reRequire('./get');
 
       MockFriendship.overrides.find.returnWith = () => {
         return Promise.resolve([
@@ -75,8 +75,7 @@ describe('Friendships router', () => {
     });
 
     it('should get an array of all friendships belonging to a user', (done) => {
-      const friendships = mock.reRequire('./friendships');
-      const getFriendships = friendships.middleware.getFriendships[0];
+      const { getFriendships } = mock.reRequire('./get');
 
       MockFriendship.overrides.find.returnWith = () => {
         return Promise.resolve([
@@ -103,8 +102,7 @@ describe('Friendships router', () => {
     });
 
     it('should handle errors', (done) => {
-      const friendships = mock.reRequire('./friendships');
-      const getFriendships = friendships.middleware.getFriendships[0];
+      const { getFriendships } = mock.reRequire('./get');
 
       MockFriendship.overrides.find.returnWith = () => {
         return Promise.reject(new Error('Some error'));
@@ -122,10 +120,16 @@ describe('Friendships router', () => {
 
     afterEach(afterEachCallback);
 
-    it('should require the user owns the friendship', () => {
-      const routeDefinition = mock.reRequire('./friendships');
-      expect(routeDefinition.middleware.deleteFriendship[0].name)
-        .toEqual('confirmUserOwnsFriendship');
+    it('should check user ownership', () => {
+      spyOn(MockFriendship, 'confirmUserOwnership').and.returnValue(
+        Promise.reject(new Error('Some error'))
+      );
+
+      const { deleteFriendship } = mock.reRequire('./delete');
+
+      deleteFriendship(_req, _res, (err) => {
+        expect(err.message).toEqual('Some error');
+      });
     });
 
     it('should delete a friendship', (done) => {
@@ -133,8 +137,7 @@ describe('Friendships router', () => {
 
       _req.params.friendshipId = 'friendshipid';
 
-      const routeDefinition = mock.reRequire('./friendships');
-      const deleteFriendship = routeDefinition.middleware.deleteFriendship[1];
+      const { deleteFriendship } = mock.reRequire('./delete');
 
       deleteFriendship(_req, _res, () => {});
 
@@ -156,8 +159,7 @@ describe('Friendships router', () => {
         Promise.reject(new Error('Some error'))
       );
 
-      const routeDefinition = mock.reRequire('./friendships');
-      const deleteFriendship = routeDefinition.middleware.deleteFriendship[1];
+      const { deleteFriendship } = mock.reRequire('./delete');
 
       deleteFriendship(_req, _res, (err) => {
         expect(err.message).toEqual('Some error');
@@ -172,14 +174,19 @@ describe('Friendships router', () => {
     afterEach(afterEachCallback);
 
     it('should create a friendship', (done) => {
+      MockFriendship.overrides.find.returnWith = () => {
+        return Promise.resolve([]);
+      };
+
       const spy = spyOn(MockFriendship.prototype, 'save').and.returnValue(
         Promise.resolve({
           _id: 'friendshipid'
         })
       );
 
-      const routeDefinition = mock.reRequire('./friendships');
-      const createFriendship = routeDefinition.middleware.createFriendship[1];
+      const { createFriendship } = mock.reRequire('./post');
+
+      _req.body._friend = 'friendid';
 
       createFriendship(_req, _res, () => { });
 
@@ -190,26 +197,17 @@ describe('Friendships router', () => {
       });
     });
 
-    it('should validate the friend request', (done) => {
-      MockFriendship.overrides.find.returnWith = () => Promise.resolve([]);
-
-      const routeDefinition = mock.reRequire('./friendships');
-      const createFriendship = routeDefinition.middleware.createFriendship[0];
-
-      createFriendship(_req, _res, (err) => {
-        expect(err).toBeUndefined();
-        done();
-      });
-    });
-
     it('should fail if already following the user', (done) => {
-      MockFriendship.overrides.find.returnWith = () => Promise.resolve([{}]);
+      MockFriendship.overrides.find.returnWith = () => {
+        return Promise.resolve([
+          new MockFriendship({})
+        ]);
+      };
 
       _req.user._id = 'requser';
       _req.body._friend = 'friendid';
 
-      const routeDefinition = mock.reRequire('./friendships');
-      const createFriendship = routeDefinition.middleware.createFriendship[0];
+      const { createFriendship } = mock.reRequire('./post');
 
       createFriendship(_req, _res, (err) => {
         expect(err.name).toEqual('FriendshipValidationError');
@@ -222,8 +220,7 @@ describe('Friendships router', () => {
       _req.user._id = 'friendid';
       _req.body._friend = 'friendid';
 
-      const routeDefinition = mock.reRequire('./friendships');
-      const createFriendship = routeDefinition.middleware.createFriendship[0];
+      const { createFriendship } = mock.reRequire('./post');
 
       createFriendship(_req, _res, (err) => {
         expect(err.name).toEqual('FriendshipValidationError');
@@ -233,12 +230,15 @@ describe('Friendships router', () => {
     });
 
     it('should handle errors', (done) => {
+      MockFriendship.overrides.find.returnWith = () => {
+        return Promise.resolve([]);
+      };
+
       MockFriendship.overrides.save.returnWith = () => {
         return Promise.reject(new Error('Some error'));
       };
 
-      const routeDefinition = mock.reRequire('./friendships');
-      const createFriendship = routeDefinition.middleware.createFriendship[1];
+      const { createFriendship } = mock.reRequire('./post');
 
       createFriendship(_req, _res, (err) => {
         expect(err.message).toEqual('Some error');
@@ -250,12 +250,15 @@ describe('Friendships router', () => {
       const err = new Error();
       err.name = 'ValidationError';
 
+      MockFriendship.overrides.find.returnWith = () => {
+        return Promise.resolve([]);
+      };
+
       spyOn(MockFriendship.prototype, 'save').and.returnValue(
         Promise.reject(err)
       );
 
-      const routeDefinition = mock.reRequire('./friendships');
-      const createFriendship = routeDefinition.middleware.createFriendship[1];
+      const { createFriendship } = mock.reRequire('./post');
 
       createFriendship(_req, _res, (err) => {
         expect(err.name).toEqual('FriendshipValidationError');

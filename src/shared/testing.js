@@ -29,9 +29,13 @@ function assignFind(model) {
       return promise;
     };
 
-    const select = () => {
+    const where = () => {
       return {
-        populate
+        in() {
+          return {
+            populate
+          }
+        }
       };
     };
 
@@ -42,7 +46,7 @@ function assignFind(model) {
       limit,
       lean,
       populate,
-      select
+      where
     };
   }
 }
@@ -70,10 +74,16 @@ function assignReset(Model) {
   }
 }
 
+function assignConfirmUserOwnership(Model) {
+  Model.confirmUserOwnership = function () {
+    return Promise.resolve(new Model());
+  };
+}
+
 class MockDocument {
   constructor() {
     this.remove = () => {};
-    this.update = () => {};
+    this.updateSync = () => {};
     this._id = 'abc123';
   }
 }
@@ -177,6 +187,11 @@ assignReset(MockWishList);
 assignReset(MockGift);
 assignReset(MockDib);
 assignReset(MockFriendship);
+
+assignConfirmUserOwnership(MockWishList);
+assignConfirmUserOwnership(MockGift);
+assignConfirmUserOwnership(MockDib);
+assignConfirmUserOwnership(MockFriendship);
 
 module.exports = {
   tick,
