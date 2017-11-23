@@ -40,8 +40,9 @@ const updateSubDocuments = (doc, values) => {
       }
 
       const subdoc = field.id(data._id);
-      if (subdoc && typeof subdoc.update === 'function') {
-        subdoc.update(data);
+
+      if (subdoc && typeof subdoc.updateSync === 'function') {
+        subdoc.updateSync(data);
       }
     });
   });
@@ -50,7 +51,7 @@ const updateSubDocuments = (doc, values) => {
 function updateDocument(doc, fields, values) {
   const changes = {};
 
-  fields.forEach(field => {
+  fields.forEach((field) => {
     if (values[field] === undefined) {
       return;
     }

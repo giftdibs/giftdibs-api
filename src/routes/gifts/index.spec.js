@@ -2,10 +2,11 @@ const mock = require('mock-require');
 
 const {
   MockGift,
+  MockWishList,
   MockRequest,
   MockResponse,
   tick
-} = require('../shared/testing');
+} = require('../../shared/testing');
 
 describe('Gifts router', () => {
   let _req;
@@ -13,6 +14,7 @@ describe('Gifts router', () => {
 
   const beforeEachCallback = () => {
     MockGift.reset();
+    MockWishList.reset();
 
     _req = new MockRequest({
       user: {},
@@ -22,13 +24,17 @@ describe('Gifts router', () => {
     });
     _res = new MockResponse();
 
-    mock('../middleware/auth-response', function authResponse(data) {
+    mock('../../middleware/auth-response', function authResponse(data) {
       return (req, res, next) => {
         data.authResponse = {};
         res.json(data);
       }
     });
-    mock('../database/models/gift', { Gift: MockGift });
+
+    mock('../../database/models/wish-list', {
+      WishList: MockWishList
+    });
+    mock('../../database/models/gift', { Gift: MockGift });
   };
 
   const afterEachCallback = () => {
@@ -40,16 +46,8 @@ describe('Gifts router', () => {
   afterEach(afterEachCallback);
 
   it('should require a jwt for all routes', () => {
-    const routeDefinition = mock.reRequire('./gifts');
+    const routeDefinition = mock.reRequire('./index');
     expect(routeDefinition.router.stack[0].name).toEqual('authenticateJwt');
-  });
-
-  it('should require user owns the gift and wish list for all routes', () => {
-    const middleware = mock.reRequire('./gifts').middleware;
-    expect(middleware.addGift[0].name).toEqual('confirmUserOwnsWishList');
-    expect(middleware.deleteGift[0].name).toEqual('confirmUserOwnsGift');
-    expect(middleware.updateGift[0].name).toEqual('confirmUserOwnsGift');
-    expect(middleware.updateGift[1].name).toEqual('confirmUserOwnsWishList');
   });
 
   describe('GET /gifts', () => {
@@ -58,8 +56,7 @@ describe('Gifts router', () => {
     afterEach(afterEachCallback);
 
     it('should get an unsorted array of all gifts', (done) => {
-      const gifts = mock.reRequire('./gifts');
-      const getGifts = gifts.middleware.getGifts[0];
+      const { getGifts } = mock.reRequire('./get');
 
       MockGift.overrides.find.returnWith = () => {
         return Promise.resolve([
@@ -76,7 +73,7 @@ describe('Gifts router', () => {
         ]);
       };
 
-      getGifts(_req, _res, () => {});
+      getGifts(_req, _res, () => { });
 
       tick(() => {
         expect(Array.isArray(_res.json.output.gifts)).toEqual(true);
@@ -86,8 +83,7 @@ describe('Gifts router', () => {
     });
 
     it('should get an array of all gifts in a wish list, ordered', (done) => {
-      const gifts = mock.reRequire('./gifts');
-      const getGifts = gifts.middleware.getGifts[0];
+      const { getGifts } = mock.reRequire('./get');
 
       MockGift.overrides.find.returnWith = () => {
         return Promise.resolve([
@@ -138,14 +134,30 @@ describe('Gifts router', () => {
       });
     });
 
-    it('should handle errors', (done) => {
-      const gifts = mock.reRequire('./gifts');
-      const getGifts = gifts.middleware.getGifts[0];
+    it('should handle wish list not found', (done) => {
+      const { getGifts } = mock.reRequire('./get');
 
-      MockGift.overrides.find.returnWith = () => Promise.reject(new Error());
+      MockWishList.overrides.find.returnWith = () => {
+        return Promise.resolve([]);
+      };
+
+      _req.query.wishListId = 'wishlistid';
 
       getGifts(_req, _res, (err) => {
-        expect(err).toBeDefined();
+        expect(err.name).toEqual('WishListNotFoundError');
+        done();
+      });
+    });
+
+    it('should handle errors', (done) => {
+      const { getGifts } = mock.reRequire('./get');
+
+      MockGift.overrides.find.returnWith = () => {
+        return Promise.reject(new Error('Some error'));
+      };
+
+      getGifts(_req, _res, (err) => {
+        expect(err.message).toEqual('Some error');
         done();
       });
     });
@@ -160,12 +172,12 @@ describe('Gifts router', () => {
       MockGift.overrides.save.returnWith = () => Promise.resolve({
         _id: 'newgiftid'
       });
-      const routeDefinition = mock.reRequire('./gifts');
-      const addGift = routeDefinition.middleware.addGift[1];
+
+      const { createGift } = mock.reRequire('./post');
 
       _req.body.name = 'New gift';
 
-      addGift(_req, _res, () => { });
+      createGift(_req, _res, () => { });
 
       tick(() => {
         expect(_res.json.output.giftId).toEqual('newgiftid');
@@ -175,12 +187,14 @@ describe('Gifts router', () => {
     });
 
     it('should handle errors', (done) => {
-      MockGift.overrides.save.returnWith = () => Promise.reject(new Error());
-      const routeDefinition = mock.reRequire('./gifts');
-      const addGift = routeDefinition.middleware.addGift[1];
+      MockGift.overrides.save.returnWith = () => {
+        return Promise.reject(new Error('Some error'));
+      };
 
-      addGift(_req, _res, (err) => {
-        expect(err).toBeDefined();
+      const { createGift } = mock.reRequire('./post');
+
+      createGift(_req, _res, (err) => {
+        expect(err.message).toEqual('Some error');
         done();
       });
     });
@@ -191,10 +205,10 @@ describe('Gifts router', () => {
         err.name = 'ValidationError';
         return Promise.reject(err);
       };
-      const routeDefinition = mock.reRequire('./gifts');
-      const addGift = routeDefinition.middleware.addGift[1];
 
-      addGift(_req, _res, (err) => {
+      const { createGift } = mock.reRequire('./post');
+
+      createGift(_req, _res, (err) => {
         expect(err.name).toEqual('GiftValidationError');
         done();
       });
@@ -208,10 +222,10 @@ describe('Gifts router', () => {
 
     it('should delete a gift', (done) => {
       spyOn(MockGift, 'remove').and.callThrough();
+
       _req.params.giftId = 'giftid';
 
-      const routeDefinition = mock.reRequire('./gifts');
-      const deleteGift = routeDefinition.middleware.deleteGift[1];
+      const { deleteGift } = mock.reRequire('./delete');
 
       deleteGift(_req, _res, () => {});
 
@@ -223,12 +237,14 @@ describe('Gifts router', () => {
     });
 
     it('should handle errors', (done) => {
-      spyOn(MockGift, 'remove').and.returnValue(Promise.reject(new Error()));
-      const routeDefinition = mock.reRequire('./gifts');
-      const deleteGift = routeDefinition.middleware.deleteGift[1];
+      spyOn(MockGift, 'remove').and.returnValue(
+        Promise.reject(new Error('Some error'))
+      );
+
+      const { deleteGift } = mock.reRequire('./delete');
 
       deleteGift(_req, _res, (err) => {
-        expect(err).toBeDefined();
+        expect(err.message).toEqual('Some error');
         done();
       });
     });
@@ -245,8 +261,12 @@ describe('Gifts router', () => {
         _id: 'giftid'
       });
 
-      const updateSpy = spyOn(gift, 'update');
+      const updateSpy = spyOn(gift, 'updateSync');
       const saveSpy = spyOn(gift, 'save');
+
+      spyOn(MockGift, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(gift)
+      );
 
       spyOn(MockGift, 'find').and.returnValue({
         limit: () => {
@@ -257,8 +277,7 @@ describe('Gifts router', () => {
       _req.params.giftId = 'giftid';
       _req.body.name = 'Updated name';
 
-      const routeDefinition = mock.reRequire('./gifts');
-      const updateGift = routeDefinition.middleware.updateGift[2];
+      const { updateGift } = mock.reRequire('./patch');
 
       updateGift(_req, _res, () => {});
 
@@ -270,17 +289,14 @@ describe('Gifts router', () => {
     });
 
     it('should handle errors', (done) => {
-      spyOn(MockGift, 'find').and.returnValue({
-        limit: () => {
-          return Promise.reject(new Error());
-        }
-      });
+      spyOn(MockGift, 'confirmUserOwnership').and.returnValue(
+        Promise.reject(new Error('Some error'))
+      );
 
-      const routeDefinition = mock.reRequire('./gifts');
-      const updateGift = routeDefinition.middleware.updateGift[2];
+      const { updateGift } = mock.reRequire('./patch');
 
       updateGift(_req, _res, (err) => {
-        expect(err).toBeDefined();
+        expect(err.message).toEqual('Some error');
         done();
       });
     });

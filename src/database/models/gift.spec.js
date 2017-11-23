@@ -80,7 +80,7 @@ describe('Gift schema', () => {
   });
 
   it('should beautify native mongo errors', () => {
-    let found = Gift.schema.plugins.filter(plugin => {
+    let found = Gift.schema.plugins.filter((plugin) => {
       return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
     })[0];
     expect(found).toBeDefined();
@@ -90,7 +90,7 @@ describe('Gift schema', () => {
     const gift = new Gift(_giftDefinition);
     const formData = {};
 
-    gift.update(formData);
+    gift.updateSync(formData);
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       gift,

@@ -1,12 +1,29 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const randomstring = require('randomstring');
-const { isEmail, isAlpha } = require('validator');
-const { updateDocument } = require('../utils/update-document');
+
+const {
+  isEmail,
+  isAlpha
+} = require('validator');
+
+const {
+  updateDocument
+} = require('../utils/update-document');
+
+const {
+  UserNotFoundError,
+  UserPermissionError,
+  UserValidationError
+} = require('../../shared/errors');
 
 const {
   MongoDbErrorHandlerPlugin
 } = require('../plugins/mongodb-error-handler');
+
+const {
+  ConfirmUserOwnershipPlugin
+} = require('../plugins/confirm-user-ownership');
 
 const hasDuplicateChars = (str) => {
   let regex = /(.)\1{2,}/;
@@ -102,7 +119,7 @@ userSchema.methods.confirmPassword = function (password) {
   return new Promise((resolve, reject) => {
     bcrypt
       .compare(password, this.password)
-      .then(valid => {
+      .then((valid) => {
         if (valid) {
           resolve();
         } else {
@@ -149,7 +166,7 @@ userSchema.methods.setPassword = function (password) {
 
   return bcrypt
     .hash(password, saltRounds)
-    .then(hash => {
+    .then((hash) => {
       this.password = hash;
       return this;
     });
@@ -190,17 +207,29 @@ userSchema.methods.verifyEmailAddress = function (token) {
   return false;
 };
 
-userSchema.methods.update = function (values) {
+userSchema.methods.updateSync = function (values) {
   const fields = [
     'firstName',
     'lastName',
     'emailAddress',
     'facebookId'
   ];
+
   updateDocument(this, fields, values);
+
+  return this;
 };
 
 userSchema.plugin(MongoDbErrorHandlerPlugin);
+
+userSchema.plugin(ConfirmUserOwnershipPlugin, {
+  errors: {
+    validation: new UserValidationError('Please provide a user ID.'),
+    notFound: new UserNotFoundError(),
+    permission: new UserPermissionError()
+  },
+  userIdField: '_id'
+});
 
 const User = mongoose.model('User', userSchema);
 

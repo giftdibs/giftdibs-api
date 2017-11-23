@@ -3,8 +3,18 @@ const { externalUrlSchema } = require('./external-url');
 const { updateDocument } = require('../utils/update-document');
 
 const {
+  GiftNotFoundError,
+  GiftPermissionError,
+  GiftValidationError
+} = require('../../shared/errors');
+
+const {
   MongoDbErrorHandlerPlugin
 } = require('../plugins/mongodb-error-handler');
+
+const {
+  ConfirmUserOwnershipPlugin
+} = require('../plugins/confirm-user-ownership');
 
 const Schema = mongoose.Schema;
 const giftSchema = new Schema({
@@ -64,7 +74,7 @@ const giftSchema = new Schema({
   }
 });
 
-giftSchema.methods.update = function (values) {
+giftSchema.methods.updateSync = function (values) {
   const fields = [
     '_wishList',
     'budget',
@@ -74,10 +84,21 @@ giftSchema.methods.update = function (values) {
     'priority',
     'quantity'
   ];
+
   updateDocument(this, fields, values);
+
+  return this;
 };
 
 giftSchema.plugin(MongoDbErrorHandlerPlugin);
+
+giftSchema.plugin(ConfirmUserOwnershipPlugin, {
+  errors: {
+    validation: new GiftValidationError('Please provide a gift ID.'),
+    notFound: new GiftNotFoundError(),
+    permission: new GiftPermissionError()
+  }
+});
 
 const Gift = mongoose.model('Gift', giftSchema);
 

@@ -53,13 +53,15 @@ describe('Update document database util', () => {
     const subdoc = {
       _id: '123',
       remove() {},
-      update() {}
+      updateSync() {}
     };
+
     doc.children = [subdoc];
     doc.children.id = () => subdoc;
-    spyOn(doc.children[0], 'update');
+    const spy = spyOn(doc.children[0], 'updateSync');
+
     updateDocument(doc, fields, changes);
-    expect(doc.children[0].update).toHaveBeenCalledWith({
+    expect(spy).toHaveBeenCalledWith({
       _id: '123',
       name: 'newname'
     });

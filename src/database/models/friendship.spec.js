@@ -48,7 +48,7 @@ describe('Friendship schema', () => {
   });
 
   it('should beautify native mongo errors', () => {
-    let found = Friendship.schema.plugins.filter(plugin => {
+    let found = Friendship.schema.plugins.filter((plugin) => {
       return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
     })[0];
     expect(found).toBeDefined();

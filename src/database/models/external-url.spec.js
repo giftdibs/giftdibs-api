@@ -64,7 +64,7 @@ describe('ExternalUrl schema', () => {
   });
 
   it('should beautify native mongo errors', () => {
-    let found = ExternalUrl.schema.plugins.filter(plugin => {
+    let found = ExternalUrl.schema.plugins.filter((plugin) => {
       return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
     })[0];
     expect(found).toBeDefined();
@@ -74,7 +74,7 @@ describe('ExternalUrl schema', () => {
     const externalUrl = new ExternalUrl(_externalUrlDefinition);
     const formData = {};
 
-    externalUrl.update(formData);
+    externalUrl.updateSync(formData);
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       externalUrl,
@@ -89,7 +89,7 @@ describe('ExternalUrl schema', () => {
       url: 'new'
     };
 
-    externalUrl.update(formData);
+    externalUrl.updateSync(formData);
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       externalUrl,

@@ -8,7 +8,11 @@ module.exports = {
   connect: () => {
     return mongoose
       .connect(databaseUri, { useMongoClient: true })
-      .then(() => logger.info(`Database connected at ${databaseUri}`))
-      .catch(err => logger.error(`Database connection error: ${err.message}`));
+      .then(() => {
+        logger.info(`Database connected at ${databaseUri}`);
+      })
+      .catch((err) => {
+        logger.error(`Database connection error: ${err.message}`);
+      });
   }
 };
