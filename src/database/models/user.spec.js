@@ -111,11 +111,13 @@ describe('User schema', () => {
   });
 
   it('should fail if emailAddress is not formatted correctly', (done) => {
-    let user = new User({ emailAddress: 'invalid.email' });
-    user.validate().catch(err => {
-      expect(err.errors.emailAddress.properties.type).toEqual('isEmail');
-      done();
-    });
+    const user = new User({ emailAddress: 'invalid.email' });
+    user
+      .validate()
+      .catch((err) => {
+        expect(err.errors.emailAddress.properties.type).toEqual('isEmail');
+        done();
+      });
   });
 
   it('should convert emailAddress to lowercase', () => {
@@ -131,7 +133,7 @@ describe('User schema', () => {
   });
 
   it('should beautify native mongo errors', () => {
-    let found = User.schema.plugins.filter(plugin => {
+    let found = User.schema.plugins.filter((plugin) => {
       return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
     })[0];
     expect(found).toBeDefined();
@@ -229,7 +231,7 @@ describe('User schema', () => {
 
     user.setPassword('1234567')
       .then(() => user.confirmPassword('abc'))
-      .catch(err => {
+      .catch((err) => {
         expect(err.message).toEqual('Password invalid.');
         done();
       });
@@ -322,7 +324,7 @@ describe('User schema', () => {
       firstName: 'Test'
     };
 
-    user.update(formData);
+    user.updateSync(formData);
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       user,

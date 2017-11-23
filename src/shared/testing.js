@@ -25,13 +25,25 @@ function assignFind(model) {
 
     const limit = () => {
       promise.lean = lean;
+      promise.select = select;
       promise.populate = populate;
       return promise;
     };
 
-    const select = () => {
+    const where = () => {
       return {
-        populate
+        in() {
+          return {
+            populate
+          }
+        }
+      };
+    };
+
+    const select = (fields) => {
+      model.selectedFields = fields;
+      return {
+        lean
       };
     };
 
@@ -42,7 +54,8 @@ function assignFind(model) {
       limit,
       lean,
       populate,
-      select
+      select,
+      where
     };
   }
 }
@@ -70,10 +83,16 @@ function assignReset(Model) {
   }
 }
 
+function assignConfirmUserOwnership(Model) {
+  Model.confirmUserOwnership = function () {
+    return Promise.resolve(new Model());
+  };
+}
+
 class MockDocument {
   constructor() {
     this.remove = () => {};
-    this.update = () => {};
+    this.updateSync = () => {};
     this._id = 'abc123';
   }
 }
@@ -149,6 +168,23 @@ class MockFriendship extends MockDocument {
   }
 }
 
+class MockUser extends MockDocument {
+  constructor(definition = {}) {
+    super();
+
+    const defaults = {};
+
+    this.resetEmailAddressVerification = {};
+
+    Object.assign(
+      this,
+      defaults,
+      definition,
+      MockUser.overrides.constructorDefinition
+    );
+  }
+}
+
 function MockRequest(options = {}) {
   return Object.assign({}, {
     body: {},
@@ -167,16 +203,25 @@ assignFind(MockWishList);
 assignFind(MockGift);
 assignFind(MockDib);
 assignFind(MockFriendship);
+assignFind(MockUser);
 
 assignSave(MockWishList);
 assignSave(MockGift);
 assignSave(MockDib);
 assignSave(MockFriendship);
+assignSave(MockUser);
 
 assignReset(MockWishList);
 assignReset(MockGift);
 assignReset(MockDib);
 assignReset(MockFriendship);
+assignReset(MockUser);
+
+assignConfirmUserOwnership(MockWishList);
+assignConfirmUserOwnership(MockGift);
+assignConfirmUserOwnership(MockDib);
+assignConfirmUserOwnership(MockFriendship);
+assignConfirmUserOwnership(MockUser);
 
 module.exports = {
   tick,
@@ -185,6 +230,7 @@ module.exports = {
   MockGift,
   MockWishList,
   MockExternalUrl,
+  MockUser,
   MockRequest,
   MockResponse
 };

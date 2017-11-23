@@ -49,17 +49,20 @@ describe('Auth Facebook router', () => {
   });
 
   it('should log a user in using a facebook user access token', () => {
-    spyOn(facebook, 'getProfile').and.returnValue(Promise.resolve({
-      email: 'foo@bar.com'
-    }));
+    spyOn(facebook, 'getProfile').and.returnValue(
+      Promise.resolve({
+        email: 'foo@bar.com'
+      })
+    );
 
     const route = mock.reRequire('./auth-facebook');
-    const loginFacebook = route.middleware.loginFacebook;
+    const loginWithFacebook = route.middleware.loginWithFacebook;
     const req = {
       body: {
         facebookUserAccessToken: 'abc123'
       }
     };
+
     const res = {
       json: (data) => {
         expect(req.user).toBeDefined();
@@ -68,13 +71,16 @@ describe('Auth Facebook router', () => {
         expect(data.authResponse.token).toBeDefined();
       }
     };
-    loginFacebook[0](req, res, () => {});
+
+    loginWithFacebook(req, res, () => {});
   });
 
   it('should log a user in using a facebook email address (and token)', () => {
-    spyOn(facebook, 'getProfile').and.returnValue(Promise.resolve({
-      email: 'foo@bar.com'
-    }));
+    spyOn(facebook, 'getProfile').and.returnValue(
+      Promise.resolve({
+        email: 'foo@bar.com'
+      })
+    );
 
     _findCallback = (query) => {
       if (query.facebookId) {
@@ -85,19 +91,21 @@ describe('Auth Facebook router', () => {
     };
 
     const route = mock.reRequire('./auth-facebook');
-    const loginFacebook = route.middleware.loginFacebook;
+    const loginWithFacebook = route.middleware.loginWithFacebook;
     const req = {
       body: {
         facebookUserAccessToken: 'abc123'
       }
     };
+
     const res = {
       json: (data) => {
         expect(req.user).toBeDefined();
         expect(req.user.dateLastLoggedIn).toBeDefined();
       }
     };
-    loginFacebook[0](req, res, () => {});
+
+    loginWithFacebook(req, res, () => {});
   });
 
   it('should register a new user with facebook profile', () => {
@@ -113,12 +121,13 @@ describe('Auth Facebook router', () => {
     };
 
     const route = mock.reRequire('./auth-facebook');
-    const loginFacebook = route.middleware.loginFacebook;
+    const loginWithFacebook = route.middleware.loginWithFacebook;
     const req = {
       body: {
         facebookUserAccessToken: 'abc123'
       }
     };
+
     const res = {
       json: (data) => {
         expect(req.user).toBeDefined();
@@ -126,7 +135,8 @@ describe('Auth Facebook router', () => {
         expect(req.user.emailAddressVerified).toEqual(true);
       }
     };
-    loginFacebook[0](req, res, () => {});
+
+    loginWithFacebook(req, res, () => {});
   });
 
   it('should handle validation errors from facebook profile', () => {
@@ -135,6 +145,7 @@ describe('Auth Facebook router', () => {
       err.name = 'ValidationError';
       return Promise.reject(err);
     };
+
     spyOn(facebook, 'getProfile').and.returnValue(Promise.resolve({
       first_name: '',
       last_name: '',
@@ -147,13 +158,14 @@ describe('Auth Facebook router', () => {
     };
 
     const route = mock.reRequire('./auth-facebook');
-    const loginFacebook = route.middleware.loginFacebook;
+    const loginWithFacebook = route.middleware.loginWithFacebook;
     const req = {
       body: {
         facebookUserAccessToken: 'abc123'
       }
     };
-    loginFacebook[0](req, {}, (err) => {
+
+    loginWithFacebook(req, {}, (err) => {
       expect(err).toBeDefined();
       expect(err.code).toEqual(110);
       expect(err.status).toEqual(400);
@@ -164,25 +176,29 @@ describe('Auth Facebook router', () => {
     MockUser.prototype.setPassword = function () {
       return Promise.reject(new Error());
     };
-    spyOn(facebook, 'getProfile').and.returnValue(Promise.resolve({
-      first_name: '',
-      last_name: '',
-      email: 'foo@bar.com',
-      id: '0'
-    }));
+
+    spyOn(facebook, 'getProfile').and.returnValue(
+      Promise.resolve({
+        first_name: '',
+        last_name: '',
+        email: 'foo@bar.com',
+        id: '0'
+      })
+    );
 
     _findCallback = (query) => {
       return Promise.resolve([]);
     };
 
     const route = mock.reRequire('./auth-facebook');
-    const loginFacebook = route.middleware.loginFacebook;
+    const loginWithFacebook = route.middleware.loginWithFacebook;
     const req = {
       body: {
         facebookUserAccessToken: 'abc123'
       }
     };
-    loginFacebook[0](req, {}, (err) => {
+
+    loginWithFacebook(req, {}, (err) => {
       expect(err).toBeDefined();
     });
   });
