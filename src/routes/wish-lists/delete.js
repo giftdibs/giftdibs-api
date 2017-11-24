@@ -7,14 +7,8 @@ const {
 function deleteWishList(req, res, next) {
   WishList
     .confirmUserOwnership(req.params.wishListId, req.user._id)
+    .then((wishList) => wishList.remove())
     .then(() => {
-      return WishList
-        .remove({
-          _id: req.params.wishListId
-        });
-    })
-    .then(() => {
-      // TODO: Remove gifts that reference this wish list.
       authResponse({
         message: 'Wish list successfully deleted.'
       })(req, res, next);

@@ -133,7 +133,12 @@ describe('Friendships router', () => {
     });
 
     it('should delete a friendship', (done) => {
-      spyOn(MockFriendship, 'remove').and.callThrough();
+      const friendship = new MockFriendship({});
+      const spy = spyOn(friendship, 'remove');
+
+      spyOn(MockFriendship, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(friendship)
+      );
 
       _req.params.friendshipId = 'friendshipid';
 
@@ -142,11 +147,7 @@ describe('Friendships router', () => {
       deleteFriendship(_req, _res, () => {});
 
       tick(() => {
-        expect(MockFriendship.remove)
-          .toHaveBeenCalledWith({
-            _id: 'friendshipid'
-          });
-
+        expect(spy).toHaveBeenCalledWith();
         expect(_res.json.output.message)
           .toEqual('Friendship successfully deleted.');
 
@@ -155,7 +156,7 @@ describe('Friendships router', () => {
     });
 
     it('should handle errors', (done) => {
-      spyOn(MockFriendship, 'remove').and.returnValue(
+      spyOn(MockFriendship, 'confirmUserOwnership').and.returnValue(
         Promise.reject(new Error('Some error'))
       );
 

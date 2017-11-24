@@ -12,7 +12,7 @@ const {
 const { Gift } = require('../../database/models/gift');
 const { Dib } = require('../../database/models/dib');
 
-function checkAlreadyDibbed(giftId, userId) {
+function checkUserAlreadyDibbed(giftId, userId) {
   // Fail if the current user has already dibbed this gift.
   return Dib
     .find({
@@ -60,7 +60,7 @@ function createDib(req, res, next) {
   const userId = req.user._id;
 
   confirmUserDoesNotOwnGift(giftId, userId)
-    .then(() => checkAlreadyDibbed(giftId, userId))
+    .then(() => checkUserAlreadyDibbed(giftId, userId))
     .then(() => validateDibQuantity(req))
     .then(() => {
       const dib = new Dib({

@@ -212,11 +212,19 @@ describe('Users router', () => {
     afterEach(afterEachCallback);
 
     it('should DELETE a document', (done) => {
+      const user = new MockUser({});
+      const spy = spyOn(user, 'remove');
+
+      spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(user)
+      );
+
       const { deleteUser } = mock.reRequire('./delete');
 
       deleteUser(_req, _res, () => {});
 
       tick(() => {
+        expect(spy).toHaveBeenCalledWith();
         expect(_res.json.output.message)
           .toEqual('Your account was successfully deleted. Goodbye!');
         done();
@@ -224,7 +232,7 @@ describe('Users router', () => {
     });
 
     it('should handle mongoose errors', (done) => {
-      spyOn(MockUser, 'remove').and.returnValue(
+      spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
         Promise.reject(new Error('Some error'))
       );
 
