@@ -32,7 +32,10 @@ const wishListSchema = new Schema({
     ]
   },
   privacy: {
-    _allow: [],
+    _allow: [{
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'User'
+    }],
     value: {
       type: String,
       enum: ['everyone', 'me', 'followers', 'custom']
