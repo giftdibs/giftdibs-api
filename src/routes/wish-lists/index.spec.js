@@ -261,12 +261,22 @@ describe('Wish lists router', () => {
     afterEach(afterEachCallback);
 
     it('should remove a document', (done) => {
+      const wishList = new MockWishList({});
+      const spy = spyOn(wishList, 'remove');
+
+      spyOn(MockWishList, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(wishList)
+      );
+
       const { deleteWishList } = mock.reRequire('./delete');
 
       deleteWishList(_req, _res, () => {});
 
       tick(() => {
-        expect(_res.json.output.message).toBeDefined();
+        expect(spy).toHaveBeenCalledWith();
+        expect(_res.json.output.message).toEqual(
+          'Wish list successfully deleted.'
+        );
         done();
       });
     });

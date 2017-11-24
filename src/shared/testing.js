@@ -97,10 +97,6 @@ class MockDocument {
   }
 }
 
-MockDocument.remove = function () {
-  return Promise.resolve();
-};
-
 class MockWishList extends MockDocument {
   constructor(definition = {}) {
     super();

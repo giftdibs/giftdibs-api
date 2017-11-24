@@ -5,7 +5,7 @@ const {
 function deleteUser(req, res, next) {
   User
     .confirmUserOwnership(req.params.userId, req.user._id)
-    .then(() => User.remove({ _id: req.params.userId }))
+    .then((user) => user.remove())
     .then(() => {
       // TODO: Remove wish lists, gifts, dibs, friendships owned by this user.
       res.json({
