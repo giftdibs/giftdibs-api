@@ -137,7 +137,7 @@ userSchema.methods.setPassword = function (password) {
   const PASSWORD_MIN_LENGTH = 7;
   const PASSWORD_MAX_LENGTH = 50;
 
-  let error = new Error();
+  const error = new Error();
   error.name = 'ValidationError';
   error.status = 400;
   error.errors = {
@@ -146,7 +146,9 @@ userSchema.methods.setPassword = function (password) {
     }
   };
 
-  password = password.trim();
+  if (password) {
+    password = password.trim();
+  }
 
   if (!password) {
     error.errors.password.message = 'Please provide a password.';
