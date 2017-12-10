@@ -22,9 +22,11 @@ function validateDibQuantity(req) {
     req.body.quantity = 1;
   }
 
+  const giftId = req.body._gift;
+
   return Promise.all([
-    Gift.find({ _id: req.body._gift }).limit(1).lean(),
-    Dib.find({ _gift: req.body._gift }).lean()
+    Gift.find({ _id: giftId }).limit(1).lean(),
+    Dib.find({ _gift: giftId }).lean()
   ])
     .then((results) => {
       const gift = results[0][0];
@@ -34,10 +36,6 @@ function validateDibQuantity(req) {
 
       if (!gift) {
         return Promise.reject(new GiftNotFoundError());
-      }
-
-      if (gift.quantity === 1 && totalDibs === 1) {
-        return;
       }
 
       dibs.forEach((dib) => {
@@ -62,8 +60,6 @@ function validateDibQuantity(req) {
 
         return Promise.reject(err);
       }
-
-      return true;
     });
 }
 

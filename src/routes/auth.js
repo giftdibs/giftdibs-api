@@ -65,8 +65,10 @@ function getUserByResetPasswordToken(resetPasswordToken) {
 
 const register = [
   function checkSpamBot(req, res, next) {
-    if (req.body.gdNickname !== undefined) {
-      next(new RegistrationValidationError());
+    if (req.body.gdNickname) {
+      const error = new RegistrationValidationError();
+      error.code = 108;
+      next(error);
       return;
     }
 
@@ -88,8 +90,14 @@ const register = [
         return user.save();
       })
       .then((doc) => {
-        // TODO: Send verification email.
         // TODO: Send welcome email.
+        // TODO: Send verification email.
+
+        console.log([
+          'Verify email here:',
+          `http://localhost:4200/verify-email/${doc.emailAddressVerificationToken}`
+        ].join(' '));
+
         res.json({
           id: doc._id,
           message: 'Registration successful! Please log in below.'

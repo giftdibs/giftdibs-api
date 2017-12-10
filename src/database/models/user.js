@@ -132,12 +132,12 @@ userSchema.methods.confirmPassword = function (password) {
   });
 };
 
-userSchema.methods.setPassword = function (password) {
+userSchema.methods.setPassword = function (password = '') {
   const saltRounds = 10;
   const PASSWORD_MIN_LENGTH = 7;
   const PASSWORD_MAX_LENGTH = 50;
 
-  let error = new Error();
+  const error = new Error();
   error.name = 'ValidationError';
   error.status = 400;
   error.errors = {
@@ -220,6 +220,33 @@ userSchema.methods.updateSync = function (values) {
   return this;
 };
 
+function removeReferencedDocuments(user, next) {
+  const { WishList } = require('./wish-list');
+  const { Friendship } = require('./friendship');
+  const { Dib } = require('./dib');
+
+  const userId = user._id;
+
+  const removeDocs = (docs) => {
+    docs.forEach((doc) => doc.remove());
+  };
+
+  Promise.all([
+    WishList.find({ _user: userId }).then(removeDocs),
+    Dib.find({ _user: userId }).then(removeDocs),
+    Friendship.find({
+      $or: [
+        { _user: userId },
+        { _friend: userId }
+      ]
+    }).then(removeDocs)
+  ])
+    .then(() => next())
+    .catch(next);
+}
+
+userSchema.post('remove', removeReferencedDocuments);
+
 userSchema.plugin(MongoDbErrorHandlerPlugin);
 
 userSchema.plugin(ConfirmUserOwnershipPlugin, {
@@ -233,4 +260,7 @@ userSchema.plugin(ConfirmUserOwnershipPlugin, {
 
 const User = mongoose.model('User', userSchema);
 
-module.exports = { User };
+module.exports = {
+  User,
+  removeReferencedDocuments
+};

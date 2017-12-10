@@ -60,6 +60,22 @@ describe('Dib schema', () => {
       .toEqual('The dib\'s quantity must be provided.');
   });
 
+  it('should fail if notes has more characters than allowed', () => {
+    let test = '';
+    while (test.length < 1002) {
+      test += '.';
+    }
+
+    _dibDefinition.notes = test;
+
+    const dib = new Dib(_dibDefinition);
+    const err = dib.validateSync();
+
+    expect(err.errors.notes.properties.type).toEqual('maxlength');
+    expect(err.errors.notes.message)
+      .toEqual('Notes cannot be longer than 1000 characters.');
+  });
+
   it('should fail if the pricePaid is less than zero', () => {
     _dibDefinition.pricePaid = -1;
     const dib = new Dib(_dibDefinition);
@@ -117,6 +133,7 @@ describe('Dib schema', () => {
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       dib,
       [
+        'notes',
         'pricePaid',
         'quantity'
       ],

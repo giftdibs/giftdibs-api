@@ -221,7 +221,12 @@ describe('Gifts router', () => {
     afterEach(afterEachCallback);
 
     it('should delete a gift', (done) => {
-      spyOn(MockGift, 'remove').and.callThrough();
+      const gift = new MockGift({});
+      const spy = spyOn(gift, 'remove');
+
+      spyOn(MockGift, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(gift)
+      );
 
       _req.params.giftId = 'giftid';
 
@@ -230,14 +235,14 @@ describe('Gifts router', () => {
       deleteGift(_req, _res, () => {});
 
       tick(() => {
-        expect(MockGift.remove).toHaveBeenCalledWith({ _id: 'giftid' });
+        expect(spy).toHaveBeenCalledWith();
         expect(_res.json.output.message).toEqual('Gift successfully deleted.');
         done();
       });
     });
 
     it('should handle errors', (done) => {
-      spyOn(MockGift, 'remove').and.returnValue(
+      spyOn(MockGift, 'confirmUserOwnership').and.returnValue(
         Promise.reject(new Error('Some error'))
       );
 

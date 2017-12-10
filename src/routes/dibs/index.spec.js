@@ -286,7 +286,13 @@ describe('Dibs router', () => {
     });
 
     it('should delete a dib', (done) => {
-      spyOn(MockDib, 'remove').and.callThrough();
+      const dib = new MockDib({});
+      const spy = spyOn(dib, 'remove');
+
+      spyOn(MockDib, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(dib)
+      );
+
       _req.params.dibId = 'dibid';
 
       const { deleteDib } = mock.reRequire('./delete');
@@ -294,14 +300,14 @@ describe('Dibs router', () => {
       deleteDib(_req, _res, () => {});
 
       tick(() => {
-        expect(MockDib.remove).toHaveBeenCalledWith({ _id: 'dibid' });
+        expect(spy).toHaveBeenCalledWith();
         expect(_res.json.output.message).toEqual('Dib successfully removed.');
         done();
       });
     });
 
     it('should handle errors', (done) => {
-      spyOn(MockDib, 'remove').and.returnValue(
+      spyOn(MockDib, 'confirmUserOwnership').and.returnValue(
         Promise.reject(new Error('Some error'))
       );
 

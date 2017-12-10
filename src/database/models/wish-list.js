@@ -66,8 +66,23 @@ wishListSchema.plugin(ConfirmUserOwnershipPlugin, {
   }
 });
 
+function removeReferencedDocuments(doc, next) {
+  const { Gift } = require('./gift');
+
+  Gift
+    .find({ _wishList: doc._id })
+    .then((gifts) => {
+      gifts.forEach((gift) => gift.remove());
+      next();
+    })
+    .catch(next);
+}
+
+wishListSchema.post('remove', removeReferencedDocuments);
+
 const WishList = mongoose.model('WishList', wishListSchema);
 
 module.exports = {
-  WishList
+  WishList,
+  removeReferencedDocuments
 };

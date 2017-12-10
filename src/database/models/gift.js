@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+
 const { externalUrlSchema } = require('./external-url');
 const { updateDocument } = require('../utils/update-document');
 
@@ -100,6 +101,24 @@ giftSchema.plugin(ConfirmUserOwnershipPlugin, {
   }
 });
 
+function removeReferencedDocuments(doc, next) {
+  const { Dib } = require('./dib');
+
+  Dib
+    .find({ _gift: doc._id })
+    .then((dibs) => {
+      dibs.forEach((dib) => dib.remove());
+      next();
+    })
+    .catch(next);
+}
+
+giftSchema.post('remove', removeReferencedDocuments);
+
 const Gift = mongoose.model('Gift', giftSchema);
 
-module.exports = { Gift };
+module.exports = {
+  Gift,
+  giftSchema,
+  removeReferencedDocuments
+};
