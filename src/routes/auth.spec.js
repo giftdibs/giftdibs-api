@@ -237,7 +237,7 @@ describe('Auth router', () => {
       };
       register[0](req, {}, (err) => {
         expect(err).toBeDefined();
-        expect(err.code).toEqual(102);
+        expect(err.code).toEqual(108);
         expect(err.status).toEqual(400);
         done();
       });

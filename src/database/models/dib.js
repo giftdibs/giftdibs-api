@@ -29,6 +29,14 @@ const dibSchema = new Schema({
     required: [true, 'A user ID must be provided.']
   },
   dateDelivered: Date,
+  notes: {
+    type: String,
+    trim: true,
+    maxlength: [
+      1001,
+      'Notes cannot be longer than 1000 characters.'
+    ]
+  },
   pricePaid: {
     type: Number,
     min: [0, 'The price paid must be at least zero.'],
@@ -52,7 +60,11 @@ const dibSchema = new Schema({
 });
 
 dibSchema.methods.updateSync = function (values) {
-  const fields = ['pricePaid', 'quantity'];
+  const fields = [
+    'notes',
+    'pricePaid',
+    'quantity'
+  ];
 
   // Update the date delivered if user marks the dib as delivered
   // (for the first time).
