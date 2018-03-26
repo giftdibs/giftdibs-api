@@ -17,6 +17,18 @@ const {
   ConfirmUserOwnershipPlugin
 } = require('../plugins/confirm-user-ownership');
 
+function removeReferencedDocuments(doc, next) {
+  const { Dib } = require('./dib');
+
+  Dib
+    .find({ _gift: doc._id })
+    .then((dibs) => {
+      dibs.forEach((dib) => dib.remove());
+      next();
+    })
+    .catch(next);
+}
+
 const Schema = mongoose.Schema;
 const giftSchema = new Schema({
   _user: {
@@ -91,8 +103,9 @@ giftSchema.methods.updateSync = function (values) {
   return this;
 };
 
-giftSchema.plugin(MongoDbErrorHandlerPlugin);
+giftSchema.post('remove', removeReferencedDocuments);
 
+giftSchema.plugin(MongoDbErrorHandlerPlugin);
 giftSchema.plugin(ConfirmUserOwnershipPlugin, {
   errors: {
     validation: new GiftValidationError('Please provide a gift ID.'),
@@ -100,20 +113,6 @@ giftSchema.plugin(ConfirmUserOwnershipPlugin, {
     permission: new GiftPermissionError()
   }
 });
-
-function removeReferencedDocuments(doc, next) {
-  const { Dib } = require('./dib');
-
-  Dib
-    .find({ _gift: doc._id })
-    .then((dibs) => {
-      dibs.forEach((dib) => dib.remove());
-      next();
-    })
-    .catch(next);
-}
-
-giftSchema.post('remove', removeReferencedDocuments);
 
 const Gift = mongoose.model('Gift', giftSchema);
 

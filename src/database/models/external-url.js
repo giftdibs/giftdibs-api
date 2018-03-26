@@ -4,7 +4,9 @@ const {
   MongoDbErrorHandlerPlugin
 } = require('../plugins/mongodb-error-handler');
 
-const { updateDocument } = require('../utils/update-document');
+const {
+  updateDocument
+} = require('../utils/update-document');
 
 const Schema = mongoose.Schema;
 const externalUrlSchema = new Schema({

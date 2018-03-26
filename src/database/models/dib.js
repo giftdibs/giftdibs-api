@@ -14,7 +14,9 @@ const {
   ConfirmUserOwnershipPlugin
 } = require('../plugins/confirm-user-ownership');
 
-const { updateDocument } = require('../utils/update-document');
+const {
+  updateDocument
+} = require('../utils/update-document');
 
 const Schema = mongoose.Schema;
 const dibSchema = new Schema({

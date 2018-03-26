@@ -25,10 +25,36 @@ const {
   ConfirmUserOwnershipPlugin
 } = require('../plugins/confirm-user-ownership');
 
-const hasDuplicateChars = (str) => {
-  let regex = /(.)\1{2,}/;
+function hasDuplicateChars(str) {
+  const regex = /(.)\1{2,}/;
+
   return !regex.test(str);
 };
+
+function removeReferencedDocuments(user, next) {
+  const { WishList } = require('./wish-list');
+  const { Friendship } = require('./friendship');
+  const { Dib } = require('./dib');
+
+  const userId = user._id;
+
+  const removeDocs = (docs) => {
+    docs.forEach((doc) => doc.remove());
+  };
+
+  Promise.all([
+    WishList.find({ _user: userId }).then(removeDocs),
+    Dib.find({ _user: userId }).then(removeDocs),
+    Friendship.find({
+      $or: [
+        { _user: userId },
+        { _friend: userId }
+      ]
+    }).then(removeDocs)
+  ])
+    .then(() => next())
+    .catch(next);
+}
 
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
@@ -220,35 +246,9 @@ userSchema.methods.updateSync = function (values) {
   return this;
 };
 
-function removeReferencedDocuments(user, next) {
-  const { WishList } = require('./wish-list');
-  const { Friendship } = require('./friendship');
-  const { Dib } = require('./dib');
-
-  const userId = user._id;
-
-  const removeDocs = (docs) => {
-    docs.forEach((doc) => doc.remove());
-  };
-
-  Promise.all([
-    WishList.find({ _user: userId }).then(removeDocs),
-    Dib.find({ _user: userId }).then(removeDocs),
-    Friendship.find({
-      $or: [
-        { _user: userId },
-        { _friend: userId }
-      ]
-    }).then(removeDocs)
-  ])
-    .then(() => next())
-    .catch(next);
-}
-
 userSchema.post('remove', removeReferencedDocuments);
 
 userSchema.plugin(MongoDbErrorHandlerPlugin);
-
 userSchema.plugin(ConfirmUserOwnershipPlugin, {
   errors: {
     validation: new UserValidationError('Please provide a user ID.'),
