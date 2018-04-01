@@ -1,4 +1,4 @@
-require('./shared/environment')();
+require('./shared/environment').applyEnvironment();
 
 const express = require('express');
 const bodyParser = require('body-parser');

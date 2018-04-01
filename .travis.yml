@@ -1,15 +1,23 @@
 language: node_js
-sudo: required
-dist: trusty
-
 branches:
   only:
-    - master
-    - /^rc-.*$/
-    - /^[0-9]+\.[0-9]+\.[0-9]+.*/
+  - master
 
 git:
-  depth: 10
+  depth: 5
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+
+deploy:
+  provider: heroku
+  api_key:
+    secure: Vp1S3SIn7looLe6DIsHWxU/iW1ibFIu3IOZgAPyVmWTxlDSMM4T+UvY8kT2EOf8qL6EU1q4tfzqapxghcQ+k58/p7L9YZRFrf3TCLtAr6XgEpaFjqmE8lf/Ef4m7xOliecqPjHHQMrBleuMpLi/VWKT09JqSdNRcvAewFGfNmcNe4CFjyGMeFRp0AaK1xHRgqm66HPrNkwErxY2h2B2DYWkFqkLSIuP+QNvN3NJWHGt9uX41D0yltfvFcSYY8ELYsGBfGLoXExJdtOgGJoPQj/T2+K89jv6abiTxMKiHLQo9cGig+IiE/+LgeQMy5Og/AjuXIDSfUvil+qbC9FzsxnVaenI5lyUJb5+CNv/PRORrTO6kGaXJQGQgQVpTVJExshogENfAMmcBOUXTQICwMInfobLzkB3V1JSeTjLlQ77xpUrSG1tZCfow+4IWlMWISXjVUcbOj45A7vSiDxyxpzqe6UGOicsk8IKpPQUYSGg41VAoKde18Tad9/4lNN7MKgaySEjDSkstCPqdgT7395WOHS2CmC7ULoO8T2OLuAdqTaGQc2Rk5iYkZRbG5R7ax2muYTI+ZmCMcoX2UVQmNi5B7GrDVG4EXaVsnXdbKHiyC9gtVwnL5/4EXgouIYi7LL/+7gr3YigC46PJEHb+s1wCV39XQT4cNbQ1yvR4oLk=
+  app: giftdibs-api
+  on:
+    repo: giftdibs/giftdibs-api
+
+cache:
+  directories:
+    - /home/travis/.rvm/
+    - node_modules
