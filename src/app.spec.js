@@ -14,7 +14,7 @@ describe('App', () => {
       use: () => {},
       initialize: () => {},
       authenticate: () => {}
-    })
+    });
 
     mock('./middleware/access-control', {});
     mock('./routes', {});

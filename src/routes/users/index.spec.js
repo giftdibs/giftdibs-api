@@ -11,7 +11,7 @@ describe('Users router', () => {
   let _req;
   let _res;
 
-  const beforeEachCallback = () => {
+  beforeEach(() => {
     MockUser.reset();
 
     _req = new MockRequest({
@@ -32,15 +32,11 @@ describe('Users router', () => {
         res.json(data);
       }
     });
-  };
+  });
 
-  const afterEachCallback = () => {
+  afterEach(() => {
     mock.stopAll();
-  };
-
-  beforeEach(beforeEachCallback);
-
-  afterEach(afterEachCallback);
+  });
 
   it('should require a jwt for all routes', () => {
     const users = mock.reRequire('./index');
@@ -48,10 +44,6 @@ describe('Users router', () => {
   });
 
   describe('GET /users', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should GET an array of all documents', (done) => {
       MockUser.overrides.find.returnWith = () => {
         return Promise.resolve([
@@ -207,10 +199,6 @@ describe('Users router', () => {
   });
 
   describe('DELETE /users/:userId', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should DELETE a document', (done) => {
       const user = new MockUser({});
       const spy = spyOn(user, 'remove');
@@ -246,10 +234,6 @@ describe('Users router', () => {
   });
 
   describe('PATCH /users/:user', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should update a document', (done) => {
       const user = new MockUser();
 

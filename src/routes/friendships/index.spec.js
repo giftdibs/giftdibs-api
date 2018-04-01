@@ -11,7 +11,7 @@ describe('Friendships router', () => {
   let _req;
   let _res;
 
-  const beforeEachCallback = () => {
+  beforeEach(() => {
     MockFriendship.reset();
 
     _req = new MockRequest({
@@ -33,15 +33,11 @@ describe('Friendships router', () => {
     });
 
     mock('../../database/models/friendship', { Friendship: MockFriendship });
-  };
+  });
 
-  const afterEachCallback = () => {
+  afterEach(() => {
     mock.stopAll();
-  };
-
-  beforeEach(beforeEachCallback);
-
-  afterEach(afterEachCallback);
+  });
 
   it('should require a jwt for all routes', () => {
     const routeDefinition = mock.reRequire('./index');
@@ -49,10 +45,6 @@ describe('Friendships router', () => {
   });
 
   describe('GET /friendships', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should get an array of all friendships', (done) => {
       const { getFriendships } = mock.reRequire('./get');
 
@@ -116,10 +108,6 @@ describe('Friendships router', () => {
   });
 
   describe('DELETE /friendships/:friendshipId', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should check user ownership', () => {
       spyOn(MockFriendship, 'confirmUserOwnership').and.returnValue(
         Promise.reject(new Error('Some error'))
@@ -170,10 +158,6 @@ describe('Friendships router', () => {
   });
 
   describe('POST /friendships', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should create a friendship', (done) => {
       MockFriendship.overrides.find.returnWith = () => {
         return Promise.resolve([]);

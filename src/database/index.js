@@ -7,7 +7,7 @@ const databaseUri = process.env.DATABASE_URI;
 module.exports = {
   connect: () => {
     return mongoose
-      .connect(databaseUri, { useMongoClient: true })
+      .connect(databaseUri)
       .then(() => {
         logger.info(`Database connected at ${databaseUri}`);
       })

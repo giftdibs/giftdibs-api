@@ -12,7 +12,7 @@ describe('Dibs router', () => {
   let _req;
   let _res;
 
-  const beforeEachCallback = () => {
+  beforeEach(() => {
     MockDib.reset();
     MockGift.reset();
 
@@ -35,15 +35,11 @@ describe('Dibs router', () => {
     });
     mock('../../database/models/dib', { Dib: MockDib });
     mock('../../database/models/gift', { Gift: MockGift });
-  };
+  });
 
-  const afterEachCallback = () => {
+  afterEach(() => {
     mock.stopAll();
-  };
-
-  beforeEach(beforeEachCallback);
-
-  afterEach(afterEachCallback);
+  });
 
   it('should require a jwt for all routes', () => {
     const routeDefinition = mock.reRequire('./index');
@@ -51,10 +47,6 @@ describe('Dibs router', () => {
   });
 
   describe('GET /dibs', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should get an array of all dibs belonging to user', (done) => {
       const { getDibs } = mock.reRequire('./get');
 
@@ -167,10 +159,6 @@ describe('Dibs router', () => {
   });
 
   describe('GET /dibs/recipients', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should get formatted array of all dibs belonging to user', (done) => {
       MockDib.overrides.find.returnWith = () => {
         return Promise.resolve([
@@ -269,10 +257,6 @@ describe('Dibs router', () => {
   });
 
   describe('DELETE /dibs/:dibId', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should check user ownership', () => {
       spyOn(MockDib, 'confirmUserOwnership').and.returnValue(
         Promise.reject(new Error('Some error'))
@@ -321,10 +305,6 @@ describe('Dibs router', () => {
   });
 
   describe('PATCH /dibs/:dibId', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should handle user not owning the dib', () => {
       spyOn(MockDib, 'confirmUserOwnership').and.returnValue(
         Promise.reject(new Error('Some error'))
@@ -483,10 +463,6 @@ describe('Dibs router', () => {
   });
 
   describe('POST /dibs', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should create a dib', (done) => {
       // Gift.find() is called twice in the router.
       MockGift.overrides.find.returnWith = () => {
