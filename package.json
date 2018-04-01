@@ -8,7 +8,7 @@
     "watch": "nodemon ./index.js",
     "test": "npm run lint && npm run coverage",
     "lint": "node ./node_modules/.bin/eslint src",
-    "coverage": "istanbul cover jasmine JASMINE_CONFIG_PATH=jasmine.json"
+    "coverage": "node ./node_modules/.bin/istanbul cover jasmine JASMINE_CONFIG_PATH=jasmine.json"
   },
   "repository": {
     "type": "git",
@@ -30,7 +30,7 @@
     "dotenv": "5.0.1",
     "express": "4.16.3",
     "jsonwebtoken": "8.2.0",
-    "mongoose": "5.0.11",
+    "mongoose": "5.0.12",
     "passport": "0.4.0",
     "passport-jwt": "4.0.0",
     "passport-local": "1.0.0",
@@ -42,15 +42,15 @@
   "devDependencies": {
     "eslint": "4.19.1",
     "eslint-config-standard": "11.0.0",
-    "eslint-plugin-import": "2.9.0",
+    "eslint-plugin-import": "2.10.0",
     "eslint-plugin-jasmine": "2.9.3",
     "eslint-plugin-node": "6.0.1",
     "eslint-plugin-promise": "3.7.0",
     "eslint-plugin-standard": "3.0.1",
     "istanbul": "0.4.5",
-    "jasmine": "3.1.0",
+    "jasmine": "2.99.0",
     "jasmine-spec-reporter": "4.2.1",
-    "mock-require": "3.0.1",
-    "nodemon": "1.17.2"
+    "mock-require": "3.0.2",
+    "nodemon": "1.17.3"
   }
 }

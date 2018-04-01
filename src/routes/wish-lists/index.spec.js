@@ -12,7 +12,7 @@ describe('Wish lists router', () => {
   let _req;
   let _res;
 
-  const beforeEachCallback = () => {
+  beforeEach(() => {
     MockDib.reset();
     MockWishList.reset();
 
@@ -34,15 +34,11 @@ describe('Wish lists router', () => {
     });
 
     _res = new MockResponse();
-  };
+  });
 
-  const afterEachCallback = () => {
+  afterEach(() => {
     mock.stopAll();
-  };
-
-  beforeEach(beforeEachCallback);
-
-  afterEach(afterEachCallback);
+  });
 
   it('should require a jwt for all routes', () => {
     const wishLists = mock.reRequire('./index');
@@ -50,10 +46,6 @@ describe('Wish lists router', () => {
   });
 
   describe('GET /wish-lists', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should get an array of all documents', (done) => {
       const { getWishLists } = mock.reRequire('./get');
 
@@ -105,10 +97,6 @@ describe('Wish lists router', () => {
   });
 
   describe('GET /wish-lists/:wishListId', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should get a single document', (done) => {
       const { getWishList } = mock.reRequire('./get');
 
@@ -168,10 +156,6 @@ describe('Wish lists router', () => {
   });
 
   describe('POST /wish-lists', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should create new wish lists', (done) => {
       const { createWishList } = mock.reRequire('./post');
 
@@ -206,10 +190,6 @@ describe('Wish lists router', () => {
   });
 
   describe('PATCH /wish-lists/:wishListId', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should update a document', (done) => {
       const wishList = new MockWishList({
         name: 'Old name',
@@ -256,10 +236,6 @@ describe('Wish lists router', () => {
   });
 
   describe('DELETE /wish-lists/:wishListId', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should remove a document', (done) => {
       const wishList = new MockWishList({});
       const spy = spyOn(wishList, 'remove');

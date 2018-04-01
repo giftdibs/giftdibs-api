@@ -3,7 +3,7 @@ const mock = require('mock-require');
 describe('Auth router', () => {
   let passport;
 
-  const beforeEachCallback = () => {
+  beforeEach(() => {
     mock('../middleware/auth-response', (data) => {
       return (req, res, next) => {
         data.authResponse = {};
@@ -12,21 +12,13 @@ describe('Auth router', () => {
     });
 
     passport = mock.reRequire('passport');
-  };
+  });
 
-  const afterEachCallback = () => {
+  afterEach(() => {
     mock.stopAll();
-  };
-
-  beforeEach(beforeEachCallback);
-
-  afterEach(afterEachCallback);
+  });
 
   describe('login', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should login a user and return a jwt', (done) => {
       spyOn(passport, 'authenticate').and.callFake((hook, callback) => {
         const err = null;
@@ -135,10 +127,6 @@ describe('Auth router', () => {
   });
 
   describe('register', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should register a user', (done) => {
       function User() {
         return {
@@ -258,10 +246,6 @@ describe('Auth router', () => {
   });
 
   describe('forgotten', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should create a reset password token', (done) => {
       const _user = {
         save: () => Promise.resolve(),
@@ -345,10 +329,6 @@ describe('Auth router', () => {
   });
 
   describe('resend-email-address-verification', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should require jwt when getting reset email verification token', () => {
       const auth = mock.reRequire('./auth');
       expect(auth.middleware.resendEmailAddressVerification[0].name)
@@ -375,10 +355,6 @@ describe('Auth router', () => {
   });
 
   describe('verify-email', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should require a jwt before verifying email address', () => {
       const auth = mock.reRequire('./auth');
       const verifyEmailAddress = auth.middleware.verifyEmailAddress;
