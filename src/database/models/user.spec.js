@@ -189,6 +189,20 @@ describe('User schema', () => {
       });
     });
 
+    it('should fail if the password is null', (done) => {
+      const user = new User({
+        firstName: 'Foo',
+        lastName: 'Bar',
+        emailAddress: 'foo@bar.com',
+        password: null,
+        dateLastLoggedIn: new Date()
+      });
+      user.setPassword(null).catch((err) => {
+        expect(err).toBeDefined();
+        done();
+      });
+    });
+
     it('should fail if the password is too short', (done) => {
       const user = new User({
         firstName: 'Foo',

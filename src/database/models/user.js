@@ -132,7 +132,7 @@ userSchema.methods.confirmPassword = function (password) {
   });
 };
 
-userSchema.methods.setPassword = function (password = '') {
+userSchema.methods.setPassword = function (password) {
   const saltRounds = 10;
   const PASSWORD_MIN_LENGTH = 7;
   const PASSWORD_MAX_LENGTH = 50;
@@ -146,7 +146,7 @@ userSchema.methods.setPassword = function (password = '') {
     }
   };
 
-  password = password.trim();
+  password = (password || '').trim();
 
   if (!password) {
     error.errors.password.message = 'Please provide a password.';
