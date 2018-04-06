@@ -193,7 +193,7 @@ userSchema.methods.resetEmailAddressVerification = function () {
   // TODO: Send email with token.
   console.log([
     'Verify email here:',
-    `http://localhost:4200/account/verify-email/${this.emailAddressVerificationToken}`
+    `http://localhost:4200/account/verify/${this.emailAddressVerificationToken}`
   ].join(' '));
 };
 
