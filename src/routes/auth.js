@@ -95,7 +95,7 @@ const register = [
 
         console.log([
           'Verify email here:',
-          `http://localhost:4200/verify-email/${doc.emailAddressVerificationToken}`
+          `http://localhost:4200/account/verify-email/${doc.emailAddressVerificationToken}`
         ].join(' '));
 
         res.json({

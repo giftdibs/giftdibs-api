@@ -178,7 +178,7 @@ userSchema.methods.setResetPasswordToken = function () {
   // TODO: Remove this after implementing email service.
   console.log([
     'Reset password here:',
-    `http://localhost:4200/reset-password/${this.resetPasswordToken}`
+    `http://localhost:4200/account/reset-password/${this.resetPasswordToken}`
   ].join(' '));
 };
 
@@ -193,7 +193,7 @@ userSchema.methods.resetEmailAddressVerification = function () {
   // TODO: Send email with token.
   console.log([
     'Verify email here:',
-    `http://localhost:4200/verify-email/${this.emailAddressVerificationToken}`
+    `http://localhost:4200/account/verify-email/${this.emailAddressVerificationToken}`
   ].join(' '));
 };
 
