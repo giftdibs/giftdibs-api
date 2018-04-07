@@ -99,7 +99,9 @@ const register = [
         ].join(' '));
 
         res.json({
-          id: doc._id,
+          data: {
+            id: doc._id
+          },
           message: 'Registration successful! Please log in below.'
         });
       })

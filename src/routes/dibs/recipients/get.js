@@ -65,7 +65,7 @@ function getDibsRecipients(req, res, next) {
           recipients.forEach(getSumBudget);
 
           authResponse({
-            recipients
+            data: { recipients }
           })(req, res, next);
         });
     })

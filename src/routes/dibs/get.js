@@ -41,7 +41,7 @@ function getDibs(req, res, next) {
     })
     .then((dibs) => {
       authResponse({
-        dibs
+        data: { dibs }
       })(req, res, next);
     })
     .catch(next);

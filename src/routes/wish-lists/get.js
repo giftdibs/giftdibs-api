@@ -25,7 +25,7 @@ function getWishList(req, res, next) {
     })
     .then((wishList) => {
       authResponse({
-        wishList
+        data: { wishList }
       })(req, res, next);
     })
     .catch(next);
@@ -44,7 +44,7 @@ function getWishLists(req, res, next) {
     .lean()
     .then((wishLists) => {
       authResponse({
-        wishLists
+        data: { wishLists }
       })(req, res, next);
     })
     .catch(next);
