@@ -303,6 +303,22 @@ const verifyEmailAddress = [
   }
 ];
 
+const deleteAccount = [
+  authenticateJwt,
+  function deleteAccount(req, res, next) {
+    User
+      .confirmUserOwnership(req.body.userId, req.user._id)
+      .then((user) => user.confirmPassword(req.body.password))
+      .then((user) => user.remove())
+      .then(() => {
+        res.json({
+          message: 'Your account was successfully deleted. Goodbye!'
+        });
+      })
+      .catch(next);
+  }
+];
+
 const router = express.Router();
 router.post('/auth/register', register);
 router.post('/auth/login', login);
@@ -310,6 +326,7 @@ router.post('/auth/forgotten', forgotten);
 router.post('/auth/reset-password', resetPassword);
 router.post('/auth/resend-email-verification', resendEmailAddressVerification);
 router.post('/auth/verify-email', verifyEmailAddress);
+router.post('/auth/delete-account', deleteAccount);
 
 module.exports = {
   middleware: {
@@ -318,7 +335,8 @@ module.exports = {
     forgotten,
     resetPassword,
     resendEmailAddressVerification,
-    verifyEmailAddress
+    verifyEmailAddress,
+    deleteAccount
   },
   router
 };
