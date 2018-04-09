@@ -64,7 +64,7 @@ describe('Dibs router', () => {
       getDibs(_req, _res, () => { });
 
       tick(() => {
-        expect(Array.isArray(_res.json.output.dibs)).toEqual(true);
+        expect(Array.isArray(_res.json.output.data.dibs)).toEqual(true);
         done();
       });
     });
@@ -237,7 +237,7 @@ describe('Dibs router', () => {
       getDibsRecipients(_req, _res, () => { });
 
       tick(() => {
-        const recipients = _res.json.output.recipients;
+        const recipients = _res.json.output.data.recipients;
 
         expect(Array.isArray(recipients)).toEqual(true);
         expect(recipients.length).toEqual(2);
@@ -464,7 +464,7 @@ describe('Dibs router', () => {
 
   describe('POST /dibs', () => {
     it('should create a dib', (done) => {
-      // Gift.find() is called twice in the router.
+      // TODO: Gift.find() is called twice in the router?
       MockGift.overrides.find.returnWith = () => {
         MockGift.overrides.find.returnWith = () => {
           return Promise.resolve([
@@ -497,7 +497,7 @@ describe('Dibs router', () => {
 
       tick(() => {
         expect(spy).toHaveBeenCalledWith();
-        expect(_res.json.output.dibId).toEqual('dibid');
+        expect(_res.json.output.data.dibId).toEqual('dibid');
         done();
       });
     });

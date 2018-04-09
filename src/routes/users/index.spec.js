@@ -56,7 +56,7 @@ describe('Users router', () => {
       getUsers(_req, _res, () => { });
 
       tick(() => {
-        expect(Array.isArray(_res.json.output.users)).toEqual(true);
+        expect(Array.isArray(_res.json.output.data.users)).toEqual(true);
         done();
       });
     });
@@ -128,7 +128,7 @@ describe('Users router', () => {
       getUser(_req, _res, () => { });
 
       tick(() => {
-        expect(_res.json.output.user.firstName).toEqual('John');
+        expect(_res.json.output.data.user.firstName).toEqual('John');
         done();
       });
     });
@@ -198,41 +198,6 @@ describe('Users router', () => {
     });
   });
 
-  describe('DELETE /users/:userId', () => {
-    it('should DELETE a document', (done) => {
-      const user = new MockUser({});
-      const spy = spyOn(user, 'remove');
-
-      spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
-        Promise.resolve(user)
-      );
-
-      const { deleteUser } = mock.reRequire('./delete');
-
-      deleteUser(_req, _res, () => {});
-
-      tick(() => {
-        expect(spy).toHaveBeenCalledWith();
-        expect(_res.json.output.message)
-          .toEqual('Your account was successfully deleted. Goodbye!');
-        done();
-      });
-    });
-
-    it('should handle mongoose errors', (done) => {
-      spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
-        Promise.reject(new Error('Some error'))
-      );
-
-      const { deleteUser } = mock.reRequire('./delete');
-
-      deleteUser(_req, _res, (err) => {
-        expect(err.message).toEqual('Some error');
-        done();
-      });
-    });
-  });
-
   describe('PATCH /users/:user', () => {
     it('should update a document', (done) => {
       const user = new MockUser();
@@ -240,14 +205,18 @@ describe('Users router', () => {
       const spy = spyOn(user, 'updateSync');
       const { updateUser } = mock.reRequire('./patch');
 
-      _req.body = { firstName: 'NewName' };
+      _req.body = {
+        attributes: {
+          firstName: 'NewName'
+        }
+      };
 
       spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
         Promise.resolve(user)
       );
 
       updateUser(_req, {}, () => {
-        expect(spy).toHaveBeenCalledWith(_req.body);
+        expect(spy).toHaveBeenCalledWith(_req.body.attributes);
         done();
       });
     });
@@ -324,7 +293,9 @@ describe('Users router', () => {
         );
 
         _req.body = {
-          emailAddress: 'new@email.com'
+          attributes: {
+            emailAddress: 'new@email.com'
+          }
         };
 
         const spy = spyOn(user, 'resetEmailAddressVerification');

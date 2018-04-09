@@ -60,7 +60,7 @@ describe('Friendships router', () => {
       getFriendships(_req, _res, () => {});
 
       tick(() => {
-        expect(Array.isArray(_res.json.output.friendships)).toEqual(true);
+        expect(Array.isArray(_res.json.output.data.friendships)).toEqual(true);
         expect(_res.json.output.authResponse).toBeDefined();
         done();
       });
@@ -83,7 +83,7 @@ describe('Friendships router', () => {
       getFriendships(_req, _res, () => {});
 
       tick(() => {
-        expect(Array.isArray(_res.json.output.friendships)).toEqual(true);
+        expect(Array.isArray(_res.json.output.data.friendships)).toEqual(true);
         expect(_res.json.output.authResponse).toBeDefined();
         expect(Array.isArray(MockFriendship.overrides.find.lastQuery.$or))
           .toEqual(true);
@@ -177,7 +177,7 @@ describe('Friendships router', () => {
 
       tick(() => {
         expect(spy).toHaveBeenCalledWith();
-        expect(_res.json.output.friendshipId).toEqual('friendshipid');
+        expect(_res.json.output.data.friendshipId).toEqual('friendshipid');
         done();
       });
     });

@@ -179,6 +179,8 @@ class MockUser extends MockDocument {
       MockUser.overrides.constructorDefinition
     );
   }
+
+  confirmPassword() {}
 }
 
 function MockRequest(options = {}) {

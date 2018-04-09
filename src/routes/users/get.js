@@ -46,7 +46,7 @@ function getUser(req, res, next) {
       }
 
       authResponse({
-        user
+        data: { user }
       })(req, res, next);
     })
     .catch(next);
@@ -61,7 +61,7 @@ function getUsers(req, res, next) {
     .lean()
     .then((users) => {
       authResponse({
-        users
+        data: { users }
       })(req, res, next);
     })
     .catch(next);

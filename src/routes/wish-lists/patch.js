@@ -13,9 +13,10 @@ function updateWishList(req, res, next) {
       wishList.updateSync(req.body);
       return wishList.save();
     })
-    .then(() => {
+    .then((wishList) => {
       authResponse({
-        message: 'Wish list updated.'
+        message: 'Wish list updated.',
+        data: { wishList }
       })(req, res, next);
     })
     .catch((err) => handleError(err, next));
