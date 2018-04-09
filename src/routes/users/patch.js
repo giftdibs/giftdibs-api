@@ -35,7 +35,10 @@ function updateUser(req, res, next) {
         return user;
       }
 
-      const emailAddress = req.body.attributes.emailAddress;
+      const emailAddress = (
+        req.body.attributes &&
+        req.body.attributes.emailAddress
+      );
 
       // If the email address is being changed, need to re-verify.
       if (emailAddress && (user.emailAddress !== emailAddress)) {

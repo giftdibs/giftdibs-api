@@ -100,7 +100,7 @@ const register = [
 
         res.json({
           data: {
-            id: doc._id
+            userId: doc._id
           },
           message: 'Registration successful! Please log in below.'
         });

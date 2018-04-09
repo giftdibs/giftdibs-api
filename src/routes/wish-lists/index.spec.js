@@ -52,7 +52,7 @@ describe('Wish lists router', () => {
       getWishLists(_req, _res, () => { });
 
       tick(() => {
-        expect(Array.isArray(_res.json.output.wishLists)).toEqual(true);
+        expect(Array.isArray(_res.json.output.data.wishLists)).toEqual(true);
         done();
       });
     });
@@ -65,7 +65,7 @@ describe('Wish lists router', () => {
       getWishLists(_req, _res, () => {});
 
       tick(() => {
-        expect(Array.isArray(_res.json.output.wishLists)).toEqual(true);
+        expect(Array.isArray(_res.json.output.data.wishLists)).toEqual(true);
         done();
       });
     });
@@ -113,7 +113,7 @@ describe('Wish lists router', () => {
       getWishList(_req, _res, () => {});
 
       tick(() => {
-        expect(_res.json.output.wishList._id).toBeDefined();
+        expect(_res.json.output.data.wishList._id).toBeDefined();
         done();
       });
     });
@@ -165,7 +165,7 @@ describe('Wish lists router', () => {
       createWishList(_req, _res, () => {});
 
       tick(() => {
-        expect(_res.json.output.wishListId).toBeDefined();
+        expect(_res.json.output.data.wishListId).toBeDefined();
         expect(_res.json.output.message)
           .toEqual('Wish list successfully created.');
         expect(_res.json.output.authResponse).toBeDefined();

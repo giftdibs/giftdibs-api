@@ -199,6 +199,7 @@ describe('User schema', () => {
       });
       user.setPassword(null).catch((err) => {
         expect(err).toBeDefined();
+        expect(err.errors.password.message).toEqual('Please provide a password.');
         done();
       });
     });
@@ -247,7 +248,18 @@ describe('User schema', () => {
       user.setPassword('1234567')
         .then(() => user.confirmPassword('abc'))
         .catch((err) => {
-          expect(err.message).toEqual('Password invalid.');
+          expect(err.message).toEqual('That password did not match what we have on record.');
+          done();
+        });
+    });
+
+    it('should handle errors from the password hash utility', (done) => {
+      const user = new User({
+        password: undefined
+      });
+      user.confirmPassword(undefined)
+        .catch((err) => {
+          expect(err.message).toEqual('That password did not match what we have on record.');
           done();
         });
     });
