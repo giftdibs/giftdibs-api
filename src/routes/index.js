@@ -4,6 +4,7 @@ module.exports = [
   require('./dibs').router,
   require('./friendships').router,
   require('./gifts').router,
+  require('./search').router,
   require('./users').router,
   require('./wish-lists').router
 ];
