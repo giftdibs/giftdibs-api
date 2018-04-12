@@ -29,7 +29,7 @@ const definitions = [
     name: 'LoginNotFoundError',
     message: 'A record could not be found with the credentials provided.',
     code: 101,
-    status: 400
+    status: 404
   },
   {
     name: 'RegistrationValidationError',
@@ -65,7 +65,7 @@ const definitions = [
     name: 'UserNotFoundError',
     message: 'User not found.',
     code: 200,
-    status: 400
+    status: 404
   },
   {
     name: 'UserValidationError',
@@ -83,7 +83,7 @@ const definitions = [
     name: 'WishListNotFoundError',
     message: 'Wish list not found.',
     code: 300,
-    status: 400
+    status: 404
   },
   {
     name: 'WishListValidationError',
@@ -101,7 +101,7 @@ const definitions = [
     name: 'GiftNotFoundError',
     message: 'Gift not found.',
     code: 400,
-    status: 400
+    status: 404
   },
   {
     name: 'GiftValidationError',
@@ -119,7 +119,7 @@ const definitions = [
     name: 'DibNotFoundError',
     message: 'Dib not found.',
     code: 500,
-    status: 400
+    status: 404
   },
   {
     name: 'DibValidationError',
@@ -137,7 +137,7 @@ const definitions = [
     name: 'FriendshipNotFoundError',
     message: 'Friendship not found.',
     code: 600,
-    status: 400
+    status: 404
   },
   {
     name: 'FriendshipValidationError',

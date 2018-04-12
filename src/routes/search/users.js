@@ -1,14 +1,34 @@
+const escapeStringRegexp = require('escape-string-regexp');
+
+const {
+  User
+} = require('../../database/models/user');
+
 const authResponse = require('../../middleware/auth-response');
 
 function searchUsers(req, res, next) {
   const searchText = decodeURIComponent(req.params.encodedSearchText);
-  console.log('searchText?', searchText);
+  const escapedSearchText = escapeStringRegexp(searchText);
+  const regex = new RegExp(escapedSearchText, 'i');
 
-  authResponse({
-    data: {
-      results: []
-    }
-  })(req, res, next);
+  User
+    .find({
+      '$or': [
+        { 'firstName': regex },
+        { 'lastName': regex }
+      ]
+    })
+    .limit(15)
+    .select('firstName lastName _id')
+    .lean()
+    .then((docs) => {
+      authResponse({
+        data: {
+          results: docs
+        }
+      })(req, res, next);
+    })
+    .catch(next);
 }
 
 module.exports = {

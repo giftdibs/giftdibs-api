@@ -20,7 +20,7 @@ function createGift(req, res, next) {
     })
     .then((gift) => {
       authResponse({
-        giftId: gift._id,
+        data: { giftId: gift._id },
         message: 'Gift successfully created.'
       })(req, res, next);
     })

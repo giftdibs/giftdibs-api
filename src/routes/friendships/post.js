@@ -18,7 +18,7 @@ function createFriendship(req, res, next) {
     })
     .then((friendship) => {
       authResponse({
-        friendshipId: friendship._id,
+        data: { friendshipId: friendship._id },
         message: 'Friendship successfully created.'
       })(req, res, next);
     })

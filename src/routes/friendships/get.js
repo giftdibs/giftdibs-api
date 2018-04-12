@@ -20,7 +20,7 @@ function getFriendships(req, res, next) {
     .lean()
     .then((friendships) => {
       authResponse({
-        friendships
+        data: { friendships }
       })(req, res, next);
     })
     .catch(next);

@@ -16,7 +16,7 @@ function createWishList(req, res, next) {
     .save()
     .then((doc) => {
       authResponse({
-        wishListId: doc._id,
+        data: { wishListId: doc._id },
         message: 'Wish list successfully created.'
       })(req, res, next);
     })

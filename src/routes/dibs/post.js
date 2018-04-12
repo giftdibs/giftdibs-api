@@ -73,7 +73,7 @@ function createDib(req, res, next) {
     })
     .then((dib) => {
       authResponse({
-        dibId: dib._id,
+        data: { dibId: dib._id },
         message: 'Gift successfully dibbed!'
       })(req, res, next);
     })
