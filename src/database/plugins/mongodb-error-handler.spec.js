@@ -11,7 +11,7 @@ describe('MongoDbErrorHandlerPlugin', () => {
     mongoError = new Error();
     mongoError.message = [
       'E11000 duplicate key error collection:',
-      'api.User index: emailAddress_1 dup key: { : "foo@bar.com" }',
+      'api.User index: dbName.$emailAddress_1 dup key: { : "foo@bar.com" }',
       'emailAddress_1 dup key: { : "foo@bar.com" }'
     ].join(' ');
     mongoError.name = 'MongoError';
@@ -40,21 +40,6 @@ describe('MongoDbErrorHandlerPlugin', () => {
     plugin.MongoDbErrorHandlerPlugin(mockSchema);
     _callback.call({ schema: mockSchema }, mongoError, {}, (err) => {
       expect(err.errors.emailAddress.kind).toEqual('unique');
-    });
-  });
-
-  it([
-    'should pass the original error to the callback',
-    'if type errors are encountered'
-  ].join(' '), () => {
-    mongoError.message = '';
-    let _callback;
-    mockSchema.post = (hook, cb) => {
-      _callback = cb;
-    };
-    plugin.MongoDbErrorHandlerPlugin(mockSchema);
-    _callback.call({ schema: mockSchema }, mongoError, {}, (err) => {
-      expect(err.name).toEqual('MongoError');
     });
   });
 

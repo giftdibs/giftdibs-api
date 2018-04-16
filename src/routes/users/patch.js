@@ -35,14 +35,18 @@ function updateUser(req, res, next) {
         return user;
       }
 
-      const emailAddress = req.body.emailAddress;
+      const emailAddress = (
+        req.body.attributes &&
+        req.body.attributes.emailAddress
+      );
 
       // If the email address is being changed, need to re-verify.
       if (emailAddress && (user.emailAddress !== emailAddress)) {
         user.resetEmailAddressVerification();
       }
 
-      return user.updateSync(req.body);
+      // http://jsonapi.org/format/#crud-updating
+      return user.updateSync(req.body.attributes);
     })
     .then((user) => user.save())
     .then((user) => {

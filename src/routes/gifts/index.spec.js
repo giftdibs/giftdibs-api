@@ -68,8 +68,8 @@ describe('Gifts router', () => {
       getGifts(_req, _res, () => { });
 
       tick(() => {
-        expect(Array.isArray(_res.json.output.gifts)).toEqual(true);
-        expect(_res.json.output.gifts[0].name).toEqual('foo');
+        expect(Array.isArray(_res.json.output.data.gifts)).toEqual(true);
+        expect(_res.json.output.data.gifts[0].name).toEqual('foo');
         done();
       });
     });
@@ -115,7 +115,7 @@ describe('Gifts router', () => {
       getGifts(_req, _res, () => { });
 
       tick(() => {
-        const gifts = _res.json.output.gifts;
+        const gifts = _res.json.output.data.gifts;
         expect(gifts[0].name).toEqual('a');
         expect(gifts[1].name).toEqual('b');
         expect(gifts[2].name).toEqual('c');
@@ -168,7 +168,7 @@ describe('Gifts router', () => {
       createGift(_req, _res, () => { });
 
       tick(() => {
-        expect(_res.json.output.giftId).toEqual('newgiftid');
+        expect(_res.json.output.data.giftId).toEqual('newgiftid');
         expect(MockGift.lastTouched.name).toEqual('New gift');
         done();
       });
