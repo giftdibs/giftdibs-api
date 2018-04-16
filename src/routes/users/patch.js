@@ -51,8 +51,8 @@ function updateUser(req, res, next) {
     .then((user) => user.save())
     .then((user) => {
       authResponse({
-        message: 'User updated.',
-        data: { user }
+        data: { user },
+        message: 'User updated.'
       })(req, res, next);
     })
     .catch((err) => handleError(err, next));

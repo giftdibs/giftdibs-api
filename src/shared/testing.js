@@ -23,10 +23,11 @@ function assignFind(model) {
       return { lean, populate };
     };
 
-    const limit = () => {
+    const limit = (num) => {
       promise.lean = lean;
       promise.select = select;
       promise.populate = populate;
+      model.limit = num;
       return promise;
     };
 
