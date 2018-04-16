@@ -1,10 +1,12 @@
-const escapeStringRegexp = require('escape-string-regexp');
-
-const {
-  User
-} = require('../../database/models/user');
+const { User } = require('../../database/models/user');
 
 const authResponse = require('../../middleware/auth-response');
+
+function escapeStringRegexp(str) {
+  const matchOperatorsRegex = /[|\\{}()[\]^$+*?.]/g;
+
+  return str.replace(matchOperatorsRegex, '\\$&');
+}
 
 function searchUsers(req, res, next) {
   const searchText = decodeURIComponent(req.params.encodedSearchText);
