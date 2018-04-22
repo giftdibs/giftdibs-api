@@ -20,7 +20,15 @@ function getFriendships(req, res, next) {
     .lean()
     .then((friendships) => {
       authResponse({
-        data: { friendships }
+        data: {
+          friendships: friendships.map((friendship) => {
+            return {
+              _id: friendship._id,
+              friend: friendship._friend,
+              user: friendship._user
+            };
+          })
+        }
       })(req, res, next);
     })
     .catch(next);
