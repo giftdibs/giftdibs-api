@@ -775,4 +775,31 @@ describe('Auth router', () => {
       });
     });
   });
+
+  describe('refresh-token', () => {
+    let _req;
+    let _res;
+
+    beforeEach(() => {
+      _req = new MockRequest({});
+      _res = new MockResponse();
+    });
+
+    it('should require jwt', () => {
+      const auth = mock.reRequire('./auth');
+      const refreshToken = auth.middleware.refreshToken;
+      expect(refreshToken[0].name).toEqual('authenticateJwt');
+    });
+
+    it('should return a new token', (done) => {
+      const auth = mock.reRequire('./auth');
+      const refreshToken = auth.middleware.refreshToken;
+      refreshToken[1](_req, _res, () => {});
+      tick(() => {
+        expect(_res.json.output.authResponse).toBeDefined();
+        expect(_res.json.output.message).toEqual('Token refreshed successfully.');
+        done();
+      });
+    });
+  });
 });

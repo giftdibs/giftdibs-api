@@ -319,6 +319,15 @@ const deleteAccount = [
   }
 ];
 
+const refreshToken = [
+  authenticateJwt,
+  (req, res, next) => {
+    authResponse({
+      message: 'Token refreshed successfully.'
+    })(req, res, next);
+  }
+];
+
 const router = express.Router();
 router.post('/auth/register', register);
 router.post('/auth/login', login);
@@ -327,16 +336,18 @@ router.post('/auth/reset-password', resetPassword);
 router.post('/auth/resend-email-verification', resendEmailAddressVerification);
 router.post('/auth/verify-email', verifyEmailAddress);
 router.post('/auth/delete-account', deleteAccount);
+router.post('/auth/refresh-token', refreshToken);
 
 module.exports = {
   middleware: {
-    register,
-    login,
+    deleteAccount,
     forgotten,
-    resetPassword,
+    login,
+    refreshToken,
+    register,
     resendEmailAddressVerification,
-    verifyEmailAddress,
-    deleteAccount
+    resetPassword,
+    verifyEmailAddress
   },
   router
 };

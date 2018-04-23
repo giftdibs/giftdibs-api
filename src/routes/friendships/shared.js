@@ -19,6 +19,12 @@ function validateFriendRequest(friendId, userId) {
     );
   }
 
+  if (!friendId) {
+    return Promise.reject(
+      new FriendshipValidationError('Please provide the user ID of the friend you wish to follow.')
+    );
+  }
+
   return Friendship
     .find({
       _user: userId,
@@ -29,15 +35,16 @@ function validateFriendRequest(friendId, userId) {
     .then((docs) => {
       const friend = docs[0];
 
-      if (!friend) {
-        return;
+      if (friend) {
+        return Promise.reject(
+          new FriendshipValidationError('You are already following that person.')
+        );
       }
 
-      const err = new FriendshipValidationError(
-        'You are already following that person.'
-      );
-
-      return Promise.reject(err);
+      return new Friendship({
+        _user: userId,
+        _friend: friendId
+      });
     });
 }
 

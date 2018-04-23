@@ -4,11 +4,11 @@
   "description": "giftdibs API service",
   "main": "index.js",
   "scripts": {
-    "start": "node ./index.js",
-    "watch": "nodemon ./index.js",
-    "test": "npm run lint && npm run coverage",
+    "coverage": "node ./node_modules/.bin/istanbul cover jasmine JASMINE_CONFIG_PATH=jasmine.json",
     "lint": "node ./node_modules/.bin/eslint src",
-    "coverage": "node ./node_modules/.bin/istanbul cover jasmine JASMINE_CONFIG_PATH=jasmine.json"
+    "start": "node ./index.js",
+    "start:watch": "nodemon ./index.js",
+    "test": "npm run lint && npm run coverage"
   },
   "repository": {
     "type": "git",

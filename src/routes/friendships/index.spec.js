@@ -15,6 +15,9 @@ describe('Friendships router', () => {
     MockFriendship.reset();
 
     _req = new MockRequest({
+      body: {
+        attributes: {}
+      },
       user: {
         _id: 'userid'
       },
@@ -171,7 +174,7 @@ describe('Friendships router', () => {
 
       const { createFriendship } = mock.reRequire('./post');
 
-      _req.body._friend = 'friendid';
+      _req.body.attributes.friendId = 'friendid';
 
       createFriendship(_req, _res, () => { });
 
@@ -190,7 +193,7 @@ describe('Friendships router', () => {
       };
 
       _req.user._id = 'requser';
-      _req.body._friend = 'friendid';
+      _req.body.attributes.friendId = 'friendid';
 
       const { createFriendship } = mock.reRequire('./post');
 
@@ -203,7 +206,7 @@ describe('Friendships router', () => {
 
     it('should fail if request wants to follow itself', (done) => {
       _req.user._id = 'friendid';
-      _req.body._friend = 'friendid';
+      _req.body.attributes.friendId = 'friendid';
 
       const { createFriendship } = mock.reRequire('./post');
 
@@ -214,7 +217,23 @@ describe('Friendships router', () => {
       });
     });
 
+    it('should fail if friendId not provided', (done) => {
+      MockFriendship.overrides.find.returnWith = () => {
+        return Promise.resolve([]);
+      };
+
+      const { createFriendship } = mock.reRequire('./post');
+
+      createFriendship(_req, _res, (err) => {
+        expect(err.code).toEqual(601);
+        expect(err.status).toEqual(400);
+        expect(err.message).toEqual('Please provide the user ID of the friend you wish to follow.');
+        done();
+      });
+    });
+
     it('should handle errors', (done) => {
+      _req.body.attributes.friendId = 'friendid';
       MockFriendship.overrides.find.returnWith = () => {
         return Promise.resolve([]);
       };
@@ -232,6 +251,8 @@ describe('Friendships router', () => {
     });
 
     it('should handle validation errors', (done) => {
+      _req.body.attributes.friendId = 'friendid';
+
       const err = new Error();
       err.name = 'ValidationError';
 
