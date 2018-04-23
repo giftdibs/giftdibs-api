@@ -319,11 +319,11 @@ const deleteAccount = [
   }
 ];
 
-const resetToken = [
+const refreshToken = [
   authenticateJwt,
   (req, res, next) => {
     authResponse({
-      message: 'Token reset successfully'
+      message: 'Token refreshed successfully.'
     })(req, res, next);
   }
 ];
@@ -336,17 +336,18 @@ router.post('/auth/reset-password', resetPassword);
 router.post('/auth/resend-email-verification', resendEmailAddressVerification);
 router.post('/auth/verify-email', verifyEmailAddress);
 router.post('/auth/delete-account', deleteAccount);
-router.post('/auth/reset-token', resetToken);
+router.post('/auth/refresh-token', refreshToken);
 
 module.exports = {
   middleware: {
-    register,
-    login,
+    deleteAccount,
     forgotten,
-    resetPassword,
+    login,
+    refreshToken,
+    register,
     resendEmailAddressVerification,
-    verifyEmailAddress,
-    deleteAccount
+    resetPassword,
+    verifyEmailAddress
   },
   router
 };
