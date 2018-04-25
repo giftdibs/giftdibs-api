@@ -9,14 +9,14 @@ const {
 function createWishList(req, res, next) {
   const wishList = new WishList({
     _user: req.user._id,
-    name: req.body.name
+    name: req.body.attributes.name
   });
 
   wishList
     .save()
     .then((doc) => {
       authResponse({
-        data: { wishListId: doc._id },
+        data: { wishList: doc },
         message: 'Wish list successfully created.'
       })(req, res, next);
     })
