@@ -21,6 +21,9 @@ function getWishList(req, res, next) {
         return Promise.reject(new WishListNotFoundError());
       }
 
+      wishList.user = wishList._user;
+      delete wishList._user;
+
       return wishList;
     })
     .then((wishList) => {
@@ -44,7 +47,13 @@ function getWishLists(req, res, next) {
     .lean()
     .then((wishLists) => {
       authResponse({
-        data: { wishLists }
+        data: {
+          wishLists: wishLists.map((wishList) => {
+            wishList.user = wishList._user;
+            delete wishList._user;
+            return wishList;
+          })
+        }
       })(req, res, next);
     })
     .catch(next);

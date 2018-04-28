@@ -10,7 +10,7 @@ function updateWishList(req, res, next) {
   WishList
     .confirmUserOwnership(req.params.wishListId, req.user._id)
     .then((wishList) => {
-      wishList.updateSync(req.body);
+      wishList.updateSync(req.body.attributes);
       return wishList.save();
     })
     .then((wishList) => {
