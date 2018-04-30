@@ -1,16 +1,14 @@
 const express = require('express');
 const authenticateJwt = require('../../middleware/authenticate-jwt');
 
-const { getUser, getUsers } = require('./get');
-const { updateUser } = require('./patch');
+const { searchUsers } = require('./users');
 
 const router = express.Router();
 router.use(authenticateJwt);
-router.route('/users')
-  .get(getUsers);
-router.route('/users/:userId')
-  .get(getUser)
-  .patch(updateUser);
+router.route('/search-users')
+  .get(searchUsers);
+router.route('/search-users/:encodedSearchText')
+  .get(searchUsers);
 
 module.exports = {
   router

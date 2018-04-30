@@ -15,9 +15,10 @@ function updateDib(req, res, next) {
       dib.updateSync(req.body);
       return dib.save();
     })
-    .then(() => {
+    .then((dib) => {
       authResponse({
-        message: 'Dib successfully updated.'
+        message: 'Dib successfully updated.',
+        data: { dib }
       })(req, res, next);
     })
     .catch((err) => handleError(err, next));

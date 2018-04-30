@@ -1,17 +1,21 @@
 const mock = require('mock-require');
+const logger = require('winston');
 
 describe('Error handler middleware', () => {
-  it('should send an error as a json response', () => {
+  beforeEach(() => {
+    spyOn(logger, 'warn').and.returnValue();
+  });
+
+  it('should not pass 500 error messages to the client', () => {
     const middleware = mock.reRequire('./error-handler');
     const err = new Error('invalid');
-    err.status = 403;
     const res = {
       status: (code) => {
         return {
           json: (result) => {
-            expect(result.message).toBe('invalid');
-
-            expect(code).toEqual(403);
+            expect(result.message).not.toBe('invalid');
+            expect(result.code).toEqual(0);
+            expect(code).toEqual(500);
           }
         };
       }
@@ -22,28 +26,13 @@ describe('Error handler middleware', () => {
   it('should send multiple errors', () => {
     const middleware = mock.reRequire('./error-handler');
     const err = new Error('invalid');
+    err.status = 404;
     err.errors = [];
     const res = {
       status: (code) => {
         return {
           json: (result) => {
             expect(result.errors).toEqual([]);
-          }
-        };
-      }
-    };
-    middleware(err, null, res, () => {});
-  });
-
-  it('should default the error status to 404', () => {
-    const middleware = mock.reRequire('./error-handler');
-    const err = new Error('invalid');
-    const res = {
-      status: (statusCode) => {
-        return {
-          json: (result) => {
-            expect(result.code).toEqual(0);
-            expect(statusCode).toEqual(404);
           }
         };
       }

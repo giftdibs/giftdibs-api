@@ -30,12 +30,13 @@ function updateWishList(req, res, next) {
     .then((wishList) => {
       // formatPrivacyRequest(req.body);
       // wishList.setPrivacySync(req.body);
-      wishList.updateSync(req.body);
+      wishList.updateSync(req.body.attributes);
       return wishList.save();
     })
-    .then(() => {
+    .then((wishList) => {
       authResponse({
-        message: 'Wish list updated.'
+        message: 'Wish list updated.',
+        data: { wishList }
       })(req, res, next);
     })
     .catch((err) => handleError(err, next));

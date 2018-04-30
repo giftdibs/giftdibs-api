@@ -60,7 +60,7 @@ function getGifts(req, res, next) {
       }
 
       authResponse({
-        gifts
+        data: { gifts }
       })(req, res, next);
     })
     .catch(next);

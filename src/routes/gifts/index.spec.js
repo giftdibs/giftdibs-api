@@ -12,7 +12,7 @@ describe('Gifts router', () => {
   let _req;
   let _res;
 
-  const beforeEachCallback = () => {
+  beforeEach(() => {
     MockGift.reset();
     MockWishList.reset();
 
@@ -35,15 +35,11 @@ describe('Gifts router', () => {
       WishList: MockWishList
     });
     mock('../../database/models/gift', { Gift: MockGift });
-  };
+  });
 
-  const afterEachCallback = () => {
+  afterEach(() => {
     mock.stopAll();
-  };
-
-  beforeEach(beforeEachCallback);
-
-  afterEach(afterEachCallback);
+  });
 
   it('should require a jwt for all routes', () => {
     const routeDefinition = mock.reRequire('./index');
@@ -51,10 +47,6 @@ describe('Gifts router', () => {
   });
 
   describe('GET /gifts', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should get an unsorted array of all gifts', (done) => {
       const { getGifts } = mock.reRequire('./get');
 
@@ -76,8 +68,8 @@ describe('Gifts router', () => {
       getGifts(_req, _res, () => { });
 
       tick(() => {
-        expect(Array.isArray(_res.json.output.gifts)).toEqual(true);
-        expect(_res.json.output.gifts[0].name).toEqual('foo');
+        expect(Array.isArray(_res.json.output.data.gifts)).toEqual(true);
+        expect(_res.json.output.data.gifts[0].name).toEqual('foo');
         done();
       });
     });
@@ -123,7 +115,7 @@ describe('Gifts router', () => {
       getGifts(_req, _res, () => { });
 
       tick(() => {
-        const gifts = _res.json.output.gifts;
+        const gifts = _res.json.output.data.gifts;
         expect(gifts[0].name).toEqual('a');
         expect(gifts[1].name).toEqual('b');
         expect(gifts[2].name).toEqual('c');
@@ -164,10 +156,6 @@ describe('Gifts router', () => {
   });
 
   describe('POST /gifts', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should create a gift', (done) => {
       MockGift.overrides.save.returnWith = () => Promise.resolve({
         _id: 'newgiftid'
@@ -180,7 +168,7 @@ describe('Gifts router', () => {
       createGift(_req, _res, () => { });
 
       tick(() => {
-        expect(_res.json.output.giftId).toEqual('newgiftid');
+        expect(_res.json.output.data.giftId).toEqual('newgiftid');
         expect(MockGift.lastTouched.name).toEqual('New gift');
         done();
       });
@@ -216,10 +204,6 @@ describe('Gifts router', () => {
   });
 
   describe('DELETE /gifts/:giftId', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should delete a gift', (done) => {
       const gift = new MockGift({});
       const spy = spyOn(gift, 'remove');
@@ -256,10 +240,6 @@ describe('Gifts router', () => {
   });
 
   describe('PATCH /gifts/:giftId', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should update a gift', (done) => {
       const gift = new MockGift({
         name: 'Old name',

@@ -189,6 +189,21 @@ describe('User schema', () => {
       });
     });
 
+    it('should fail if the password is null', (done) => {
+      const user = new User({
+        firstName: 'Foo',
+        lastName: 'Bar',
+        emailAddress: 'foo@bar.com',
+        password: null,
+        dateLastLoggedIn: new Date()
+      });
+      user.setPassword(null).catch((err) => {
+        expect(err).toBeDefined();
+        expect(err.errors.password.message).toEqual('Please provide a password.');
+        done();
+      });
+    });
+
     it('should fail if the password is too short', (done) => {
       const user = new User({
         firstName: 'Foo',
@@ -233,7 +248,18 @@ describe('User schema', () => {
       user.setPassword('1234567')
         .then(() => user.confirmPassword('abc'))
         .catch((err) => {
-          expect(err.message).toEqual('Password invalid.');
+          expect(err.message).toEqual('That password did not match what we have on record.');
+          done();
+        });
+    });
+
+    it('should handle errors from the password hash utility', (done) => {
+      const user = new User({
+        password: undefined
+      });
+      user.confirmPassword(undefined)
+        .catch((err) => {
+          expect(err.message).toEqual('That password did not match what we have on record.');
           done();
         });
     });

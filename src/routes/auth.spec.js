@@ -1,9 +1,16 @@
 const mock = require('mock-require');
 
+const {
+  tick,
+  MockUser,
+  MockRequest,
+  MockResponse
+} = require('../shared/testing');
+
 describe('Auth router', () => {
   let passport;
 
-  const beforeEachCallback = () => {
+  beforeEach(() => {
     mock('../middleware/auth-response', (data) => {
       return (req, res, next) => {
         data.authResponse = {};
@@ -12,21 +19,13 @@ describe('Auth router', () => {
     });
 
     passport = mock.reRequire('passport');
-  };
+  });
 
-  const afterEachCallback = () => {
+  afterEach(() => {
     mock.stopAll();
-  };
-
-  beforeEach(beforeEachCallback);
-
-  afterEach(afterEachCallback);
+  });
 
   describe('login', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should login a user and return a jwt', (done) => {
       spyOn(passport, 'authenticate').and.callFake((hook, callback) => {
         const err = null;
@@ -127,7 +126,7 @@ describe('Auth router', () => {
 
       authenticate(req, {}, (err) => {
         expect(err).toBeDefined();
-        expect(err.status).toEqual(400);
+        expect(err.status).toEqual(404);
         expect(err.code).toEqual(101);
         done();
       });
@@ -135,10 +134,6 @@ describe('Auth router', () => {
   });
 
   describe('register', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should register a user', (done) => {
       function User() {
         return {
@@ -162,7 +157,7 @@ describe('Auth router', () => {
       };
       const res = {
         json: (result) => {
-          expect(result.id).toEqual(0);
+          expect(result.data.userId).toEqual(0);
           done();
         }
       };
@@ -258,10 +253,6 @@ describe('Auth router', () => {
   });
 
   describe('forgotten', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should create a reset password token', (done) => {
       const _user = {
         save: () => Promise.resolve(),
@@ -345,10 +336,6 @@ describe('Auth router', () => {
   });
 
   describe('resend-email-address-verification', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should require jwt when getting reset email verification token', () => {
       const auth = mock.reRequire('./auth');
       expect(auth.middleware.resendEmailAddressVerification[0].name)
@@ -375,10 +362,6 @@ describe('Auth router', () => {
   });
 
   describe('verify-email', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should require a jwt before verifying email address', () => {
       const auth = mock.reRequire('./auth');
       const verifyEmailAddress = auth.middleware.verifyEmailAddress;
@@ -545,25 +528,23 @@ describe('Auth router', () => {
       resetPassword[2](_req, res, () => { });
     });
 
-    it('should validate jwt before resetting the password (if token not set)',
-      (done) => {
-        let authJwtCalled = false;
+    it('should validate jwt before resetting the password (if token not set)', (done) => {
+      let authJwtCalled = false;
 
-        mock('../middleware/authenticate-jwt', (req, res, next) => {
-          authJwtCalled = true;
-          next();
-        });
+      mock('../middleware/authenticate-jwt', (req, res, next) => {
+        authJwtCalled = true;
+        next();
+      });
 
-        const auth = mock.reRequire('./auth');
-        const resetPassword = auth.middleware.resetPassword;
+      const auth = mock.reRequire('./auth');
+      const resetPassword = auth.middleware.resetPassword;
 
-        resetPassword[1](_req, {}, (err) => {
-          expect(err).toBeUndefined();
-          expect(authJwtCalled).toEqual(true);
-          done();
-        });
-      }
-    );
+      resetPassword[1](_req, {}, (err) => {
+        expect(err).toBeUndefined();
+        expect(authJwtCalled).toEqual(true);
+        done();
+      });
+    });
 
     it('should not validate jwt if reset password token set', (done) => {
       let authJwtCalled = false;
@@ -701,6 +682,122 @@ describe('Auth router', () => {
 
       resetPassword[2](_req, {}, (err) => {
         expect(err.name).toEqual('ResetPasswordValidationError');
+        done();
+      });
+    });
+  });
+
+  describe('delete-account', () => {
+    let _req;
+    let _res;
+
+    beforeEach(() => {
+      MockUser.reset();
+
+      _req = new MockRequest({
+        user: {
+          _id: 'userid'
+        }
+      });
+
+      _res = new MockResponse();
+
+      mock('../database/models/user', { User: MockUser });
+    });
+
+    afterEach(() => {
+      mock.stopAll();
+    });
+
+    it('should require jwt', () => {
+      const auth = mock.reRequire('./auth');
+      const deleteAccount = auth.middleware.deleteAccount;
+      expect(deleteAccount[0].name).toEqual('authenticateJwt');
+    });
+
+    it('should delete an account if password provided', (done) => {
+      const user = new MockUser({});
+
+      const removeSpy = spyOn(user, 'remove').and.returnValue(
+        Promise.resolve(user)
+      );
+
+      const passwordSpy = spyOn(user, 'confirmPassword').and.returnValue(
+        Promise.resolve(user)
+      );
+
+      const ownershipSpy = spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(user)
+      );
+
+      const auth = mock.reRequire('./auth');
+      const deleteAccount = auth.middleware.deleteAccount[1];
+
+      _req.body.userId = 'userid';
+      _req.body.password = 'password';
+
+      deleteAccount(_req, _res, () => {});
+
+      tick(() => {
+        expect(ownershipSpy).toHaveBeenCalledWith('userid', 'userid');
+        expect(passwordSpy).toHaveBeenCalledWith('password');
+        expect(removeSpy).toHaveBeenCalledWith();
+        expect(_res.json.output.message).toEqual('Your account was successfully deleted. Goodbye!');
+        done();
+      });
+    });
+
+    it('should not delete an account if password is not provided', (done) => {
+      const user = new MockUser({});
+      const removeSpy = spyOn(user, 'remove');
+      const passwordSpy = spyOn(user, 'confirmPassword').and.returnValue(
+        Promise.reject(
+          new Error('some error')
+        )
+      );
+
+      const ownershipSpy = spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(user)
+      );
+
+      const auth = mock.reRequire('./auth');
+      const deleteAccount = auth.middleware.deleteAccount[1];
+
+      _req.body.userId = 'userid';
+      _req.body.password = 'password';
+
+      deleteAccount(_req, _res, (err) => {
+        expect(ownershipSpy).toHaveBeenCalledWith('userid', 'userid');
+        expect(passwordSpy).toHaveBeenCalledWith('password');
+        expect(removeSpy).not.toHaveBeenCalledWith();
+        expect(err.message).toEqual('some error');
+        done();
+      });
+    });
+  });
+
+  describe('refresh-token', () => {
+    let _req;
+    let _res;
+
+    beforeEach(() => {
+      _req = new MockRequest({});
+      _res = new MockResponse();
+    });
+
+    it('should require jwt', () => {
+      const auth = mock.reRequire('./auth');
+      const refreshToken = auth.middleware.refreshToken;
+      expect(refreshToken[0].name).toEqual('authenticateJwt');
+    });
+
+    it('should return a new token', (done) => {
+      const auth = mock.reRequire('./auth');
+      const refreshToken = auth.middleware.refreshToken;
+      refreshToken[1](_req, _res, () => {});
+      tick(() => {
+        expect(_res.json.output.authResponse).toBeDefined();
+        expect(_res.json.output.message).toEqual('Token refreshed successfully.');
         done();
       });
     });

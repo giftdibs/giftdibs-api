@@ -142,23 +142,25 @@ const userSchema = new Schema({
 });
 
 userSchema.methods.confirmPassword = function (password) {
+  const error = new Error('That password did not match what we have on record.');
+  error.status = 400;
+  error.code = 101;
+
   return new Promise((resolve, reject) => {
     bcrypt
       .compare(password, this.password)
       .then((valid) => {
         if (valid) {
-          resolve();
+          resolve(this);
         } else {
-          const error = new Error('Password invalid.');
-          error.status = 400;
-          error.code = 101;
           reject(error);
         }
-      });
+      })
+      .catch(() => reject(error));
   });
 };
 
-userSchema.methods.setPassword = function (password = '') {
+userSchema.methods.setPassword = function (password) {
   const saltRounds = 10;
   const PASSWORD_MIN_LENGTH = 7;
   const PASSWORD_MAX_LENGTH = 50;
@@ -172,7 +174,7 @@ userSchema.methods.setPassword = function (password = '') {
     }
   };
 
-  password = password.trim();
+  password = (password || '').trim();
 
   if (!password) {
     error.errors.password.message = 'Please provide a password.';
@@ -204,7 +206,7 @@ userSchema.methods.setResetPasswordToken = function () {
   // TODO: Remove this after implementing email service.
   console.log([
     'Reset password here:',
-    `http://localhost:4200/reset-password/${this.resetPasswordToken}`
+    `http://localhost:4200/account/reset-password/${this.resetPasswordToken}`
   ].join(' '));
 };
 
@@ -219,7 +221,7 @@ userSchema.methods.resetEmailAddressVerification = function () {
   // TODO: Send email with token.
   console.log([
     'Verify email here:',
-    `http://localhost:4200/verify-email/${this.emailAddressVerificationToken}`
+    `http://localhost:4200/account/verify/${this.emailAddressVerificationToken}`
   ].join(' '));
 };
 

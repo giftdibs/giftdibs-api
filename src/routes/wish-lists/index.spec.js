@@ -12,7 +12,7 @@ describe('Wish lists router', () => {
   let _req;
   let _res;
 
-  const beforeEachCallback = () => {
+  beforeEach(() => {
     MockDib.reset();
     MockWishList.reset();
 
@@ -30,19 +30,18 @@ describe('Wish lists router', () => {
       user: {},
       params: {
         wishListId: 0
+      },
+      body: {
+        attributes: {}
       }
     });
 
     _res = new MockResponse();
-  };
+  });
 
-  const afterEachCallback = () => {
+  afterEach(() => {
     mock.stopAll();
-  };
-
-  beforeEach(beforeEachCallback);
-
-  afterEach(afterEachCallback);
+  });
 
   it('should require a jwt for all routes', () => {
     const wishLists = mock.reRequire('./index');
@@ -50,17 +49,13 @@ describe('Wish lists router', () => {
   });
 
   describe('GET /wish-lists', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should get an array of all documents', (done) => {
       const { getWishLists } = mock.reRequire('./get');
 
       getWishLists(_req, _res, () => { });
 
       tick(() => {
-        expect(Array.isArray(_res.json.output.wishLists)).toEqual(true);
+        expect(Array.isArray(_res.json.output.data.wishLists)).toEqual(true);
         done();
       });
     });
@@ -73,7 +68,7 @@ describe('Wish lists router', () => {
       getWishLists(_req, _res, () => {});
 
       tick(() => {
-        expect(Array.isArray(_res.json.output.wishLists)).toEqual(true);
+        expect(Array.isArray(_res.json.output.data.wishLists)).toEqual(true);
         done();
       });
     });
@@ -105,10 +100,6 @@ describe('Wish lists router', () => {
   });
 
   describe('GET /wish-lists/:wishListId', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should get a single document', (done) => {
       const { getWishList } = mock.reRequire('./get');
 
@@ -125,7 +116,7 @@ describe('Wish lists router', () => {
       getWishList(_req, _res, () => {});
 
       tick(() => {
-        expect(_res.json.output.wishList._id).toBeDefined();
+        expect(_res.json.output.data.wishList._id).toBeDefined();
         done();
       });
     });
@@ -168,20 +159,16 @@ describe('Wish lists router', () => {
   });
 
   describe('POST /wish-lists', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should create new wish lists', (done) => {
       const { createWishList } = mock.reRequire('./post');
 
       _req.user._id = 'userid';
-      _req.body.name = 'New wish list';
+      _req.body.attributes.name = 'New wish list';
 
       createWishList(_req, _res, () => {});
 
       tick(() => {
-        expect(_res.json.output.wishListId).toBeDefined();
+        expect(_res.json.output.data.wishList).toBeDefined();
         expect(_res.json.output.message)
           .toEqual('Wish list successfully created.');
         expect(_res.json.output.authResponse).toBeDefined();
@@ -206,10 +193,6 @@ describe('Wish lists router', () => {
   });
 
   describe('PATCH /wish-lists/:wishListId', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should update a document', (done) => {
       const wishList = new MockWishList({
         name: 'Old name',
@@ -224,14 +207,14 @@ describe('Wish lists router', () => {
       );
 
       _req.params.wishListId = 'wishlistid';
-      _req.body.name = 'Updated name';
+      _req.body.attributes.name = 'Updated name';
 
       const { updateWishList } = mock.reRequire('./patch');
 
       updateWishList(_req, _res, () => {});
 
       tick(() => {
-        expect(updateSpy).toHaveBeenCalledWith(_req.body);
+        expect(updateSpy).toHaveBeenCalledWith(_req.body.attributes);
         expect(saveSpy).toHaveBeenCalledWith();
         done();
       });
@@ -256,10 +239,6 @@ describe('Wish lists router', () => {
   });
 
   describe('DELETE /wish-lists/:wishListId', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should remove a document', (done) => {
       const wishList = new MockWishList({});
       const spy = spyOn(wishList, 'remove');

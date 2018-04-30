@@ -11,10 +11,13 @@ describe('Friendships router', () => {
   let _req;
   let _res;
 
-  const beforeEachCallback = () => {
+  beforeEach(() => {
     MockFriendship.reset();
 
     _req = new MockRequest({
+      body: {
+        attributes: {}
+      },
       user: {
         _id: 'userid'
       },
@@ -33,15 +36,11 @@ describe('Friendships router', () => {
     });
 
     mock('../../database/models/friendship', { Friendship: MockFriendship });
-  };
+  });
 
-  const afterEachCallback = () => {
+  afterEach(() => {
     mock.stopAll();
-  };
-
-  beforeEach(beforeEachCallback);
-
-  afterEach(afterEachCallback);
+  });
 
   it('should require a jwt for all routes', () => {
     const routeDefinition = mock.reRequire('./index');
@@ -49,10 +48,6 @@ describe('Friendships router', () => {
   });
 
   describe('GET /friendships', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should get an array of all friendships', (done) => {
       const { getFriendships } = mock.reRequire('./get');
 
@@ -68,7 +63,7 @@ describe('Friendships router', () => {
       getFriendships(_req, _res, () => {});
 
       tick(() => {
-        expect(Array.isArray(_res.json.output.friendships)).toEqual(true);
+        expect(Array.isArray(_res.json.output.data.friendships)).toEqual(true);
         expect(_res.json.output.authResponse).toBeDefined();
         done();
       });
@@ -91,7 +86,7 @@ describe('Friendships router', () => {
       getFriendships(_req, _res, () => {});
 
       tick(() => {
-        expect(Array.isArray(_res.json.output.friendships)).toEqual(true);
+        expect(Array.isArray(_res.json.output.data.friendships)).toEqual(true);
         expect(_res.json.output.authResponse).toBeDefined();
         expect(Array.isArray(MockFriendship.overrides.find.lastQuery.$or))
           .toEqual(true);
@@ -116,10 +111,6 @@ describe('Friendships router', () => {
   });
 
   describe('DELETE /friendships/:friendshipId', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should check user ownership', () => {
       spyOn(MockFriendship, 'confirmUserOwnership').and.returnValue(
         Promise.reject(new Error('Some error'))
@@ -170,10 +161,6 @@ describe('Friendships router', () => {
   });
 
   describe('POST /friendships', () => {
-    beforeEach(beforeEachCallback);
-
-    afterEach(afterEachCallback);
-
     it('should create a friendship', (done) => {
       MockFriendship.overrides.find.returnWith = () => {
         return Promise.resolve([]);
@@ -187,13 +174,13 @@ describe('Friendships router', () => {
 
       const { createFriendship } = mock.reRequire('./post');
 
-      _req.body._friend = 'friendid';
+      _req.body.attributes.friendId = 'friendid';
 
       createFriendship(_req, _res, () => { });
 
       tick(() => {
         expect(spy).toHaveBeenCalledWith();
-        expect(_res.json.output.friendshipId).toEqual('friendshipid');
+        expect(_res.json.output.data.friendship._id).toEqual('friendshipid');
         done();
       });
     });
@@ -206,7 +193,7 @@ describe('Friendships router', () => {
       };
 
       _req.user._id = 'requser';
-      _req.body._friend = 'friendid';
+      _req.body.attributes.friendId = 'friendid';
 
       const { createFriendship } = mock.reRequire('./post');
 
@@ -219,7 +206,7 @@ describe('Friendships router', () => {
 
     it('should fail if request wants to follow itself', (done) => {
       _req.user._id = 'friendid';
-      _req.body._friend = 'friendid';
+      _req.body.attributes.friendId = 'friendid';
 
       const { createFriendship } = mock.reRequire('./post');
 
@@ -230,7 +217,23 @@ describe('Friendships router', () => {
       });
     });
 
+    it('should fail if friendId not provided', (done) => {
+      MockFriendship.overrides.find.returnWith = () => {
+        return Promise.resolve([]);
+      };
+
+      const { createFriendship } = mock.reRequire('./post');
+
+      createFriendship(_req, _res, (err) => {
+        expect(err.code).toEqual(601);
+        expect(err.status).toEqual(400);
+        expect(err.message).toEqual('Please provide the user ID of the friend you wish to follow.');
+        done();
+      });
+    });
+
     it('should handle errors', (done) => {
+      _req.body.attributes.friendId = 'friendid';
       MockFriendship.overrides.find.returnWith = () => {
         return Promise.resolve([]);
       };
@@ -248,6 +251,8 @@ describe('Friendships router', () => {
     });
 
     it('should handle validation errors', (done) => {
+      _req.body.attributes.friendId = 'friendid';
+
       const err = new Error();
       err.name = 'ValidationError';
 
