@@ -180,7 +180,7 @@ describe('Friendships router', () => {
 
       tick(() => {
         expect(spy).toHaveBeenCalledWith();
-        expect(_res.json.output.data.friendshipId).toEqual('friendshipid');
+        expect(_res.json.output.data.friendship._id).toEqual('friendshipid');
         done();
       });
     });
