@@ -30,6 +30,9 @@ describe('Wish lists router', () => {
       user: {},
       params: {
         wishListId: 0
+      },
+      body: {
+        attributes: {}
       }
     });
 
@@ -160,12 +163,12 @@ describe('Wish lists router', () => {
       const { createWishList } = mock.reRequire('./post');
 
       _req.user._id = 'userid';
-      _req.body.name = 'New wish list';
+      _req.body.attributes.name = 'New wish list';
 
       createWishList(_req, _res, () => {});
 
       tick(() => {
-        expect(_res.json.output.data.wishListId).toBeDefined();
+        expect(_res.json.output.data.wishList).toBeDefined();
         expect(_res.json.output.message)
           .toEqual('Wish list successfully created.');
         expect(_res.json.output.authResponse).toBeDefined();
@@ -204,14 +207,14 @@ describe('Wish lists router', () => {
       );
 
       _req.params.wishListId = 'wishlistid';
-      _req.body.name = 'Updated name';
+      _req.body.attributes.name = 'Updated name';
 
       const { updateWishList } = mock.reRequire('./patch');
 
       updateWishList(_req, _res, () => {});
 
       tick(() => {
-        expect(updateSpy).toHaveBeenCalledWith(_req.body);
+        expect(updateSpy).toHaveBeenCalledWith(_req.body.attributes);
         expect(saveSpy).toHaveBeenCalledWith();
         done();
       });
