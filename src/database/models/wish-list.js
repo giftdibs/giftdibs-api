@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { updateDocument } = require('../utils/update-document');
 
 const {
   WishListNotFoundError,
@@ -7,13 +6,17 @@ const {
   WishListValidationError
 } = require('../../shared/errors');
 
-const {
-  MongoDbErrorHandlerPlugin
-} = require('../plugins/mongodb-error-handler');
+const { ConfirmUserOwnershipPlugin } = require('../plugins/confirm-user-ownership');
+const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
+const { updateDocument } = require('../utils/update-document');
 
-const {
-  ConfirmUserOwnershipPlugin
-} = require('../plugins/confirm-user-ownership');
+function confirmUniqueUsers(value) {
+  const found = this.privacy._allow.find((userId) => {
+    return (userId.toString() === value);
+  });
+
+  return !!found;
+}
 
 const Schema = mongoose.Schema;
 const wishListSchema = new Schema({
@@ -30,6 +33,21 @@ const wishListSchema = new Schema({
       100,
       'The wish list\'s name cannot be longer than 100 characters.'
     ]
+  },
+  privacy: {
+    _allow: [{
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'User',
+      validate: [{
+        validator: confirmUniqueUsers,
+        message: 'Two or more duplicate user IDs found. Only provide unique IDs.'
+      }]
+    }],
+    type: {
+      type: String,
+      enum: ['everyone', 'me', 'friends', 'custom'],
+      default: 'everyone'
+    }
   }
 }, {
   collection: 'wishlist',

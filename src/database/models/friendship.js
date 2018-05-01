@@ -34,6 +34,27 @@ const friendshipSchema = new Schema({
   }
 });
 
+friendshipSchema.statics.getFriendshipsByUserId = function (userId) {
+  const query = {};
+
+  if (!userId) {
+    return new FriendshipValidationError(
+      'Please provide a user ID.'
+    );
+  }
+
+  query.$or = [{
+    _user: userId
+  }, {
+    _friend: userId
+  }];
+
+  return this.find(query)
+    .populate('_friend', 'firstName lastName')
+    .populate('_user', 'firstName lastName')
+    .lean();
+};
+
 friendshipSchema.plugin(MongoDbErrorHandlerPlugin);
 friendshipSchema.plugin(ConfirmUserOwnershipPlugin, {
   errors: {
