@@ -3,13 +3,10 @@ const { WishList } = require('../../database/models/wish-list');
 const authResponse = require('../../middleware/auth-response');
 
 const {
-  formatPrivacyRequest,
   handleError
 } = require('./shared');
 
 function updateWishList(req, res, next) {
-  formatPrivacyRequest(req, next);
-
   WishList
     .confirmUserOwnership(req.params.wishListId, req.user._id)
     .then((wishList) => {

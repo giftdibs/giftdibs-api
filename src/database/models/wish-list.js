@@ -58,7 +58,10 @@ const wishListSchema = new Schema({
 });
 
 wishListSchema.methods.updateSync = function (values) {
-  const fields = ['name'];
+  const fields = [
+    'name',
+    'privacy'
+  ];
 
   updateDocument(this, fields, values);
 
