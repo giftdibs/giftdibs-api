@@ -36,15 +36,15 @@ function isUserAuthorizedToViewWishList(userId, wishList, friendships) {
         .filter((friendship) => {
           // Get only friendships that belong to this wish list owner.
           return (
-            friendship._user._id.toString() === wishList._user._id.toString() ||
-            friendship._friend._id.toString() === wishList._user._id.toString()
+            friendship._user.toString() === wishList._user._id.toString() ||
+            friendship._friend.toString() === wishList._user._id.toString()
           );
         })
         .find((friendship) => {
           // Make sure the session user is a friend of wish list owner.
           return (
-            friendship._user._id.toString() === userId.toString() ||
-            friendship._friend._id.toString() === userId.toString()
+            friendship._user.toString() === userId.toString() ||
+            friendship._friend.toString() === userId.toString()
           );
         });
       break;
@@ -75,7 +75,6 @@ function getWishList(req, res, next) {
     .find({ _id: req.params.wishListId })
     .limit(1)
     .populate('_user', 'firstName lastName')
-    .populate('privacy._allow', 'firstName lastName')
     .lean()
     .then((docs) => {
       const wishList = docs[0];
@@ -102,9 +101,7 @@ function getWishList(req, res, next) {
 
       return data.wishList;
     })
-    .then((wishList) => {
-      return formatWishListResponse(wishList);
-    })
+    .then((wishList) => formatWishListResponse(wishList))
     .then((wishList) => {
       authResponse({
         data: { wishList }

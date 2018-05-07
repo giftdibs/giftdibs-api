@@ -11,11 +11,11 @@ const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler'
 const { updateDocument } = require('../utils/update-document');
 
 function confirmUniqueUsers(value) {
-  const found = this.privacy._allow.find((userId) => {
+  const found = !!this.privacy._allow.find((userId) => {
     return (userId.toString() === value);
   });
 
-  return !!found;
+  return !found;
 }
 
 const Schema = mongoose.Schema;
@@ -56,6 +56,29 @@ const wishListSchema = new Schema({
     updatedAt: 'dateUpdated'
   }
 });
+
+wishListSchema.statics.confirmPrivacySetting = function (attributes) {
+  return new Promise((resolve, reject) => {
+    if (!attributes.privacy) {
+      resolve(attributes);
+    }
+
+    if (attributes.privacy.type === 'custom') {
+      if (
+        !attributes.privacy._allow ||
+        attributes.privacy._allow.length === 0
+      ) {
+        reject(new WishListValidationError('Please select at least one user.'));
+        return;
+      }
+    } else {
+      // Make sure to clear out the _allow array.
+      attributes.privacy._allow = [];
+    }
+
+    resolve(attributes);
+  });
+};
 
 wishListSchema.methods.updateSync = function (values) {
   const fields = [
