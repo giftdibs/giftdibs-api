@@ -25,6 +25,8 @@ function validateFriendRequest(friendId, userId) {
     );
   }
 
+  // TODO: Prevent non-verified accounts from following people!
+
   return Friendship
     .find({
       _user: userId,
