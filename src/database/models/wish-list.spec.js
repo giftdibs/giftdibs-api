@@ -66,6 +66,20 @@ describe('WishList schema', () => {
       expect(err.errors._user.properties.type).toEqual('required');
     });
 
+    it('should be invalid if duplicate ids are added to privacy', () => {
+      const userid = mongoose.Types.ObjectId();
+      _wishListDefinition.privacy = {
+        _allow: [
+          userid,
+          userid
+        ]
+      };
+      let wishList = new WishList(_wishListDefinition);
+      const err = wishList.validateSync();
+      expect(err.errors['privacy._allow.0'].message)
+        .toEqual('Two or more duplicate user IDs found. Only provide unique IDs.');
+    });
+
     it('should generate timestamps automatically', () => {
       expect(WishList.schema.paths.dateCreated).toBeDefined();
       expect(WishList.schema.paths.dateUpdated).toBeDefined();
@@ -86,7 +100,7 @@ describe('WishList schema', () => {
 
       expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
         wishList,
-        [ 'name' ],
+        ['name', 'privacy'],
         formData
       );
     });
@@ -96,15 +110,14 @@ describe('WishList schema', () => {
     const { MockGift } = require('../../shared/testing');
 
     beforeEach(() => {
-      delete mongoose.models.WishList;
-      delete mongoose.modelSchemas.WishList;
-
       MockGift.reset();
 
       mock('./gift', { Gift: MockGift });
     });
 
     afterEach(() => {
+      delete mongoose.models.WishList;
+      delete mongoose.modelSchemas.WishList;
       mock.stopAll();
     });
 
@@ -136,6 +149,78 @@ describe('WishList schema', () => {
 
       removeReferencedDocuments({}, (err) => {
         expect(err.message).toEqual('Some error');
+        done();
+      });
+    });
+  });
+
+  describe('confirmPrivacySetting', () => {
+    let WishList;
+
+    beforeEach(() => {
+      WishList = mock.reRequire('./wish-list').WishList;
+    });
+
+    afterEach(() => {
+      delete mongoose.models.WishList;
+      delete mongoose.modelSchemas.WishList;
+      mock.stopAll();
+    });
+
+    it('should handle undefined privacy', (done) => {
+      WishList.confirmPrivacySetting({})
+        .then((attributes) => {
+          expect(attributes).toEqual({});
+          done();
+        });
+    });
+
+    it('should fail if privacy is custom, but no users set', (done) => {
+      WishList.confirmPrivacySetting({
+        privacy: {
+          type: 'custom',
+          _allow: []
+        }
+      })
+        .catch((err) => {
+          expect(err.name).toEqual('WishListValidationError');
+          expect(err.message).toEqual('Please select at least one user.');
+
+          return WishList.confirmPrivacySetting({
+            privacy: {
+              type: 'custom',
+              _allow: undefined
+            }
+          });
+        })
+        .catch((err) => {
+          expect(err.name).toEqual('WishListValidationError');
+          expect(err.message).toEqual('Please select at least one user.');
+          done();
+        });
+    });
+
+    it('should clear _allow if not custom type', (done) => {
+      WishList.confirmPrivacySetting({
+        privacy: {
+          type: 'me',
+          _allow: [mongoose.Types.ObjectId()]
+        }
+      }).then((attributes) => {
+        expect(attributes.privacy._allow).toEqual([]);
+        done();
+      });
+    });
+
+    it('should ignore proper custom settings', (done) => {
+      const privacy = {
+        type: 'custom',
+        _allow: [mongoose.Types.ObjectId()]
+      };
+      WishList.confirmPrivacySetting({
+        privacy
+      }).then((attributes) => {
+        expect(attributes.privacy).toEqual(privacy);
         done();
       });
     });

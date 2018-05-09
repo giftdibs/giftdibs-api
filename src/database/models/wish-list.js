@@ -12,7 +12,7 @@ const { updateDocument } = require('../utils/update-document');
 
 function confirmUniqueUsers(value) {
   const found = !!this.privacy._allow.find((userId) => {
-    return (userId.toString() === value);
+    return (userId.toString() === value.toString());
   });
 
   return !found;

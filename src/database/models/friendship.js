@@ -38,8 +38,10 @@ friendshipSchema.statics.getFriendshipsByUserId = function (userId) {
   const query = {};
 
   if (!userId) {
-    return new FriendshipValidationError(
-      'Please provide a user ID.'
+    return Promise.reject(
+      new FriendshipValidationError(
+        'Please provide a user ID.'
+      )
     );
   }
 

@@ -493,7 +493,7 @@ describe('Dibs router', () => {
 
       const { createDib } = mock.reRequire('./post');
 
-      createDib(_req, _res, (err) => { console.log(err); });
+      createDib(_req, _res, () => { });
 
       tick(() => {
         expect(spy).toHaveBeenCalledWith();

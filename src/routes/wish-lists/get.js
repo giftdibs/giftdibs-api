@@ -1,14 +1,13 @@
 const authResponse = require('../../middleware/auth-response');
 
 const { WishList } = require('../../database/models/wish-list');
-const { Friendship } = require('../../database/models/friendship');
 
 const {
   WishListNotFoundError,
   WishListPermissionError
 } = require('../../shared/errors');
 
-function isUserAuthorizedToViewWishList(userId, wishList, friendships) {
+function isUserAuthorizedToViewWishList(userId, wishList) {
   const isOwner = (wishList._user._id.toString() === userId.toString());
   const privacy = wishList.privacy;
   const privacyType = privacy && privacy.type;
@@ -21,32 +20,12 @@ function isUserAuthorizedToViewWishList(userId, wishList, friendships) {
   let passes = false;
   switch (privacyType) {
     case 'me':
-      if (!isOwner) {
-        passes = false;
-      }
+      passes = false;
       break;
 
     default:
     case 'everyone':
       passes = true;
-      break;
-
-    case 'friends':
-      passes = !!friendships
-        .filter((friendship) => {
-          // Get only friendships that belong to this wish list owner.
-          return (
-            friendship._user.toString() === wishList._user._id.toString() ||
-            friendship._friend.toString() === wishList._user._id.toString()
-          );
-        })
-        .find((friendship) => {
-          // Make sure the session user is a friend of wish list owner.
-          return (
-            friendship._user.toString() === userId.toString() ||
-            friendship._friend.toString() === userId.toString()
-          );
-        });
       break;
 
     case 'custom':
@@ -83,23 +62,21 @@ function getWishList(req, res, next) {
         return Promise.reject(new WishListNotFoundError());
       }
 
-      return Friendship.getFriendshipsByUserId(wishList._user._id)
-        .then((friendships) => {
-          return { friendships, wishList };
-        });
+      return wishList
     })
-    .then((data) => {
+    .then((wishList) => {
       const isAuthorized = isUserAuthorizedToViewWishList(
         req.user._id,
-        data.wishList,
-        data.friendships
+        wishList
       );
 
       if (!isAuthorized) {
-        return new WishListPermissionError('This wish list is private.');
+        return Promise.reject(
+          new WishListPermissionError('You are not authorized to view that wish list.')
+        );
       }
 
-      return data.wishList;
+      return wishList;
     })
     .then((wishList) => formatWishListResponse(wishList))
     .then((wishList) => {
@@ -122,17 +99,10 @@ function getWishLists(req, res, next) {
     .populate('_user', 'firstName lastName')
     .lean()
     .then((wishLists) => {
-      return Friendship.getFriendshipsByUserId(req.user._id)
-        .then((friendships) => {
-          return { friendships, wishLists };
-        });
-    })
-    .then((data) => {
-      return data.wishLists.filter((wishList) => {
+      return wishLists.filter((wishList) => {
         return isUserAuthorizedToViewWishList(
           req.user._id,
-          wishList,
-          data.friendships
+          wishList
         );
       });
     })

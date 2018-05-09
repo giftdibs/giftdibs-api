@@ -53,4 +53,58 @@ describe('Friendship schema', () => {
     })[0];
     expect(found).toBeDefined();
   });
+
+  describe('getFriendshipsByUserId', () => {
+    it('should get friendships for a user', (done) => {
+      const userId = mongoose.Types.ObjectId();
+      let _populate1Args;
+      let _populate2Args;
+      let _query;
+
+      const context = {
+        find(query) {
+          _query = query;
+          return {
+            populate(path, fields) {
+              _populate1Args = { path, fields };
+              return {
+                populate(path, fields) {
+                  _populate2Args = { path, fields };
+                  return {
+                    lean() {
+                      return Promise.resolve();
+                    }
+                  };
+                }
+              };
+            }
+          };
+        }
+      };
+      Friendship.getFriendshipsByUserId.call(context, userId)
+        .then(() => {
+          expect(_query['$or'][0]._user).toEqual(userId);
+          expect(_query['$or'][1]._friend).toEqual(userId);
+          expect(_populate1Args).toEqual({
+            path: '_friend',
+            fields: 'firstName lastName'
+          });
+          expect(_populate2Args).toEqual({
+            path: '_user',
+            fields: 'firstName lastName'
+          });
+          done();
+        });
+    });
+
+    it('should fail if user id not provided', (done) => {
+      const context = {};
+      Friendship.getFriendshipsByUserId.call(context, undefined)
+        .catch((err) => {
+          expect(err.name).toEqual('FriendshipValidationError');
+          expect(err.message).toEqual('Please provide a user ID.');
+          done();
+        });
+    });
+  });
 });
