@@ -20,7 +20,7 @@ function updateWishList(req, res, next) {
       wishList.updateSync(req.body.attributes);
       return wishList.save();
     })
-    .then((doc) => {
+    .then(() => {
       authResponse({
         data: {},
         message: 'Wish list updated.'

@@ -49,7 +49,7 @@ function updateUser(req, res, next) {
       return user.updateSync(req.body.attributes);
     })
     .then((user) => user.save())
-    .then((doc) => {
+    .then(() => {
       authResponse({
         data: {},
         message: 'User updated.'
