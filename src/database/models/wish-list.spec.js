@@ -66,20 +66,6 @@ describe('WishList schema', () => {
       expect(err.errors._user.properties.type).toEqual('required');
     });
 
-    it('should be invalid if duplicate ids are added to privacy', () => {
-      const userid = mongoose.Types.ObjectId();
-      _wishListDefinition.privacy = {
-        _allow: [
-          userid,
-          userid
-        ]
-      };
-      let wishList = new WishList(_wishListDefinition);
-      const err = wishList.validateSync();
-      expect(err.errors['privacy._allow.0'].message)
-        .toEqual('Two or more duplicate user IDs found. Only provide unique IDs.');
-    });
-
     it('should generate timestamps automatically', () => {
       expect(WishList.schema.paths.dateCreated).toBeDefined();
       expect(WishList.schema.paths.dateUpdated).toBeDefined();
@@ -176,12 +162,13 @@ describe('WishList schema', () => {
     });
 
     it('should fail if privacy is custom, but no users set', (done) => {
-      WishList.confirmPrivacySetting({
-        privacy: {
-          type: 'custom',
-          _allow: []
-        }
-      })
+      WishList
+        .confirmPrivacySetting({
+          privacy: {
+            type: 'custom',
+            _allow: []
+          }
+        })
         .catch((err) => {
           expect(err.name).toEqual('WishListValidationError');
           expect(err.message).toEqual('Please select at least one user.');
@@ -208,6 +195,20 @@ describe('WishList schema', () => {
         }
       }).then((attributes) => {
         expect(attributes.privacy._allow).toEqual([]);
+        done();
+      });
+    });
+
+    it('should remove duplicate ids in _allow', (done) => {
+      const userId = mongoose.Types.ObjectId();
+      const fooId = mongoose.Types.ObjectId();
+      WishList.confirmPrivacySetting({
+        privacy: {
+          type: 'custom',
+          _allow: [userId, userId, fooId]
+        }
+      }).then((attributes) => {
+        expect(attributes.privacy._allow).toEqual([userId, fooId]);
         done();
       });
     });

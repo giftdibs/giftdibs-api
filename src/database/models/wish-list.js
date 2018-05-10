@@ -10,14 +10,6 @@ const { ConfirmUserOwnershipPlugin } = require('../plugins/confirm-user-ownershi
 const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
 const { updateDocument } = require('../utils/update-document');
 
-function confirmUniqueUsers(value) {
-  const found = !!this.privacy._allow.find((userId) => {
-    return (userId.toString() === value.toString());
-  });
-
-  return !found;
-}
-
 const Schema = mongoose.Schema;
 const wishListSchema = new Schema({
   _user: {
@@ -37,11 +29,7 @@ const wishListSchema = new Schema({
   privacy: {
     _allow: [{
       type: mongoose.SchemaTypes.ObjectId,
-      ref: 'User',
-      validate: [{
-        validator: confirmUniqueUsers,
-        message: 'Two or more duplicate user IDs found. Only provide unique IDs.'
-      }]
+      ref: 'User'
     }],
     type: {
       type: String,
@@ -70,6 +58,10 @@ wishListSchema.statics.confirmPrivacySetting = function (attributes) {
       ) {
         reject(new WishListValidationError('Please select at least one user.'));
         return;
+      } else {
+        // Filter out any duplicate user ids.
+        // https://stackoverflow.com/a/15868720/6178885
+        attributes.privacy._allow = [...new Set(attributes.privacy._allow)];
       }
     } else {
       // Make sure to clear out the _allow array.

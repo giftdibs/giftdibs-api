@@ -29,7 +29,9 @@ function isUserAuthorizedToViewWishList(userId, wishList) {
       break;
 
     case 'custom':
-      passes = (wishList.privacy._allow.indexOf(userId) > -1);
+      passes = !!wishList.privacy._allow.find((allowId) => {
+        return (allowId.toString() === userId.toString());
+      });
       break;
   }
 
