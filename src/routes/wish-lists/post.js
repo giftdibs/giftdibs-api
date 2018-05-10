@@ -1,22 +1,23 @@
+const { WishList } = require('../../database/models/wish-list');
+
 const authResponse = require('../../middleware/auth-response');
 
-const { handleError } = require('./shared');
-
 const {
-  WishList
-} = require('../../database/models/wish-list');
+  handleError
+} = require('./shared');
 
 function createWishList(req, res, next) {
   const wishList = new WishList({
     _user: req.user._id,
-    name: req.body.attributes.name
+    name: req.body.attributes.name,
+    privacy: req.body.attributes.privacy
   });
 
   wishList
     .save()
     .then((doc) => {
       authResponse({
-        data: { wishList: doc },
+        data: { wishListId: doc._id },
         message: 'Wish list successfully created.'
       })(req, res, next);
     })

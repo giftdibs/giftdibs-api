@@ -15,12 +15,6 @@ describe('Friendships router', () => {
     MockFriendship.reset();
 
     _req = new MockRequest({
-      body: {
-        attributes: {}
-      },
-      user: {
-        _id: 'userid'
-      },
       params: {
         friendshipId: 'friendshipid'
       }
@@ -48,17 +42,19 @@ describe('Friendships router', () => {
   });
 
   describe('GET /friendships', () => {
-    it('should get an array of all friendships', (done) => {
+    it('should get an array of all friendships belonging to a user', (done) => {
       const { getFriendships } = mock.reRequire('./get');
 
-      MockFriendship.overrides.find.returnWith = () => {
-        return Promise.resolve([
+      _req.query.userId = 'userid';
+
+      spyOn(MockFriendship, 'getFriendshipsByUserId').and.returnValue(
+        Promise.resolve([
           new MockFriendship({
             _friend: 'friendid',
             _user: 'userid'
           })
-        ]);
-      };
+        ])
+      );
 
       getFriendships(_req, _res, () => {});
 
@@ -69,29 +65,11 @@ describe('Friendships router', () => {
       });
     });
 
-    it('should get an array of all friendships belonging to a user', (done) => {
+    it('should fail if user ID not provided', (done) => {
       const { getFriendships } = mock.reRequire('./get');
 
-      MockFriendship.overrides.find.returnWith = () => {
-        return Promise.resolve([
-          new MockFriendship({
-            _friend: 'friendid',
-            _user: 'userid'
-          })
-        ]);
-      };
-
-      _req.query.userId = 'userid';
-
-      getFriendships(_req, _res, () => {});
-
-      tick(() => {
-        expect(Array.isArray(_res.json.output.data.friendships)).toEqual(true);
-        expect(_res.json.output.authResponse).toBeDefined();
-        expect(Array.isArray(MockFriendship.overrides.find.lastQuery.$or))
-          .toEqual(true);
-        expect(MockFriendship.overrides.find.lastQuery.$or[0]._user)
-          .toEqual('userid');
+      getFriendships(_req, _res, (err) => {
+        expect(err.message).toEqual('Please provide a user ID.');
         done();
       });
     });
@@ -99,9 +77,11 @@ describe('Friendships router', () => {
     it('should handle errors', (done) => {
       const { getFriendships } = mock.reRequire('./get');
 
-      MockFriendship.overrides.find.returnWith = () => {
-        return Promise.reject(new Error('Some error'));
-      };
+      _req.query.userId = 'userid';
+
+      spyOn(MockFriendship, 'getFriendshipsByUserId').and.returnValue(
+        Promise.reject(new Error('Some error'))
+      );
 
       getFriendships(_req, _res, (err) => {
         expect(err.message).toEqual('Some error');
@@ -180,7 +160,7 @@ describe('Friendships router', () => {
 
       tick(() => {
         expect(spy).toHaveBeenCalledWith();
-        expect(_res.json.output.data.friendship._id).toEqual('friendshipid');
+        expect(_res.json.output.data.friendshipId).toEqual('friendshipid');
         done();
       });
     });

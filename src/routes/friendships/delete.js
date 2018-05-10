@@ -7,6 +7,7 @@ function deleteFriendship(req, res, next) {
     .then((friendship) => friendship.remove())
     .then(() => {
       authResponse({
+        data: {},
         message: 'Friendship successfully deleted.'
       })(req, res, next);
     })

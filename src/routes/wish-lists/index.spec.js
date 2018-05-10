@@ -1,7 +1,9 @@
 const mock = require('mock-require');
+const mongoose = require('mongoose');
 
 const {
   MockDib,
+  MockFriendship,
   MockWishList,
   MockRequest,
   MockResponse,
@@ -14,10 +16,12 @@ describe('Wish lists router', () => {
 
   beforeEach(() => {
     MockDib.reset();
+    MockFriendship.reset();
     MockWishList.reset();
 
-    mock('../../database/models/wish-list', { WishList: MockWishList });
     mock('../../database/models/dib', { Dib: MockDib });
+    mock('../../database/models/friendship', { Friendship: MockFriendship })
+    mock('../../database/models/wish-list', { WishList: MockWishList });
 
     mock('../../middleware/auth-response', function authResponse(data) {
       return (req, res, next) => {
@@ -27,12 +31,8 @@ describe('Wish lists router', () => {
     });
 
     _req = new MockRequest({
-      user: {},
       params: {
         wishListId: 0
-      },
-      body: {
-        attributes: {}
       }
     });
 
@@ -49,7 +49,7 @@ describe('Wish lists router', () => {
   });
 
   describe('GET /wish-lists', () => {
-    it('should get an array of all documents', (done) => {
+    it('should get an array of all wish lists', (done) => {
       const { getWishLists } = mock.reRequire('./get');
 
       getWishLists(_req, _res, () => { });
@@ -81,6 +81,76 @@ describe('Wish lists router', () => {
       tick(() => {
         expect(MockWishList.populatedFields['_user'])
           .toEqual('firstName lastName');
+        done();
+      });
+    });
+
+    it('should only get wish lists the user is authorized to view', (done) => {
+      const { getWishLists } = mock.reRequire('./get');
+
+      const userId = mongoose.Types.ObjectId();
+      const friendId = mongoose.Types.ObjectId();
+
+      _req.user._id = userId;
+
+      MockWishList.overrides.find.returnWith = () => {
+        return Promise.resolve([
+          new MockWishList({
+            name: 'Private list (owned)',
+            _user: {
+              _id: userId
+            },
+            privacy: {
+              type: 'me'
+            }
+          }),
+          new MockWishList({
+            name: 'Private list (not owned)',
+            privacy: {
+              type: 'me'
+            }
+          }),
+          new MockWishList({
+            name: 'Public list',
+            privacy: {
+              type: 'everyone'
+            }
+          }),
+          new MockWishList({
+            name: 'Custom list (allowed)',
+            _user: {
+              _id: friendId
+            },
+            privacy: {
+              type: 'custom',
+              _allow: [userId]
+            }
+          }),
+          new MockWishList({
+            name: 'Custom list (not allowed)',
+            _user: {
+              _id: friendId
+            },
+            privacy: {
+              type: 'custom',
+              _allow: [mongoose.Types.ObjectId()]
+            }
+          }),
+          new MockWishList({
+            name: 'Default list'
+          })
+        ]);
+      };
+
+      getWishLists(_req, _res, () => { });
+
+      tick(() => {
+        const wishLists = _res.json.output.data.wishLists;
+        expect(wishLists.length).toEqual(4);
+        expect(wishLists[0].name).toEqual('Private list (owned)');
+        expect(wishLists[1].name).toEqual('Public list');
+        expect(wishLists[2].name).toEqual('Custom list (allowed)');
+        expect(wishLists[3].name).toEqual('Default list');
         done();
       });
     });
@@ -133,6 +203,35 @@ describe('Wish lists router', () => {
       });
     });
 
+    it('should fail if user is unauthorized to view', (done) => {
+      const { getWishList } = mock.reRequire('./get');
+
+      const userId = mongoose.Types.ObjectId();
+
+      _req.user = {
+        _id: userId
+      };
+
+      MockWishList.overrides.find.returnWith = () => {
+        return Promise.resolve([
+          new MockWishList({
+            _user: {
+              _id: 'foo'
+            },
+            privacy: {
+              type: 'me'
+            }
+          })
+        ]);
+      };
+
+      getWishList(_req, _res, (err) => {
+        expect(err.name).toEqual('WishListPermissionError');
+        expect(err.message).toEqual('You are not authorized to view that wish list.');
+        done();
+      });
+    });
+
     it('should handle wish list not found', (done) => {
       MockWishList.overrides.find.returnWith = () => Promise.resolve([]);
 
@@ -162,17 +261,14 @@ describe('Wish lists router', () => {
     it('should create new wish lists', (done) => {
       const { createWishList } = mock.reRequire('./post');
 
-      _req.user._id = 'userid';
       _req.body.attributes.name = 'New wish list';
 
       createWishList(_req, _res, () => {});
 
       tick(() => {
-        expect(_res.json.output.data.wishList).toBeDefined();
-        expect(_res.json.output.message)
-          .toEqual('Wish list successfully created.');
+        expect(_res.json.output.data.wishListId).toBeDefined();
+        expect(_res.json.output.message).toEqual('Wish list successfully created.');
         expect(_res.json.output.authResponse).toBeDefined();
-        expect(MockWishList.lastTouched._user).toEqual('userid');
         expect(MockWishList.lastTouched.name).toEqual('New wish list');
         done();
       });

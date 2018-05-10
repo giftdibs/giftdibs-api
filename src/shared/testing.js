@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 function tick(callback) {
   setTimeout(callback, 0);
 }
@@ -94,7 +96,7 @@ class MockDocument {
   constructor() {
     this.remove = () => {};
     this.updateSync = () => {};
-    this._id = 'abc123';
+    this._id = mongoose.Types.ObjectId();
   }
 }
 
@@ -102,7 +104,11 @@ class MockWishList extends MockDocument {
   constructor(definition = {}) {
     super();
 
-    const defaults = {};
+    const defaults = {
+      _user: {
+        _id: mongoose.Types.ObjectId()
+      }
+    };
 
     Object.assign(
       this,
@@ -114,6 +120,10 @@ class MockWishList extends MockDocument {
     this.set = () => {};
   }
 }
+
+MockWishList.confirmPrivacySetting = function (attributes) {
+  return Promise.resolve(attributes);
+};
 
 class MockGift extends MockDocument {
   constructor(definition = {}) {
@@ -165,6 +175,10 @@ class MockFriendship extends MockDocument {
   }
 }
 
+MockFriendship.getFriendshipsByUserId = function () {
+  return Promise.resolve();
+};
+
 class MockUser extends MockDocument {
   constructor(definition = {}) {
     super();
@@ -186,9 +200,14 @@ class MockUser extends MockDocument {
 
 function MockRequest(options = {}) {
   return Object.assign({}, {
-    body: {},
+    body: {
+      attributes: {}
+    },
     params: {},
-    query: {}
+    query: {},
+    user: {
+      _id: mongoose.Types.ObjectId()
+    }
   }, options);
 }
 

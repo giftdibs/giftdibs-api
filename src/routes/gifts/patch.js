@@ -16,10 +16,10 @@ function updateGift(req, res, next) {
       gift.updateSync(req.body);
       return gift.save();
     })
-    .then((gift) => {
+    .then(() => {
       authResponse({
-        message: 'Gift successfully updated.',
-        data: { gift }
+        data: { },
+        message: 'Gift successfully updated.'
       })(req, res, next);
     })
     .catch((err) => handleError(err, next));
