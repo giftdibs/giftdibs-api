@@ -15,6 +15,7 @@ app.use(cors({
   origin: process.env.ALLOW_ORIGIN,
   methods: 'GET,POST,PATCH,DELETE,OPTIONS'
 }));
+app.options('*', cors());
 
 const passport = require('passport');
 passport.use(require('./strategies/jwt'));
