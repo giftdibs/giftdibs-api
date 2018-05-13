@@ -12,6 +12,10 @@ const { updateDocument } = require('../utils/update-document');
 
 const Schema = mongoose.Schema;
 const wishListSchema = new Schema({
+  _gifts: [{
+    type: mongoose.SchemaTypes.ObjectId,
+    ref: 'Gift'
+  }],
   _user: {
     type: mongoose.SchemaTypes.ObjectId,
     ref: 'User',
@@ -45,35 +49,42 @@ const wishListSchema = new Schema({
   }
 });
 
-wishListSchema.statics.confirmPrivacySetting = function (attributes) {
+// TODO: Add method to verify unique gift ids.
+
+wishListSchema.statics.sanitizeGiftsRequest = function (gifts) {
+
+};
+
+wishListSchema.statics.sanitizePrivacyRequest = function (privacy) {
   return new Promise((resolve, reject) => {
-    if (!attributes.privacy) {
-      resolve(attributes);
+    if (!privacy) {
+      resolve(privacy);
     }
 
-    if (attributes.privacy.type === 'custom') {
+    if (privacy.type === 'custom') {
       if (
-        !attributes.privacy._allow ||
-        attributes.privacy._allow.length === 0
+        !privacy._allow ||
+        privacy._allow.length === 0
       ) {
         reject(new WishListValidationError('Please select at least one user.'));
         return;
       } else {
         // Filter out any duplicate user ids.
         // https://stackoverflow.com/a/15868720/6178885
-        attributes.privacy._allow = [...new Set(attributes.privacy._allow)];
+        privacy._allow = [...new Set(privacy._allow)];
       }
     } else {
       // Make sure to clear out the _allow array.
-      attributes.privacy._allow = [];
+      privacy._allow = [];
     }
 
-    resolve(attributes);
+    resolve(privacy);
   });
 };
 
 wishListSchema.methods.updateSync = function (values) {
   const fields = [
+    '_gifts',
     'name',
     'privacy'
   ];
@@ -94,7 +105,7 @@ wishListSchema.plugin(ConfirmUserOwnershipPlugin, {
 
 function removeReferencedDocuments(doc, next) {
   const { Gift } = require('./gift');
-
+  // TODO: Adjust this to remove gifts.
   Gift
     .find({ _wishList: doc._id })
     .then((gifts) => {

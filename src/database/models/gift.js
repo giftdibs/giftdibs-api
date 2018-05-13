@@ -19,16 +19,6 @@ const {
 
 const Schema = mongoose.Schema;
 const giftSchema = new Schema({
-  _user: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'User',
-    required: [true, 'A user ID must be provided.']
-  },
-  _wishList: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'WishList',
-    required: [true, 'A wish list ID must be provided.']
-  },
   budget: {
     type: Number,
     min: [0, 'The gift\'s budget must greater than zero.'],
@@ -37,7 +27,9 @@ const giftSchema = new Schema({
       'The gift\'s budget must be less than 1,000,000,000,000.'
     ]
   },
-  externalUrls: [externalUrlSchema],
+  externalUrls: [
+    externalUrlSchema
+  ],
   isReceived: {
     type: Boolean,
     default: false
@@ -57,10 +49,6 @@ const giftSchema = new Schema({
     ],
     default: 1
   },
-  orderInWishList: {
-    type: Number,
-    min: [0, 'The gift\'s order must be greater than zero.']
-  },
   priority: {
     type: Number,
     min: [0, 'The gift\'s priority must be greater than zero.'],
@@ -77,11 +65,9 @@ const giftSchema = new Schema({
 
 giftSchema.methods.updateSync = function (values) {
   const fields = [
-    '_wishList',
     'budget',
     'isReceived',
     'name',
-    'orderInWishList',
     'priority',
     'quantity'
   ];

@@ -7,6 +7,9 @@ const {
   WishListPermissionError
 } = require('../../shared/errors');
 
+const populateGiftFields = 'name';
+const populateUserFields = 'firstName lastName';
+
 function isUserAuthorizedToViewWishList(userId, wishList) {
   const isOwner = (wishList._user._id.toString() === userId.toString());
   const privacy = wishList.privacy;
@@ -42,6 +45,9 @@ function formatWishListResponse(wishList) {
   wishList.user = wishList._user;
   delete wishList._user;
 
+  wishList.gifts = wishList._gifts;
+  delete wishList._gifts;
+
   const privacy = wishList.privacy || {};
   wishList.privacy = Object.assign({
     type: 'everyone',
@@ -55,7 +61,8 @@ function getWishList(req, res, next) {
   WishList
     .find({ _id: req.params.wishListId })
     .limit(1)
-    .populate('_user', 'firstName lastName')
+    .populate('_gifts', populateGiftFields)
+    .populate('_user', populateUserFields)
     .lean()
     .then((docs) => {
       const wishList = docs[0];
@@ -98,7 +105,8 @@ function getWishLists(req, res, next) {
 
   WishList
     .find(query)
-    .populate('_user', 'firstName lastName')
+    .populate('_gifts', populateGiftFields)
+    .populate('_user', populateUserFields)
     .lean()
     .then((wishLists) => {
       return wishLists.filter((wishList) => {

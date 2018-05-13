@@ -10,9 +10,9 @@ function updateWishList(req, res, next) {
   WishList
     .confirmUserOwnership(req.params.wishListId, req.user._id)
     .then((wishList) => {
-      return WishList.confirmPrivacySetting(req.body.attributes)
-        .then((attributes) => {
-          req.body.attributes = attributes;
+      return WishList.sanitizePrivacyRequest(req.body.attributes.privacy)
+        .then((privacy) => {
+          req.body.attributes.privacy = privacy;
           return wishList;
         });
     })
