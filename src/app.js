@@ -21,6 +21,10 @@ app.use(cors({
 }));
 app.options('*', cors());
 
+app.use((err, req, res, next) => {
+  console.log('err?', err);
+});
+
 const passport = require('passport');
 passport.use(require('./strategies/jwt'));
 passport.use(require('./strategies/local'));
