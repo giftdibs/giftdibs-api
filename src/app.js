@@ -12,18 +12,8 @@ app.set('port', process.env.PORT);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors({
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  methods: 'GET,POST,PATCH,DELETE,OPTIONS',
-  optionsSuccessStatus: 200,
-  origin: process.env.ALLOW_ORIGIN,
-  preflightContinue: true
+  origin: process.env.ALLOW_ORIGIN
 }));
-app.options('*', cors());
-
-app.use((err, req, res, next) => {
-  console.log('err?', err);
-});
 
 const passport = require('passport');
 passport.use(require('./strategies/jwt'));
