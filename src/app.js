@@ -11,7 +11,11 @@ const app = express();
 app.set('port', process.env.PORT);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors({
+  origin: process.env.ALLOW_ORIGIN,
+  methods: 'GET,POST,PATCH,DELETE'
+}));
+app.options('*', cors());
 
 const passport = require('passport');
 passport.use(require('./strategies/jwt'));
