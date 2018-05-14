@@ -3,13 +3,16 @@ const mock = require('mock-require');
 describe('App', () => {
   beforeEach(() => {
     mock('./environment', () => {});
+
     mock('express', () => {
       return {
+        options: () => {},
         set: () => {},
         use: () => {},
         port: () => {}
       };
     });
+
     mock('passport', {
       use: () => {},
       initialize: () => {},
@@ -40,9 +43,12 @@ describe('App', () => {
 
   it('should configure cors', () => {
     mock('cors', (config) => {
-      expect(config.origin).toEqual('http://localhost:4200');
-      expect(config.methods).toEqual('GET,POST,PATCH,DELETE,OPTIONS');
+      if (config) {
+        expect(config.origin).toEqual('http://localhost:4200');
+        expect(config.methods).toEqual('GET,POST,PATCH,DELETE,OPTIONS');
+      }
     });
+
     mock.reRequire('./app');
   });
 });

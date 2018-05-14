@@ -8,13 +8,16 @@ const db = require('./database');
 db.connect();
 
 const app = express();
+console.log('Adding CORS access for:', process.env.ALLOW_ORIGIN);
+app.use(cors({
+  methods: 'GET,POST,PATCH,DELETE,OPTIONS',
+  optionsSuccessStatus: 200,
+  origin: process.env.ALLOW_ORIGIN
+}));
+app.options('*', cors());
 app.set('port', process.env.PORT);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(cors({
-  origin: process.env.ALLOW_ORIGIN,
-  methods: 'GET,POST,PATCH,DELETE,OPTIONS'
-}));
 
 const passport = require('passport');
 passport.use(require('./strategies/jwt'));
