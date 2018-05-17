@@ -10,14 +10,14 @@ function updateWishList(req, res, next) {
   WishList
     .confirmUserOwnership(req.params.wishListId, req.user._id)
     .then((wishList) => {
-      return WishList.sanitizePrivacyRequest(req.body.attributes.privacy)
+      return WishList.sanitizePrivacyRequest(req.body.privacy)
         .then((privacy) => {
-          req.body.attributes.privacy = privacy;
+          req.body.privacy = privacy;
           return wishList;
         });
     })
     .then((wishList) => {
-      wishList.updateSync(req.body.attributes);
+      wishList.updateSync(req.body);
       return wishList.save();
     })
     .then(() => {

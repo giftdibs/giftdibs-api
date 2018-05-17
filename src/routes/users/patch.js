@@ -36,8 +36,8 @@ function updateUser(req, res, next) {
       }
 
       const emailAddress = (
-        req.body.attributes &&
-        req.body.attributes.emailAddress
+        req.body &&
+        req.body.emailAddress
       );
 
       // If the email address is being changed, need to re-verify.
@@ -45,8 +45,7 @@ function updateUser(req, res, next) {
         user.resetEmailAddressVerification();
       }
 
-      // http://jsonapi.org/format/#crud-updating
-      return user.updateSync(req.body.attributes);
+      return user.updateSync(req.body);
     })
     .then((user) => user.save())
     .then(() => {

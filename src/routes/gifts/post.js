@@ -1,22 +1,46 @@
 const authResponse = require('../../middleware/auth-response');
 
-const { Gift } = require('../../database/models/gift');
-const { WishList } = require('../../database/models/wish-list');
-const { handleError } = require('./shared');
+const {
+  Gift
+} = require('../../database/models/gift');
+
+const {
+  WishList
+} = require('../../database/models/wish-list');
+
+const {
+  GiftValidationError
+} = require('../../shared/errors');
+
+const {
+  handleError
+} = require('./shared');
 
 function createGift(req, res, next) {
+  const wishListId = req.body.wishListId;
+
+  if (!wishListId) {
+    throw new GiftValidationError(
+      'Please provide a wish list ID.'
+    );
+  }
+
   WishList
-    .confirmUserOwnership(req.body._wishList, req.user._id)
-    .then(() => {
+    .confirmUserOwnership(wishListId, req.user._id)
+    .then((wishList) => {
       const gift = new Gift({
-        _user: req.user._id,
-        _wishList: req.body._wishList,
         budget: req.body.budget,
-        externalUrls: req.body.externalUrls,
         name: req.body.name
       });
 
-      return gift.save();
+      return gift.save()
+        .then((giftDoc) => {
+          wishList._gifts.push(giftDoc._id);
+          return wishList.save()
+            .then(() => {
+              return giftDoc;
+            });
+        })
     })
     .then((gift) => {
       authResponse({

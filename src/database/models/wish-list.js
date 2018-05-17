@@ -6,9 +6,17 @@ const {
   WishListValidationError
 } = require('../../shared/errors');
 
-const { ConfirmUserOwnershipPlugin } = require('../plugins/confirm-user-ownership');
-const { MongoDbErrorHandlerPlugin } = require('../plugins/mongodb-error-handler');
-const { updateDocument } = require('../utils/update-document');
+const {
+  ConfirmUserOwnershipPlugin
+} = require('../plugins/confirm-user-ownership');
+
+const {
+  MongoDbErrorHandlerPlugin
+} = require('../plugins/mongodb-error-handler');
+
+const {
+  updateDocument
+} = require('../utils/update-document');
 
 const Schema = mongoose.Schema;
 const wishListSchema = new Schema({
@@ -49,10 +57,90 @@ const wishListSchema = new Schema({
   }
 });
 
+const populateGiftFields = 'name';
+const populateUserFields = 'firstName lastName';
+
+function isUserAuthorizedToViewWishList(userId, wishList) {
+  const isOwner = (wishList._user._id.toString() === userId.toString());
+  const privacy = wishList.privacy;
+  const privacyType = privacy && privacy.type;
+
+  // Owners of a wish list should always be authorized.
+  if (isOwner) {
+    return true;
+  }
+
+  let passes = false;
+  switch (privacyType) {
+    case 'me':
+      passes = false;
+      break;
+
+    default:
+    case 'everyone':
+      passes = true;
+      break;
+
+    case 'custom':
+      passes = !!wishList.privacy._allow.find((allowId) => {
+        return (allowId.toString() === userId.toString());
+      });
+      break;
+  }
+
+  return passes;
+}
+
+wishListSchema.statics.findAuthorized = function (userId, query = {}) {
+  return this.find(query)
+    .populate('_gifts', populateGiftFields)
+    .populate('_user', populateUserFields)
+    .lean()
+    .then((wishLists) => {
+      return wishLists.filter((wishList) => {
+        return isUserAuthorizedToViewWishList(
+          userId,
+          wishList
+        );
+      });
+    })
+};
+
+wishListSchema.statics.findAuthorizedById = function (wishListId, userId) {
+  return this.find({ _id: wishListId })
+    .limit(1)
+    .populate('_gifts', populateGiftFields)
+    .populate('_user', populateUserFields)
+    .lean()
+    .then((docs) => {
+      const wishList = docs[0];
+
+      if (!wishList) {
+        return Promise.reject(new WishListNotFoundError());
+      }
+
+      return wishList
+    })
+    .then((wishList) => {
+      const isAuthorized = isUserAuthorizedToViewWishList(
+        userId,
+        wishList
+      );
+
+      if (!isAuthorized) {
+        return Promise.reject(
+          new WishListPermissionError(
+            'You are not authorized to view that wish list.'
+          )
+        );
+      }
+
+      return wishList;
+    });
+};
+
 // TODO: Add method to verify unique gift ids.
-
 wishListSchema.statics.sanitizeGiftsRequest = function (gifts) {
-
 };
 
 wishListSchema.statics.sanitizePrivacyRequest = function (privacy) {

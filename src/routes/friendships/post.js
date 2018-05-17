@@ -6,7 +6,7 @@ const {
 } = require('./shared');
 
 function createFriendship(req, res, next) {
-  const friendId = req.body.attributes.friendId;
+  const friendId = req.body.friendId;
   validateFriendRequest(friendId, req.user._id)
     .then((friendship) => friendship.save())
     .then((doc) => {

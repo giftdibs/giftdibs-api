@@ -121,8 +121,8 @@ class MockWishList extends MockDocument {
   }
 }
 
-MockWishList.confirmPrivacySetting = function (attributes) {
-  return Promise.resolve(attributes);
+MockWishList.confirmPrivacySetting = function (privacy) {
+  return Promise.resolve(privacy);
 };
 
 class MockGift extends MockDocument {
@@ -200,9 +200,7 @@ class MockUser extends MockDocument {
 
 function MockRequest(options = {}) {
   return Object.assign({}, {
-    body: {
-      attributes: {}
-    },
+    body: {},
     params: {},
     query: {},
     user: {
