@@ -91,23 +91,8 @@ function isUserAuthorizedToViewWishList(userId, wishList) {
   return passes;
 }
 
-wishListSchema.statics.findAuthorized = function (userId, query = {}) {
+function findOneAuthorizedByQuery(query, userId) {
   return this.find(query)
-    .populate('_gifts', populateGiftFields)
-    .populate('_user', populateUserFields)
-    .lean()
-    .then((wishLists) => {
-      return wishLists.filter((wishList) => {
-        return isUserAuthorizedToViewWishList(
-          userId,
-          wishList
-        );
-      });
-    })
-};
-
-wishListSchema.statics.findAuthorizedById = function (wishListId, userId) {
-  return this.find({ _id: wishListId })
     .limit(1)
     .populate('_gifts', populateGiftFields)
     .populate('_user', populateUserFields)
@@ -137,6 +122,29 @@ wishListSchema.statics.findAuthorizedById = function (wishListId, userId) {
 
       return wishList;
     });
+}
+
+wishListSchema.statics.findAuthorized = function (userId, query = {}) {
+  return this.find(query)
+    .populate('_gifts', populateGiftFields)
+    .populate('_user', populateUserFields)
+    .lean()
+    .then((wishLists) => {
+      return wishLists.filter((wishList) => {
+        return isUserAuthorizedToViewWishList(
+          userId,
+          wishList
+        );
+      });
+    })
+};
+
+wishListSchema.statics.findAuthorizedById = function (wishListId, userId) {
+  return findOneAuthorizedByQuery.call(this, { _id: wishListId }, userId);
+};
+
+wishListSchema.statics.findAuthorizedByGiftId = function (giftId, userId) {
+  return findOneAuthorizedByQuery.call(this, { _gifts: giftId }, userId);
 };
 
 // TODO: Add method to verify unique gift ids.

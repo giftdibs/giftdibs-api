@@ -4,18 +4,12 @@ const { externalUrlSchema } = require('./external-url');
 const { updateDocument } = require('../utils/update-document');
 
 const {
-  GiftNotFoundError,
-  GiftPermissionError,
-  GiftValidationError
-} = require('../../shared/errors');
+  WishList
+} = require('./wish-list');
 
 const {
   MongoDbErrorHandlerPlugin
 } = require('../plugins/mongodb-error-handler');
-
-const {
-  ConfirmUserOwnershipPlugin
-} = require('../plugins/confirm-user-ownership');
 
 const Schema = mongoose.Schema;
 const giftSchema = new Schema({
@@ -63,6 +57,19 @@ const giftSchema = new Schema({
   }
 });
 
+giftSchema.statics.findAuthorizedById = function (giftId, userId) {
+  // Running this method will automatically check the gift's privacy,
+  // and if the user has access to modify.
+  return WishList
+    .findAuthorizedByGiftId(giftId, userId)
+    .then(() => {
+      return this.find({ _id: giftId }).limit(1);
+    })
+    .then((docs) => {
+      return docs[0];
+    });
+};
+
 giftSchema.methods.updateSync = function (values) {
   const fields = [
     'budget',
@@ -78,14 +85,6 @@ giftSchema.methods.updateSync = function (values) {
 };
 
 giftSchema.plugin(MongoDbErrorHandlerPlugin);
-
-giftSchema.plugin(ConfirmUserOwnershipPlugin, {
-  errors: {
-    validation: new GiftValidationError('Please provide a gift ID.'),
-    notFound: new GiftNotFoundError(),
-    permission: new GiftPermissionError()
-  }
-});
 
 function removeReferencedDocuments(doc, next) {
   const { Dib } = require('./dib');
