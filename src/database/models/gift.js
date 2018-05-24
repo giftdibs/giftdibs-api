@@ -11,6 +11,11 @@ const {
   MongoDbErrorHandlerPlugin
 } = require('../plugins/mongodb-error-handler');
 
+const {
+  GiftNotFoundError,
+  GiftPermissionError
+} = require('../../shared/errors');
+
 const Schema = mongoose.Schema;
 const giftSchema = new Schema({
   budget: {
@@ -59,10 +64,36 @@ const giftSchema = new Schema({
 
 giftSchema.statics.findAuthorizedById = function (giftId, userId) {
   // Running this method will automatically check the gift's privacy,
-  // and if the user has access to modify.
+  // and if the user has access to retrieve.
   return WishList
     .findAuthorizedByGiftId(giftId, userId)
     .then(() => {
+      return this.find({ _id: giftId }).limit(1);
+    })
+    .then((docs) => {
+      return docs[0];
+    });
+};
+
+giftSchema.statics.confirmUserOwnership = function (giftId, userId) {
+  // Running this method will automatically check the gift's privacy,
+  // and if the user has access to modify.
+  return WishList
+    .find({
+      _gifts: giftId
+    })
+    .limit(1)
+    .then((doc) => {
+      const wishList = doc[0];
+
+      if (!wishList) {
+        return Promise.reject(new GiftNotFoundError());
+      }
+
+      if (userId.toString() !== wishList._user.toString()) {
+        return Promise.reject(new GiftPermissionError());
+      }
+
       return this.find({ _id: giftId }).limit(1);
     })
     .then((docs) => {
@@ -99,6 +130,12 @@ function removeReferencedDocuments(doc, next) {
 }
 
 giftSchema.post('remove', removeReferencedDocuments);
+
+// Replace newline characters.
+giftSchema.pre('validate', function (next) {
+  this.name = this.name.replace(/\r?\n/g, ' ');
+  next();
+});
 
 const Gift = mongoose.model('Gift', giftSchema);
 

@@ -57,7 +57,7 @@ const wishListSchema = new Schema({
   }
 });
 
-const populateGiftFields = 'name';
+const populateGiftFields = 'name isReceived';
 const populateUserFields = 'firstName lastName';
 
 function isUserAuthorizedToViewWishList(userId, wishList) {
@@ -128,6 +128,7 @@ wishListSchema.statics.findAuthorized = function (userId, query = {}) {
   return this.find(query)
     .populate('_gifts', populateGiftFields)
     .populate('_user', populateUserFields)
+    .sort('-dateUpdated')
     .lean()
     .then((wishLists) => {
       return wishLists.filter((wishList) => {
