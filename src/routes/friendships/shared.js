@@ -21,7 +21,9 @@ function validateFriendRequest(friendId, userId) {
 
   if (!friendId) {
     return Promise.reject(
-      new FriendshipValidationError('Please provide the user ID of the friend you wish to follow.')
+      new FriendshipValidationError(
+        'Please provide the user ID of the friend you wish to follow.'
+      )
     );
   }
 

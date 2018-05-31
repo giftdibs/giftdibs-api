@@ -5,6 +5,10 @@ const {
 } = require('../../database/models/gift');
 
 const {
+  WishList
+} = require('../../database/models/wish-list');
+
+const {
   handleError
 } = require('./shared');
 
@@ -31,8 +35,39 @@ const {
 // }
 
 function getGift(req, res, next) {
-  Gift
-    .findAuthorizedById(req.params.giftId, req.user._id)
+  WishList
+    .findAuthorizedByGiftId(req.params.giftId, req.user._id)
+    .then((wishList) => {
+      return Gift
+        .find({
+          _id: req.params.giftId
+        })
+        .limit(1)
+        .populate('dibs._user', 'firstName lastName')
+        .lean()
+        .then((docs) => {
+          const gift = docs[0];
+          gift.wishListId = wishList._id;
+          gift.user = wishList._user;
+
+          // TODO: Create a separate method that the wish list
+          // routes can use too!
+          // Remove dibs if session user is owner of gift.
+          if (wishList._user._id.toString() === req.user._id.toString()) {
+            gift.dibs = [];
+          }
+
+          if (gift.dibs) {
+            gift.dibs = gift.dibs.map((dib) => {
+              dib.user = dib._user;
+              delete dib._user;
+              return dib;
+            });
+          }
+
+          return gift;
+        });
+    })
     .then((gift) => {
       authResponse({
         data: { gift }

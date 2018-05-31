@@ -1,6 +1,7 @@
 const authResponse = require('../../middleware/auth-response');
 
 const {
+  GiftNotFoundError,
   DibValidationError
 } = require('../../shared/errors');
 
@@ -9,71 +10,67 @@ const {
   validateDibQuantity
 } = require('./shared');
 
-const { Gift } = require('../../database/models/gift');
-const { Dib } = require('../../database/models/dib');
+const {
+  Gift
+} = require('../../database/models/gift');
 
-function checkUserAlreadyDibbed(giftId, userId) {
-  // Fail if the current user has already dibbed this gift.
-  return Dib
-    .find({
-      _gift: giftId,
-      _user: userId
-    })
-    .limit(1)
-    .lean()
-    .then((docs) => {
-      const dib = docs[0];
+const {
+  WishList
+} = require('../../database/models/wish-list');
 
-      if (!dib) {
-        return;
-      }
+function getDibbableGift(giftId, userId) {
+  return Promise.all([
+    WishList.findAuthorizedByGiftId(giftId, userId),
+    Gift.find({ _id: giftId }).limit(1)
+  ]).then((result) => {
+    const wishList = result[0];
+    const gift = result[1][0];
 
-      return Promise.reject(
-        new DibValidationError('You have already dibbed that gift.')
+    if (!wishList) {
+      throw new GiftNotFoundError();
+    }
+
+    if (wishList._user.toString() === userId.toString()) {
+      throw new DibValidationError('You cannot dib your own gift.');
+    }
+
+    if (gift.isReceived) {
+      throw new DibValidationError(
+        'You cannot dib a gift that has been marked received.'
       );
-    });
-}
+    }
 
-function confirmUserDoesNotOwnGift(giftId, userId) {
-  // Do not allow owner to dib their own gift.
-  return Gift
-    .find({
-      _id: giftId,
-      _user: userId
-    })
-    .lean()
-    .then((docs) => {
-      // Gift not owned by current user, so it's a pass!
-      if (!docs[0]) {
-        return;
-      }
-
-      // User owns the gift; invalidated the request.
-      return Promise.reject(
-        new DibValidationError('You cannot dib your own gift.')
-      );
+    const foundDib = gift.dibs.find((dib) => {
+      return (dib._user.toString() === userId.toString());
     });
+
+    if (foundDib) {
+      throw new DibValidationError('You have already dibbed that gift.');
+    }
+
+    return gift;
+  });
 }
 
 function createDib(req, res, next) {
-  const giftId = req.body._gift;
+  const giftId = req.body.giftId;
   const userId = req.user._id;
 
-  confirmUserDoesNotOwnGift(giftId, userId)
-    .then(() => checkUserAlreadyDibbed(giftId, userId))
-    .then(() => validateDibQuantity(req))
-    .then(() => {
-      const dib = new Dib({
-        _gift: req.body._gift,
+  getDibbableGift(giftId, userId)
+    .then((gift) => validateDibQuantity(gift, req))
+    .then((gift) => {
+      gift.dibs.push({
+        _gift: giftId,
         _user: req.user._id,
         quantity: req.body.quantity
       });
 
-      return dib.save();
+      return gift.save();
     })
-    .then((dib) => {
+    .then((doc) => {
+      const dibId = doc.dibs[doc.dibs.length - 1]._id;
       authResponse({
-        data: { dibId: dib._id },
+        data: { dibId },
         message: 'Gift successfully dibbed!'
       })(req, res, next);
     })

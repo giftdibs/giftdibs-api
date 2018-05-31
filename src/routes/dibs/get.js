@@ -1,50 +1,107 @@
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  DibValidationError
-} = require('../../shared/errors');
+// const {
+//   DibValidationError
+// } = require('../../shared/errors');
 
-const { Gift } = require('../../database/models/gift');
-const { Dib } = require('../../database/models/dib');
+// const { WishList } = require('../../database/models/wish-list');
+// const { Dib } = require('../../database/models/dib');
 
-// TODO: Make sure user has permission to retrieve dibs from this wish list,
-// once we've established wish list privacy.
+// function formatResponse(dibs) {
+//   return dibs.map((dib) => {
+//     dib.user = dib._user;
+//     delete dib._user;
+//     return dib;
+//   });
+// }
+
 function getDibs(req, res, next) {
-  if (!req.query.wishListId) {
-    next(
-      new DibValidationError('Please provide a wish list ID.')
-    );
+  authResponse({ data: { dibs: [] } })(req, res, next);
+  // let promise;
 
-    return;
-  }
+// if (req.query.giftId) {
+//   promise = WishList.findAuthorizedByGiftId(req.query.giftId, req.user._id);
+// } else if (req.query.wishListId) {
+//   promise = WishList.findAuthorizedById(req.query.wishListId, req.user._id);
+// } else {
+//   next(
+//   new DibValidationError('Please provide either a gift ID or wish list ID.')
+//   );
+//   return;
+// }
 
-  // User wishes to retrieve all dibs for a given wish list.
-  // (If the user owns the wish list, do not retrieve any dib information!)
+  // promise
+  //   .then((wishList) => {
+  //     // If the user owns the wish list, do not retrieve any dib information!
+  //     if (wishList._user._id.toString() === req.user._id.toString()) {
+  //       return [];
+  //     }
 
-  // Get all gifts in a wish list, not owned by current user.
-  // (we don't want to retrieve dibs for current user)
-  Gift
-    .find({
-      _wishList: req.query.wishListId,
-      _user: { $ne: req.user._id }
-    })
-    .lean()
-    .then((gifts) => {
-      const giftIds = gifts.map((gift) => gift._id);
+  //     const giftIds = wishList._gifts.map((gift) => gift._id);
 
-      return Dib
-        .find({})
-        .where('_gift')
-        .in(giftIds)
-        .populate('_user', 'firstName lastName')
-        .lean();
-    })
-    .then((dibs) => {
-      authResponse({
-        data: { dibs }
-      })(req, res, next);
-    })
-    .catch(next);
+  //     return Dib
+  //       .find({
+  //         _gift: giftIds
+  //       })
+  //       .populate('_user', 'firstName lastName')
+  //       .lean();
+  //   })
+  //   .then((dibs) => formatResponse(dibs))
+  //   .then((dibs) => {
+  //     authResponse({
+  //       data: { dibs }
+  //     })(req, res, next);
+  //   })
+  //   .catch(next);
+
+  // // User wishes to retrieve all dibs for a given wish list.
+  // // (If the user owns the wish list, do not retrieve any dib information!)
+  // WishList
+  //   .findAuthorizedById(req.query.wishListId, req.user._id)
+  //   .then((wishList) => {
+  //     if (wishList._user._id.toString() === req.user._id.toString()) {
+  //       return [];
+  //     }
+
+  //     const giftIds = wishList._gifts.map((gift) => gift._id);
+
+  //     return Dib
+  //       .find({
+  //         _gift: giftIds
+  //       })
+  //       .populate('_user', 'firstName lastName')
+  //       .lean();
+  //   })
+  //   .then((dibs) => formatResponse(dibs))
+  //   .then((dibs) => {
+  //     authResponse({
+  //       data: { dibs }
+  //     })(req, res, next);
+  //   })
+  //   .catch(next);
+
+  // Gift
+  //   .find({
+  //     _wishList: req.query.wishListId,
+  //     _user: { $ne: req.user._id }
+  //   })
+  //   .lean()
+  //   .then((gifts) => {
+  //     const giftIds = gifts.map((gift) => gift._id);
+
+  //     return Dib
+  //       .find({})
+  //       .where('_gift')
+  //       .in(giftIds)
+  //       .populate('_user', 'firstName lastName')
+  //       .lean();
+  //   })
+  //   .then((dibs) => {
+  //     authResponse({
+  //       data: { dibs }
+  //     })(req, res, next);
+  //   })
+  //   .catch(next);
 }
 
 module.exports = {

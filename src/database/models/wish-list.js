@@ -57,7 +57,7 @@ const wishListSchema = new Schema({
   }
 });
 
-const populateGiftFields = 'name isReceived';
+const populateGiftFields = 'dibs isReceived name quantity';
 const populateUserFields = 'firstName lastName';
 
 function isUserAuthorizedToViewWishList(userId, wishList) {
@@ -97,8 +97,8 @@ function findOneAuthorizedByQuery(query, userId) {
     .populate('_gifts', populateGiftFields)
     .populate('_user', populateUserFields)
     .lean()
-    .then((docs) => {
-      const wishList = docs[0];
+    .then((objects) => {
+      const wishList = objects[0];
 
       if (!wishList) {
         return Promise.reject(new WishListNotFoundError());

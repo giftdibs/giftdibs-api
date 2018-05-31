@@ -4,12 +4,21 @@ const { externalUrlSchema } = require('./external-url');
 const { updateDocument } = require('../utils/update-document');
 
 const {
+  dibSchema
+} = require('./dib');
+
+const {
   WishList
 } = require('./wish-list');
 
 const {
   MongoDbErrorHandlerPlugin
 } = require('../plugins/mongodb-error-handler');
+
+const {
+  DibNotFoundError,
+  DibPermissionError
+} = require('../../shared/errors');
 
 const {
   GiftNotFoundError,
@@ -26,6 +35,9 @@ const giftSchema = new Schema({
       'The gift\'s budget must be less than 1,000,000,000,000.'
     ]
   },
+  dibs: [
+    dibSchema
+  ],
   externalUrls: [
     externalUrlSchema
   ],
@@ -62,16 +74,41 @@ const giftSchema = new Schema({
   }
 });
 
-giftSchema.statics.findAuthorizedById = function (giftId, userId) {
-  // Running this method will automatically check the gift's privacy,
-  // and if the user has access to retrieve.
-  return WishList
-    .findAuthorizedByGiftId(giftId, userId)
-    .then(() => {
-      return this.find({ _id: giftId }).limit(1);
+// giftSchema.statics.findAuthorizedById = function (giftId, userId) {
+//   // Running this method will automatically check the gift's privacy,
+//   // and if the user has access to retrieve.
+//   return WishList
+//     .findAuthorizedByGiftId(giftId, userId)
+//     .then((wishList) => {
+//       return this.find({ _id: giftId }).limit(1).then((docs) => {
+//         const gift = docs[0].toObject();
+//         gift.wishListId = wishList._id;
+//         gift.user = wishList._user;
+//         return gift;
+//       });
+//     });
+// };
+
+giftSchema.statics.findByDibId = function (dibId, userId) {
+  return Gift
+    .find({
+      'dibs._id': dibId
     })
-    .then((docs) => {
-      return docs[0];
+    .limit(1)
+    .then((gifts) => {
+      const gift = gifts[0];
+
+      if (!gift) {
+        throw new DibNotFoundError();
+      }
+
+      // Make sure the session user owns the dib.
+      const dib = gift.dibs.id(dibId);
+      if (dib._user.toString() !== userId.toString()) {
+        throw new DibPermissionError();
+      }
+
+      return gift;
     });
 };
 
@@ -83,8 +120,9 @@ giftSchema.statics.confirmUserOwnership = function (giftId, userId) {
       _gifts: giftId
     })
     .limit(1)
-    .then((doc) => {
-      const wishList = doc[0];
+    .lean()
+    .then((docs) => {
+      const wishList = docs[0];
 
       if (!wishList) {
         return Promise.reject(new GiftNotFoundError());
@@ -110,6 +148,10 @@ giftSchema.methods.updateSync = function (values) {
     'quantity'
   ];
 
+  if (!values.quantity) {
+    values.quantity = 1;
+  }
+
   updateDocument(this, fields, values);
 
   return this;
@@ -117,6 +159,7 @@ giftSchema.methods.updateSync = function (values) {
 
 giftSchema.plugin(MongoDbErrorHandlerPlugin);
 
+// TODO: Check all of these methods to make sure we're updating everything!
 function removeReferencedDocuments(doc, next) {
   const { Dib } = require('./dib');
 
@@ -133,7 +176,10 @@ giftSchema.post('remove', removeReferencedDocuments);
 
 // Replace newline characters.
 giftSchema.pre('validate', function (next) {
-  this.name = this.name.replace(/\r?\n/g, ' ');
+  if (this.name) {
+    this.name = this.name.replace(/\r?\n/g, ' ');
+  }
+
   next();
 });
 

@@ -5,15 +5,18 @@ const {
   validateDibQuantity
 } = require('./shared');
 
-const { Dib } = require('../../database/models/dib');
+const {
+  Gift
+} = require('../../database/models/gift');
 
 function updateDib(req, res, next) {
-  Dib
-    .confirmUserOwnership(req.params.dibId, req.user._id)
-    .then((dib) => validateDibQuantity(req).then(() => dib))
-    .then((dib) => {
+  Gift
+    .findByDibId(req.params.dibId, req.user._id)
+    .then((gift) => validateDibQuantity(gift, req))
+    .then((gift) => {
+      const dib = gift.dibs.id(req.params.dibId);
       dib.updateSync(req.body);
-      return dib.save();
+      return gift.save();
     })
     .then(() => {
       authResponse({

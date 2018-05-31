@@ -1,10 +1,10 @@
 const {
-  DibValidationError,
-  GiftNotFoundError
+  DibValidationError
 } = require('../../shared/errors');
 
-const { Gift } = require('../../database/models/gift');
-const { Dib } = require('../../database/models/dib');
+// const {
+//   Gift
+// } = require('../../database/models/gift');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
@@ -17,50 +17,40 @@ function handleError(err, next) {
   next(err);
 }
 
-function validateDibQuantity(req) {
+function validateDibQuantity(gift, req) {
   if (req.body.quantity === undefined) {
     req.body.quantity = 1;
   }
 
-  const giftId = req.body._gift;
+  let totalDibs = req.body.quantity;
 
-  return Promise.all([
-    Gift.find({ _id: giftId }).limit(1).lean(),
-    Dib.find({ _gift: giftId }).lean()
-  ])
-    .then((results) => {
-      const gift = results[0][0];
-      const dibs = results[1];
-
-      let totalDibs = req.body.quantity;
-
-      if (!gift) {
-        return Promise.reject(new GiftNotFoundError());
+  return new Promise((resolve, reject) => {
+    gift.dibs.forEach((dib) => {
+      // Don't count the quantity of a dib that's being updated.
+      if (req.params.dibId === dib._id.toString()) {
+        return;
       }
 
-      dibs.forEach((dib) => {
-        // Don't count the quantity of a dib that's being updated.
-        if (req.params.dibId === dib._id.toString()) {
-          return;
-        }
-
-        totalDibs += dib.quantity;
-      });
-
-      if (totalDibs > gift.quantity) {
-        const err = new DibValidationError();
-
-        err.errors = [{
-          message: [
-            'Dib quantity is more than are available.',
-            'Please choose a smaller amount.'
-          ].join(' '),
-          field: 'quantity'
-        }];
-
-        return Promise.reject(err);
-      }
+      totalDibs += parseInt(dib.quantity, 10);
     });
+
+    if (totalDibs > gift.quantity) {
+      const err = new DibValidationError();
+
+      err.errors = [{
+        message: [
+          'Dib quantity is more than are available.',
+          'Please choose a smaller amount.'
+        ].join(' '),
+        field: 'quantity'
+      }];
+
+      reject(err);
+      return;
+    }
+
+    resolve(gift);
+  });
 }
 
 module.exports = {

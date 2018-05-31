@@ -1,28 +1,29 @@
 const mongoose = require('mongoose');
 
-const {
-  DibNotFoundError,
-  DibPermissionError,
-  DibValidationError
-} = require('../../shared/errors');
+// const {
+//   Gift
+// } = require('./gift');
+
+// const {
+//   DibNotFoundError,
+//   DibPermissionError,
+//   DibValidationError
+// } = require('../../shared/errors');
 
 const {
   MongoDbErrorHandlerPlugin
 } = require('../plugins/mongodb-error-handler');
 
-const {
-  ConfirmUserOwnershipPlugin
-} = require('../plugins/confirm-user-ownership');
+// const {
+//   ConfirmUserOwnershipPlugin
+// } = require('../plugins/confirm-user-ownership');
 
-const { updateDocument } = require('../utils/update-document');
+const {
+  updateDocument
+} = require('../utils/update-document');
 
 const Schema = mongoose.Schema;
 const dibSchema = new Schema({
-  _gift: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'Gift',
-    required: [true, 'A gift ID must be provided.']
-  },
   _user: {
     type: mongoose.SchemaTypes.ObjectId,
     ref: 'User',
@@ -52,7 +53,6 @@ const dibSchema = new Schema({
     ]
   }
 }, {
-  collection: 'dib',
   timestamps: {
     createdAt: 'dateCreated',
     updatedAt: 'dateUpdated'
@@ -65,6 +65,10 @@ dibSchema.methods.updateSync = function (values) {
     'pricePaid',
     'quantity'
   ];
+
+  if (!values.quantity) {
+    values.quantity = 1;
+  }
 
   // Update the date delivered if user marks the dib as delivered
   // (for the first time).
@@ -80,14 +84,16 @@ dibSchema.methods.updateSync = function (values) {
 };
 
 dibSchema.plugin(MongoDbErrorHandlerPlugin);
-dibSchema.plugin(ConfirmUserOwnershipPlugin, {
-  errors: {
-    validation: new DibValidationError('Please provide a friendship ID.'),
-    notFound: new DibNotFoundError(),
-    permission: new DibPermissionError()
-  }
-});
+// dibSchema.plugin(ConfirmUserOwnershipPlugin, {
+//   errors: {
+//     validation: new DibValidationError('Please provide a friendship ID.'),
+//     notFound: new DibNotFoundError(),
+//     permission: new DibPermissionError()
+//   }
+// });
 
-const Dib = mongoose.model('Dib', dibSchema);
+// const Dib = mongoose.model('Dib', dibSchema);
 
-module.exports = { Dib };
+module.exports = {
+  dibSchema
+};

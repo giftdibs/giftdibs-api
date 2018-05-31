@@ -1,17 +1,27 @@
+const {
+  Gift
+} = require('../../database/models/gift');
+
 const authResponse = require('../../middleware/auth-response');
 
-const { Dib } = require('../../database/models/dib');
+const {
+  handleError
+} = require('./shared');
 
 function deleteDib(req, res, next) {
-  Dib
-    .confirmUserOwnership(req.params.dibId, req.user._id)
-    .then((dib) => dib.remove())
+  Gift
+    .findByDibId(req.params.dibId, req.user._id)
+    .then((gift) => {
+      const dib = gift.dibs.id(req.params.dibId);
+      dib.remove();
+      return gift.save();
+    })
     .then(() => {
       authResponse({
         message: 'Dib successfully removed.'
       })(req, res, next);
     })
-    .catch(next);
+    .catch((err) => handleError(err, next));
 }
 
 module.exports = {
