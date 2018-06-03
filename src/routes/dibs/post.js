@@ -30,7 +30,7 @@ function getDibbableGift(giftId, userId) {
       throw new GiftNotFoundError();
     }
 
-    if (wishList._user.toString() === userId.toString()) {
+    if (wishList.user._id.toString() === userId.toString()) {
       throw new DibValidationError('You cannot dib your own gift.');
     }
 

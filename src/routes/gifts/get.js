@@ -48,18 +48,25 @@ function getGift(req, res, next) {
         .then((docs) => {
           const gift = docs[0];
           gift.wishListId = wishList._id;
-          gift.user = wishList._user;
+          gift.user = wishList.user;
 
           // TODO: Create a separate method that the wish list
           // routes can use too!
           // Remove dibs if session user is owner of gift.
-          if (wishList._user._id.toString() === req.user._id.toString()) {
+          if (wishList.user._id.toString() === req.user._id.toString()) {
             gift.dibs = [];
           }
 
           if (gift.dibs) {
             gift.dibs = gift.dibs.map((dib) => {
-              dib.user = dib._user;
+              // TODO: Find a consistent way to format anonymous dibs across the app!
+              const isDibOwner = (dib._user._id.toString() === req.user._id.toString());
+              if (dib.isAnonymous && !isDibOwner) {
+                dib.user = {};
+              } else {
+                dib.user = dib._user;
+              }
+
               delete dib._user;
               return dib;
             });

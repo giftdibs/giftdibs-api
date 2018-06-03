@@ -135,7 +135,7 @@ giftSchema.statics.confirmUserOwnership = function (giftId, userId) {
       return this.find({ _id: giftId }).limit(1);
     })
     .then((docs) => {
-      return docs[0];
+      return Promise.resolve(docs[0]);
     });
 };
 
@@ -161,15 +161,16 @@ giftSchema.plugin(MongoDbErrorHandlerPlugin);
 
 // TODO: Check all of these methods to make sure we're updating everything!
 function removeReferencedDocuments(doc, next) {
-  const { Dib } = require('./dib');
+  // const { Dib } = require('./dib');
 
-  Dib
-    .find({ _gift: doc._id })
-    .then((dibs) => {
-      dibs.forEach((dib) => dib.remove());
-      next();
-    })
-    .catch(next);
+  // Dib
+  //   .find({ _gift: doc._id })
+  //   .then((dibs) => {
+  //     dibs.forEach((dib) => dib.remove());
+  //     next();
+  //   })
+  //   .catch(next);
+  next();
 }
 
 giftSchema.post('remove', removeReferencedDocuments);

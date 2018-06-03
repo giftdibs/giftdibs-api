@@ -30,6 +30,10 @@ const dibSchema = new Schema({
     required: [true, 'A user ID must be provided.']
   },
   dateDelivered: Date,
+  isAnonymous: {
+    type: Boolean,
+    default: true
+  },
   notes: {
     type: String,
     trim: true,
@@ -61,6 +65,7 @@ const dibSchema = new Schema({
 
 dibSchema.methods.updateSync = function (values) {
   const fields = [
+    'isAnonymous',
     'notes',
     'pricePaid',
     'quantity'

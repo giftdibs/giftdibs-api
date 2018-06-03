@@ -57,7 +57,7 @@ const wishListSchema = new Schema({
   }
 });
 
-const populateGiftFields = 'dibs isReceived name quantity';
+const populateGiftFields = 'budget dibs isReceived name priority quantity';
 const populateUserFields = 'firstName lastName';
 
 function isUserAuthorizedToViewWishList(userId, wishList) {
@@ -124,6 +124,52 @@ function findOneAuthorizedByQuery(query, userId) {
     });
 }
 
+function formatWishListResponse(wishList, userId) {
+  wishList.user = wishList._user;
+  delete wishList._user;
+
+  wishList.gifts = wishList._gifts;
+  delete wishList._gifts;
+
+  const privacy = wishList.privacy || {};
+  wishList.privacy = Object.assign({
+    type: 'everyone',
+    _allow: []
+  }, privacy);
+
+  // TODO:
+  // Think of a better way to handle different populated fields
+  // depending on the owner? (To make sure all routes are consistant.)
+  if (wishList.gifts) {
+    const isOwner = (userId.toString() === wishList.user._id.toString());
+    wishList.gifts.forEach((gift) => {
+      if (isOwner) {
+        gift.dibs = [];
+      } else if (gift.dibs) {
+        gift.dibs.forEach((dib) => {
+          // TODO: Find a consistent way to format
+          // anonymous dibs across the app!
+          const isDibOwner = (
+            dib._user.toString() ===
+            userId.toString()
+          );
+          if (dib.isAnonymous && !isDibOwner) {
+            dib.user = {};
+          } else {
+            dib.user = {
+              _id: dib._user
+            };
+          }
+
+          delete dib._user;
+        });
+      }
+    });
+  }
+
+  return wishList;
+}
+
 wishListSchema.statics.findAuthorized = function (userId, query = {}) {
   return this.find(query)
     .populate('_gifts', populateGiftFields)
@@ -131,25 +177,40 @@ wishListSchema.statics.findAuthorized = function (userId, query = {}) {
     .sort('-dateUpdated')
     .lean()
     .then((wishLists) => {
-      return wishLists.filter((wishList) => {
-        return isUserAuthorizedToViewWishList(
-          userId,
-          wishList
-        );
-      });
+      return wishLists
+        .filter((wishList) => {
+          return isUserAuthorizedToViewWishList(
+            userId,
+            wishList
+          );
+        })
+        .map((wishList) => {
+          return formatWishListResponse(wishList, userId);
+        });
     })
 };
 
 wishListSchema.statics.findAuthorizedById = function (wishListId, userId) {
-  return findOneAuthorizedByQuery.call(this, { _id: wishListId }, userId);
+  return findOneAuthorizedByQuery.call(
+    this,
+    { _id: wishListId },
+    userId
+  ).then((wishList) => formatWishListResponse(wishList, userId));
 };
 
 wishListSchema.statics.findAuthorizedByGiftId = function (giftId, userId) {
-  return findOneAuthorizedByQuery.call(this, { _gifts: giftId }, userId);
+  return findOneAuthorizedByQuery.call(
+    this,
+    { _gifts: giftId },
+    userId
+  ).then((wishList) => formatWishListResponse(wishList, userId));
 };
 
-// TODO: Add method to verify unique gift ids.
+// TODO: Add method to verify unique gift ids?
 wishListSchema.statics.sanitizeGiftsRequest = function (gifts) {
+  // Kinda like we're doing with duplicate user ids:
+  // https://stackoverflow.com/a/15868720/6178885
+  // privacy._allow = [...new Set(privacy._allow)];
 };
 
 wishListSchema.statics.sanitizePrivacyRequest = function (privacy) {
@@ -186,6 +247,9 @@ wishListSchema.methods.updateSync = function (values) {
     'privacy'
   ];
 
+  // TODO: If gift owner changes privacy of wish list,
+  // remove dibs of people that no longer have permission!
+
   updateDocument(this, fields, values);
 
   return this;
@@ -202,9 +266,9 @@ wishListSchema.plugin(ConfirmUserOwnershipPlugin, {
 
 function removeReferencedDocuments(doc, next) {
   const { Gift } = require('./gift');
-  // TODO: Adjust this to remove gifts.
+
   Gift
-    .find({ _wishList: doc._id })
+    .find({ _id: doc._gifts })
     .then((gifts) => {
       gifts.forEach((gift) => gift.remove());
       next();
