@@ -1,7 +1,12 @@
 const mongoose = require('mongoose');
 
-const { externalUrlSchema } = require('./external-url');
-const { updateDocument } = require('../utils/update-document');
+const {
+  updateDocument
+} = require('../utils/update-document');
+
+const {
+  externalUrlSchema
+} = require('./external-url');
 
 const {
   dibSchema
@@ -24,6 +29,181 @@ const {
   GiftNotFoundError,
   GiftPermissionError
 } = require('../../shared/errors');
+
+function confirmUserOwnership(giftId, userId) {
+  const giftModel = this;
+
+  return WishList
+    .find({
+      _gifts: giftId
+    })
+    .limit(1)
+    .lean()
+    .then((docs) => {
+      const wishList = docs[0];
+
+      if (!wishList) {
+        return Promise.reject(new GiftNotFoundError());
+      }
+
+      if (userId.toString() !== wishList._user.toString()) {
+        return Promise.reject(new GiftPermissionError());
+      }
+
+      return giftModel.find({ _id: giftId }).limit(1);
+    })
+    .then((docs) => {
+      return Promise.resolve(docs[0]);
+    });
+}
+
+function findAuthorizedByGiftId(giftId, userId) {
+  let wishList;
+
+  WishList
+    .findAuthorizedByGiftId(giftId, userId)
+    .then((_wishList) => {
+      wishList = _wishList;
+      return Gift
+        .find({
+          _id: giftId
+        })
+        .limit(1)
+        .populate('dibs._user', 'firstName lastName')
+        .lean();
+    })
+    .then((docs) => {
+      const gift = docs[0];
+      gift.wishListId = wishList._id;
+      gift.user = wishList.user;
+
+      // TODO: Create a separate method that the wish list
+      // routes can use too!
+
+      // Remove dibs if session user is owner of gift.
+      if (wishList.user._id.toString() === userId.toString()) {
+        gift.dibs = [];
+      }
+
+      if (gift.dibs) {
+        gift.dibs = gift.dibs.map((dib) => {
+          // TODO: Find a consistent way to format
+          // anonymous dibs across the app!
+          const isDibOwner = (
+            dib._user._id.toString() ===
+            userId.toString()
+          );
+
+          if (dib.isAnonymous && !isDibOwner) {
+            dib.user = {};
+          } else {
+            dib.user = dib._user;
+          }
+
+          delete dib._user;
+
+          return dib;
+        });
+      }
+
+      return gift;
+    });
+}
+
+function findByDibId(dibId, userId) {
+  return Gift
+    .find({
+      'dibs._id': dibId
+    })
+    .limit(1)
+    .then((gifts) => {
+      const gift = gifts[0];
+
+      if (!gift) {
+        throw new DibNotFoundError();
+      }
+
+      // Make sure the session user owns the dib.
+      const dib = gift.dibs.id(dibId);
+      if (dib._user.toString() !== userId.toString()) {
+        throw new DibPermissionError();
+      }
+
+      return gift;
+    });
+}
+
+// function formatGiftResponse(gift, userId) {
+// }
+
+function moveToWishList(wishListId, userId) {
+  const instance = this;
+
+  return WishList
+    .findAuthorized(
+      userId,
+      {
+        $or: [
+          { _id: wishListId },
+          { _gifts: instance._id }
+        ]
+      },
+      true
+    )
+    .then((wishLists) => {
+      // The gift already belongs to the wish list.
+      if (wishLists.length === 1) {
+        return {
+          gift: instance
+        };
+      }
+
+      wishLists.forEach((wishList) => {
+        const found = wishList._gifts.find((giftId) => {
+          return (giftId.toString() === instance._id.toString());
+        });
+
+        if (found) {
+          wishList._gifts.remove(instance._id);
+        } else {
+          wishList._gifts.push(instance._id);
+        }
+      });
+
+      // Save wish lists and return the gift.
+      return Promise
+        .all([
+          wishLists[0].save(),
+          wishLists[1].save()
+        ])
+        .then((results) => {
+          return {
+            gift: instance,
+            wishListIds: results.map((wishList) => wishList._id)
+          };
+        });
+    });
+}
+
+function updateSync(values) {
+  const instance = this;
+
+  const fields = [
+    'budget',
+    'isReceived',
+    'name',
+    'priority',
+    'quantity'
+  ];
+
+  if (!values.quantity) {
+    values.quantity = 1;
+  }
+
+  updateDocument(instance, fields, values);
+
+  return instance;
+}
 
 const Schema = mongoose.Schema;
 const giftSchema = new Schema({
@@ -74,110 +254,16 @@ const giftSchema = new Schema({
   }
 });
 
-// giftSchema.statics.findAuthorizedById = function (giftId, userId) {
-//   // Running this method will automatically check the gift's privacy,
-//   // and if the user has access to retrieve.
-//   return WishList
-//     .findAuthorizedByGiftId(giftId, userId)
-//     .then((wishList) => {
-//       return this.find({ _id: giftId }).limit(1).then((docs) => {
-//         const gift = docs[0].toObject();
-//         gift.wishListId = wishList._id;
-//         gift.user = wishList._user;
-//         return gift;
-//       });
-//     });
-// };
-
-giftSchema.statics.findByDibId = function (dibId, userId) {
-  return Gift
-    .find({
-      'dibs._id': dibId
-    })
-    .limit(1)
-    .then((gifts) => {
-      const gift = gifts[0];
-
-      if (!gift) {
-        throw new DibNotFoundError();
-      }
-
-      // Make sure the session user owns the dib.
-      const dib = gift.dibs.id(dibId);
-      if (dib._user.toString() !== userId.toString()) {
-        throw new DibPermissionError();
-      }
-
-      return gift;
-    });
-};
-
-giftSchema.statics.confirmUserOwnership = function (giftId, userId) {
-  // Running this method will automatically check the gift's privacy,
-  // and if the user has access to modify.
-  return WishList
-    .find({
-      _gifts: giftId
-    })
-    .limit(1)
-    .lean()
-    .then((docs) => {
-      const wishList = docs[0];
-
-      if (!wishList) {
-        return Promise.reject(new GiftNotFoundError());
-      }
-
-      if (userId.toString() !== wishList._user.toString()) {
-        return Promise.reject(new GiftPermissionError());
-      }
-
-      return this.find({ _id: giftId }).limit(1);
-    })
-    .then((docs) => {
-      return Promise.resolve(docs[0]);
-    });
-};
-
-giftSchema.methods.updateSync = function (values) {
-  const fields = [
-    'budget',
-    'isReceived',
-    'name',
-    'priority',
-    'quantity'
-  ];
-
-  if (!values.quantity) {
-    values.quantity = 1;
-  }
-
-  updateDocument(this, fields, values);
-
-  return this;
-};
+giftSchema.statics.findAuthorizedByGiftId = findAuthorizedByGiftId;
+giftSchema.statics.findByDibId = findByDibId;
+giftSchema.statics.confirmUserOwnership = confirmUserOwnership;
+giftSchema.methods.moveToWishList = moveToWishList;
+giftSchema.methods.updateSync = updateSync;
 
 giftSchema.plugin(MongoDbErrorHandlerPlugin);
-
-// TODO: Check all of these methods to make sure we're updating everything!
-function removeReferencedDocuments(doc, next) {
-  // const { Dib } = require('./dib');
-
-  // Dib
-  //   .find({ _gift: doc._id })
-  //   .then((dibs) => {
-  //     dibs.forEach((dib) => dib.remove());
-  //     next();
-  //   })
-  //   .catch(next);
-  next();
-}
-
-giftSchema.post('remove', removeReferencedDocuments);
-
-// Replace newline characters.
 giftSchema.pre('validate', function (next) {
   if (this.name) {
+    // Replace newline characters.
     this.name = this.name.replace(/\r?\n/g, ' ');
   }
 
@@ -188,6 +274,5 @@ const Gift = mongoose.model('Gift', giftSchema);
 
 module.exports = {
   Gift,
-  giftSchema,
-  removeReferencedDocuments
+  giftSchema
 };

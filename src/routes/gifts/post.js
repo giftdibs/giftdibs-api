@@ -35,6 +35,7 @@ function createGift(req, res, next) {
 
       return gift.save()
         .then((giftDoc) => {
+          // TODO: Be sure to validate that gift IDs are unique!
           wishList._gifts.push(giftDoc._id);
           return wishList.save()
             .then(() => {

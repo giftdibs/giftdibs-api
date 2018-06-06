@@ -18,45 +18,6 @@ const {
   updateDocument
 } = require('../utils/update-document');
 
-const Schema = mongoose.Schema;
-const wishListSchema = new Schema({
-  _gifts: [{
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'Gift'
-  }],
-  _user: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'User',
-    required: [true, 'A user ID must be provided.']
-  },
-  name: {
-    type: String,
-    required: [true, 'Please provide a wish list name.'],
-    trim: true,
-    maxlength: [
-      100,
-      'The wish list\'s name cannot be longer than 100 characters.'
-    ]
-  },
-  privacy: {
-    _allow: [{
-      type: mongoose.SchemaTypes.ObjectId,
-      ref: 'User'
-    }],
-    type: {
-      type: String,
-      enum: ['everyone', 'me', 'friends', 'custom'],
-      default: 'everyone'
-    }
-  }
-}, {
-  collection: 'wishlist',
-  timestamps: {
-    createdAt: 'dateCreated',
-    updatedAt: 'dateUpdated'
-  }
-});
-
 const populateGiftFields = 'budget dibs isReceived name priority quantity';
 const populateUserFields = 'firstName lastName';
 
@@ -170,24 +131,90 @@ function formatWishListResponse(wishList, userId) {
   return wishList;
 }
 
-wishListSchema.statics.findAuthorized = function (userId, query = {}) {
-  return this.find(query)
-    .populate('_gifts', populateGiftFields)
-    .populate('_user', populateUserFields)
-    .sort('-dateUpdated')
-    .lean()
-    .then((wishLists) => {
-      return wishLists
-        .filter((wishList) => {
-          return isUserAuthorizedToViewWishList(
-            userId,
-            wishList
-          );
-        })
-        .map((wishList) => {
-          return formatWishListResponse(wishList, userId);
-        });
-    })
+const Schema = mongoose.Schema;
+const wishListSchema = new Schema({
+  _gifts: [{
+    type: mongoose.SchemaTypes.ObjectId,
+    ref: 'Gift'
+  }],
+  _user: {
+    type: mongoose.SchemaTypes.ObjectId,
+    ref: 'User',
+    required: [true, 'A user ID must be provided.']
+  },
+  name: {
+    type: String,
+    required: [true, 'Please provide a wish list name.'],
+    trim: true,
+    maxlength: [
+      100,
+      'The wish list\'s name cannot be longer than 100 characters.'
+    ]
+  },
+  privacy: {
+    _allow: [{
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'User'
+    }],
+    type: {
+      type: String,
+      enum: ['everyone', 'me', 'friends', 'custom'],
+      default: 'everyone'
+    }
+  }
+}, {
+  collection: 'wishlist',
+  timestamps: {
+    createdAt: 'dateCreated',
+    updatedAt: 'dateUpdated'
+  }
+});
+
+wishListSchema.statics.findAuthorized = function (
+  userId,
+  query = {},
+  raw = false
+) {
+  const combined = {
+    $and: [
+      query,
+      {
+        // Privacy
+        $or: [
+          { _user: userId },
+          { 'privacy.type': 'everyone' },
+          { 'privacy._allow': userId }
+        ]
+      }
+    ]
+  };
+
+  const promise = this.find(combined);
+
+  if (!raw) {
+    promise.populate('_gifts', populateGiftFields)
+      .populate('_user', populateUserFields)
+      .sort('-dateUpdated')
+      .lean();
+  }
+
+  return promise.then((wishLists) => {
+    return wishLists
+      // TODO: We now have two different ways to check authorized?
+      // .filter((wishList) => {
+      //   return isUserAuthorizedToViewWishList(
+      //     userId,
+      //     wishList
+      //   );
+      // })
+      .map((wishList) => {
+        if (raw) {
+          return wishList;
+        }
+
+        return formatWishListResponse(wishList, userId);
+      });
+  });
 };
 
 wishListSchema.statics.findAuthorizedById = function (wishListId, userId) {
@@ -206,43 +233,44 @@ wishListSchema.statics.findAuthorizedByGiftId = function (giftId, userId) {
   ).then((wishList) => formatWishListResponse(wishList, userId));
 };
 
-// TODO: Add method to verify unique gift ids?
-wishListSchema.statics.sanitizeGiftsRequest = function (gifts) {
-  // Kinda like we're doing with duplicate user ids:
-  // https://stackoverflow.com/a/15868720/6178885
-  // privacy._allow = [...new Set(privacy._allow)];
-};
+wishListSchema.statics.sanitizeRequest = function (reqBody) {
+  const clone = { ...reqBody };
 
-wishListSchema.statics.sanitizePrivacyRequest = function (privacy) {
-  return new Promise((resolve, reject) => {
-    if (!privacy) {
-      resolve(privacy);
-    }
+  clone.privacy = clone.privacy || {};
+  // clone.gifts = clone.gifts || {};
 
-    if (privacy.type === 'custom') {
-      if (
-        !privacy._allow ||
-        privacy._allow.length === 0
-      ) {
-        reject(new WishListValidationError('Please select at least one user.'));
-        return;
-      } else {
-        // Filter out any duplicate user ids.
-        // https://stackoverflow.com/a/15868720/6178885
-        privacy._allow = [...new Set(privacy._allow)];
-      }
+  if (clone.privacy.type === 'custom') {
+    if (
+      !clone.privacy.allowedUserIds ||
+      clone.privacy.allowedUserIds.length === 0
+    ) {
+      throw new WishListValidationError('Please select at least one user.');
     } else {
-      // Make sure to clear out the _allow array.
-      privacy._allow = [];
+      // Filter out any duplicate user ids.
+      // https://stackoverflow.com/a/15868720/6178885
+      clone.privacy.allowedUserIds = [...new Set(clone.privacy.allowedUserIds)];
     }
+  } else {
+    // Make sure to clear out the allowedUserIds array.
+    clone.privacy.allowedUserIds = [];
+  }
 
-    resolve(privacy);
-  });
+  // Ensure unique gift IDs:
+  // https://stackoverflow.com/a/15868720/6178885
+  // clone.gifts = [...new Set(clone.gifts)];
+
+  // Map the request fields to the database fields:
+  // clone._gifts = clone.gifts;
+  clone.privacy._allow = clone.privacy.allowedUserIds;
+  // delete clone.gifts;
+  delete clone.privacy.allowedUserIds;
+
+  return clone;
 };
 
 wishListSchema.methods.updateSync = function (values) {
   const fields = [
-    '_gifts',
+    // '_gifts',
     'name',
     'privacy'
   ];

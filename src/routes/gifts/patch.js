@@ -12,12 +12,30 @@ function updateGift(req, res, next) {
   Gift
     .confirmUserOwnership(req.params.giftId, req.user._id)
     .then((gift) => {
-      gift.updateSync(req.body);
-      return gift.save();
+      const wishListId = req.body.wishListId;
+
+      // If a wish list ID is included in the request,
+      // attempt to move it to the new wish list.
+      if (wishListId) {
+        return gift.moveToWishList(wishListId, req.user._id);
+      }
+
+      return { gift };
     })
-    .then(() => {
+    .then((result) => {
+      result.gift.updateSync(req.body);
+      result.gift.save();
+      return result;
+    })
+    .then((result) => {
+      const data = {
+        giftId: result.gift._id
+      };
+
+      data.wishListIds = result.wishListIds;
+
       authResponse({
-        data: { },
+        data,
         message: 'Gift successfully updated.'
       })(req, res, next);
     })

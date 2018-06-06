@@ -9,15 +9,11 @@ const {
 } = require('./shared');
 
 function updateWishList(req, res, next) {
+  const sanitized = WishList.sanitizeRequest(req.body);
+  req.body = sanitized;
+
   WishList
     .confirmUserOwnership(req.params.wishListId, req.user._id)
-    .then((wishList) => {
-      return WishList.sanitizePrivacyRequest(req.body.privacy)
-        .then((privacy) => {
-          req.body.privacy = privacy;
-          return wishList;
-        });
-    })
     .then((wishList) => {
       wishList.updateSync(req.body);
       return wishList.save();
