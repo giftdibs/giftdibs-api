@@ -1,22 +1,8 @@
 const mongoose = require('mongoose');
 
-// const {
-//   Gift
-// } = require('./gift');
-
-// const {
-//   DibNotFoundError,
-//   DibPermissionError,
-//   DibValidationError
-// } = require('../../shared/errors');
-
 const {
   MongoDbErrorHandlerPlugin
 } = require('../plugins/mongodb-error-handler');
-
-// const {
-//   ConfirmUserOwnershipPlugin
-// } = require('../plugins/confirm-user-ownership');
 
 const {
   updateDocument
@@ -63,6 +49,24 @@ const dibSchema = new Schema({
   }
 });
 
+function formatDibResponse(dib, userId) {
+  const dibId = dib._user._id || dib._user;
+
+  const isDibOwner = (
+    dibId.toString() === userId.toString()
+  );
+
+  if (dib.isAnonymous && !isDibOwner) {
+    dib.user = {};
+  } else {
+    dib.user = dib._user;
+  }
+
+  delete dib._user;
+
+  return dib;
+};
+
 dibSchema.methods.updateSync = function (values) {
   const fields = [
     'isAnonymous',
@@ -89,16 +93,8 @@ dibSchema.methods.updateSync = function (values) {
 };
 
 dibSchema.plugin(MongoDbErrorHandlerPlugin);
-// dibSchema.plugin(ConfirmUserOwnershipPlugin, {
-//   errors: {
-//     validation: new DibValidationError('Please provide a friendship ID.'),
-//     notFound: new DibNotFoundError(),
-//     permission: new DibPermissionError()
-//   }
-// });
-
-// const Dib = mongoose.model('Dib', dibSchema);
 
 module.exports = {
-  dibSchema
+  dibSchema,
+  formatDibResponse
 };

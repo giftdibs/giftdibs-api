@@ -1,4 +1,6 @@
-const { WishList } = require('../../database/models/wish-list');
+const {
+  WishList
+} = require('../../database/models/wish-list');
 
 const authResponse = require('../../middleware/auth-response');
 

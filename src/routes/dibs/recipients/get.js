@@ -1,7 +1,13 @@
 const authResponse = require('../../../middleware/auth-response');
 
-const { Gift } = require('../../../database/models/gift');
-const { WishList } = require('../../../database/models/wish-list');
+const {
+  formatGiftResponse,
+  Gift
+} = require('../../../database/models/gift');
+
+const {
+  WishList
+} = require('../../../database/models/wish-list');
 
 function getSumBudget(recipient) {
   let total = 0;
@@ -27,37 +33,58 @@ function getSumBudget(recipient) {
 
 function getDibsRecipients(req, res, next) {
   const recipients = [];
+  const userId = req.user._id;
+
+  let dibbedGifts;
   let dibbedGiftIds;
 
   Gift
     .find({
-      'dibs._user': req.user._id
+      'dibs._user': userId
     })
+    .populate('dibs._user', 'firstName lastName')
     .lean()
     .then((gifts) => {
+      dibbedGifts = gifts;
       dibbedGiftIds = gifts.map((gift) => gift._id.toString());
 
-      return WishList.findAuthorized(req.user._id, {
+      return WishList.findAuthorized(userId, {
         '_gifts': {
           '$in': dibbedGiftIds
         }
       });
     })
     .then((wishLists) => {
-      // Remove all gifts except those that were dibbed.
       wishLists.forEach((wishList) => {
+        // Remove all gifts except those that were dibbed.
         wishList.gifts = wishList.gifts.filter((gift) => {
           return (dibbedGiftIds.indexOf(gift._id.toString()) > -1);
         });
-      });
 
-      wishLists.forEach((wishList) => {
-        const found = recipients.find((recipient) => {
-          return (recipient._id.toString() === wishList.user._id.toString());
+        // Map the populated dibbed gift to the gifts in the wish list.
+        wishList.gifts = wishList.gifts.map((gift) => {
+          const found = dibbedGifts.find((dibbedGift) => {
+            return (dibbedGift._id.toString() === gift._id.toString());
+          });
+
+          // Remove any dibs that do not belong to session user.
+          found.dibs = found.dibs.filter((dib) => {
+            return (dib._user._id.toString() === userId.toString());
+          });
+
+          // Format the gifts response.
+          return formatGiftResponse(found, wishList, userId);
         });
 
-        if (found) {
-          found.wishLists.push(wishList);
+        // Format the wish list response.
+        delete wishList.privacy;
+
+        // Add to existing recipient?
+        const foundRecipient = recipients.find((recipient) => {
+          return (recipient._id.toString() === wishList.user._id.toString());
+        });
+        if (foundRecipient) {
+          foundRecipient.wishLists.push(wishList);
           return;
         }
 
@@ -67,36 +94,6 @@ function getDibsRecipients(req, res, next) {
           firstName: wishList.user.firstName,
           lastName: wishList.user.lastName,
           wishLists: [wishList]
-        });
-      });
-
-      // Remove any dibs that do not belong to session user.
-      // Also, format the dib.user field.
-      recipients.forEach((recipient) => {
-        recipient.wishLists.forEach((wishList) => {
-          wishList.gifts.forEach((gift) => {
-            gift.user = wishList.user;
-            delete gift._user;
-            gift.dibs = gift.dibs.filter((dib) => {
-              const isDibOwner = (
-                dib.user._id.toString() ===
-                req.user._id.toString()
-              );
-              if (dib.user._id && isDibOwner) {
-                // TODO: Is there a consistent way to handle this?
-                // (Getting dibs elsewhere automatically populates dib user.)
-                dib.user = {
-                  _id: req.user._id,
-                  firstName: req.user.firstName,
-                  lastName: req.user.lastName
-                };
-
-                return true;
-              }
-
-              return false;
-            });
-          });
         });
       });
 

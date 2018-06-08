@@ -1,16 +1,15 @@
+const authResponse = require('../../middleware/auth-response');
+
 const {
   WishList
 } = require('../../database/models/wish-list');
-
-const authResponse = require('../../middleware/auth-response');
 
 const {
   handleError
 } = require('./shared');
 
 function updateWishList(req, res, next) {
-  const sanitized = WishList.sanitizeRequest(req.body);
-  req.body = sanitized;
+  req.body = WishList.sanitizeRequest(req.body);
 
   WishList
     .confirmUserOwnership(req.params.wishListId, req.user._id)

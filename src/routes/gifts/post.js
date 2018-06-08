@@ -25,23 +25,23 @@ function createGift(req, res, next) {
     );
   }
 
+  let wishList;
+
   WishList
     .confirmUserOwnership(wishListId, req.user._id)
-    .then((wishList) => {
+    .then((_wishList) => {
+      wishList = _wishList;
+
       const gift = new Gift({
-        budget: req.body.budget,
         name: req.body.name
       });
 
-      return gift.save()
-        .then((giftDoc) => {
-          // TODO: Be sure to validate that gift IDs are unique!
-          wishList._gifts.push(giftDoc._id);
-          return wishList.save()
-            .then(() => {
-              return giftDoc;
-            });
-        })
+      return gift.save();
+    })
+    .then((giftDoc) => {
+      wishList.addGiftSync(giftDoc);
+
+      return wishList.save().then(() => giftDoc);
     })
     .then((gift) => {
       authResponse({

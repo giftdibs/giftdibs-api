@@ -17,6 +17,7 @@ function getWishList(req, res, next) {
 
 function getWishLists(req, res, next) {
   const query = {};
+
   if (req.query.userId) {
     query._user = req.query.userId;
   }

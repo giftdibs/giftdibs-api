@@ -21,6 +21,51 @@ const {
 const populateGiftFields = 'budget dibs isReceived name priority quantity';
 const populateUserFields = 'firstName lastName';
 
+const Schema = mongoose.Schema;
+const wishListSchema = new Schema({
+  _gifts: [{
+    type: mongoose.SchemaTypes.ObjectId,
+    ref: 'Gift'
+  }],
+  _user: {
+    type: mongoose.SchemaTypes.ObjectId,
+    ref: 'User',
+    required: [
+      true,
+      'A user ID must be provided.'
+    ]
+  },
+  name: {
+    type: String,
+    required: [
+      true,
+      'Please provide a wish list name.'
+    ],
+    trim: true,
+    maxlength: [
+      100,
+      'The wish list\'s name cannot be longer than 100 characters.'
+    ]
+  },
+  privacy: {
+    _allow: [{
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'User'
+    }],
+    type: {
+      type: String,
+      enum: ['everyone', 'me', 'friends', 'custom'],
+      default: 'everyone'
+    }
+  }
+}, {
+  collection: 'wishlist',
+  timestamps: {
+    createdAt: 'dateCreated',
+    updatedAt: 'dateUpdated'
+  }
+});
+
 function isUserAuthorizedToViewWishList(userId, wishList) {
   const isOwner = (wishList._user._id.toString() === userId.toString());
   const privacy = wishList.privacy;
@@ -53,7 +98,9 @@ function isUserAuthorizedToViewWishList(userId, wishList) {
 }
 
 function findOneAuthorizedByQuery(query, userId) {
-  return this.find(query)
+  const wishListModel = this;
+
+  return wishListModel.find(query)
     .limit(1)
     .populate('_gifts', populateGiftFields)
     .populate('_user', populateUserFields)
@@ -86,6 +133,8 @@ function findOneAuthorizedByQuery(query, userId) {
 }
 
 function formatWishListResponse(wishList, userId) {
+  const { formatGiftResponse } = require('./gift');
+
   wishList.user = wishList._user;
   delete wishList._user;
 
@@ -98,83 +147,34 @@ function formatWishListResponse(wishList, userId) {
     _allow: []
   }, privacy);
 
-  // TODO:
-  // Think of a better way to handle different populated fields
-  // depending on the owner? (To make sure all routes are consistant.)
   if (wishList.gifts) {
-    const isOwner = (userId.toString() === wishList.user._id.toString());
-    wishList.gifts.forEach((gift) => {
-      if (isOwner) {
-        gift.dibs = [];
-      } else if (gift.dibs) {
-        gift.dibs.forEach((dib) => {
-          // TODO: Find a consistent way to format
-          // anonymous dibs across the app!
-          const isDibOwner = (
-            dib._user.toString() ===
-            userId.toString()
-          );
-          if (dib.isAnonymous && !isDibOwner) {
-            dib.user = {};
-          } else {
-            dib.user = {
-              _id: dib._user
-            };
-          }
-
-          delete dib._user;
-        });
-      }
+    wishList.gifts = wishList.gifts.map((gift) => {
+      return formatGiftResponse(gift, wishList, userId);
     });
   }
 
   return wishList;
 }
 
-const Schema = mongoose.Schema;
-const wishListSchema = new Schema({
-  _gifts: [{
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'Gift'
-  }],
-  _user: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'User',
-    required: [true, 'A user ID must be provided.']
-  },
-  name: {
-    type: String,
-    required: [true, 'Please provide a wish list name.'],
-    trim: true,
-    maxlength: [
-      100,
-      'The wish list\'s name cannot be longer than 100 characters.'
-    ]
-  },
-  privacy: {
-    _allow: [{
-      type: mongoose.SchemaTypes.ObjectId,
-      ref: 'User'
-    }],
-    type: {
-      type: String,
-      enum: ['everyone', 'me', 'friends', 'custom'],
-      default: 'everyone'
-    }
-  }
-}, {
-  collection: 'wishlist',
-  timestamps: {
-    createdAt: 'dateCreated',
-    updatedAt: 'dateUpdated'
-  }
-});
+function removeReferencedDocuments(doc, next) {
+  const { Gift } = require('./gift');
+
+  Gift
+    .find({ _id: doc._gifts })
+    .then((gifts) => {
+      gifts.forEach((gift) => gift.remove());
+      next();
+    })
+    .catch(next);
+}
 
 wishListSchema.statics.findAuthorized = function (
   userId,
   query = {},
   raw = false
 ) {
+  const wishListModel = this;
+
   const combined = {
     $and: [
       query,
@@ -189,7 +189,7 @@ wishListSchema.statics.findAuthorized = function (
     ]
   };
 
-  const promise = this.find(combined);
+  const promise = wishListModel.find(combined);
 
   if (!raw) {
     promise.populate('_gifts', populateGiftFields)
@@ -237,7 +237,6 @@ wishListSchema.statics.sanitizeRequest = function (reqBody) {
   const clone = { ...reqBody };
 
   clone.privacy = clone.privacy || {};
-  // clone.gifts = clone.gifts || {};
 
   if (clone.privacy.type === 'custom') {
     if (
@@ -255,14 +254,8 @@ wishListSchema.statics.sanitizeRequest = function (reqBody) {
     clone.privacy.allowedUserIds = [];
   }
 
-  // Ensure unique gift IDs:
-  // https://stackoverflow.com/a/15868720/6178885
-  // clone.gifts = [...new Set(clone.gifts)];
-
   // Map the request fields to the database fields:
-  // clone._gifts = clone.gifts;
   clone.privacy._allow = clone.privacy.allowedUserIds;
-  // delete clone.gifts;
   delete clone.privacy.allowedUserIds;
 
   return clone;
@@ -270,17 +263,27 @@ wishListSchema.statics.sanitizeRequest = function (reqBody) {
 
 wishListSchema.methods.updateSync = function (values) {
   const fields = [
-    // '_gifts',
     'name',
     'privacy'
   ];
 
   // TODO: If gift owner changes privacy of wish list,
   // remove dibs of people that no longer have permission!
+  // (Need to alert user of this with a confirm.)
 
   updateDocument(this, fields, values);
 
   return this;
+};
+
+wishListSchema.methods.addGiftSync = function (gift) {
+  const instance = this;
+
+  instance._gifts.push(gift._id);
+
+  // Filter out any duplicate user ids.
+  // https://stackoverflow.com/a/15868720/6178885
+  instance._gifts = [...new Set(instance._gifts)];
 };
 
 wishListSchema.plugin(MongoDbErrorHandlerPlugin);
@@ -291,18 +294,6 @@ wishListSchema.plugin(ConfirmUserOwnershipPlugin, {
     permission: new WishListPermissionError()
   }
 });
-
-function removeReferencedDocuments(doc, next) {
-  const { Gift } = require('./gift');
-
-  Gift
-    .find({ _id: doc._gifts })
-    .then((gifts) => {
-      gifts.forEach((gift) => gift.remove());
-      next();
-    })
-    .catch(next);
-}
 
 wishListSchema.post('remove', removeReferencedDocuments);
 

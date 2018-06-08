@@ -14,8 +14,6 @@ function updateGift(req, res, next) {
     .then((gift) => {
       const wishListId = req.body.wishListId;
 
-      // If a wish list ID is included in the request,
-      // attempt to move it to the new wish list.
       if (wishListId) {
         return gift.moveToWishList(wishListId, req.user._id);
       }
