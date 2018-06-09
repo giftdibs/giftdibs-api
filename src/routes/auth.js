@@ -1,7 +1,7 @@
 const express = require('express');
 const passport = require('passport');
 
-const { User } = require('../database/models/user');
+const { Member } = require('../database/models/member');
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 
@@ -26,7 +26,7 @@ function handleResetPasswordError(err, next) {
   next(err);
 }
 
-function updatePasswordForUser(user) {
+function updatePasswordForMember(user) {
   return (req, res, next) => {
     return user
       .setPassword(req.body.password)
@@ -42,9 +42,9 @@ function updatePasswordForUser(user) {
   };
 }
 
-function getUserByResetPasswordToken(resetPasswordToken) {
+function getMemberByResetPasswordToken(resetPasswordToken) {
   // Get a user with a non-expired reset token.
-  return User
+  return Member
     .find({
       resetPasswordToken,
       resetPasswordExpires: { $gt: Date.now() }
@@ -65,7 +65,7 @@ function getUserByResetPasswordToken(resetPasswordToken) {
 
 const register = [
   function checkSpamBot(req, res, next) {
-    if (req.body.gdNickname) {
+    if (req.body.gd_nickname) {
       const error = new RegistrationValidationError();
       error.code = 108;
       next(error);
@@ -75,57 +75,43 @@ const register = [
     next();
   },
 
-  function registerUser(req, res, next) {
-    const user = new User({
-      emailAddress: req.body.emailAddress,
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      dateLastLoggedIn: new Date()
+  function registerMember(req, res, next) {
+    const member = new Member({
+      email_address: req.body.email_address,
+      first_name: req.body.first_name,
+      last_name: req.body.last_name,
+      date_last_logged_in: new Date()
     });
 
-    user
-      .setPassword(req.body.password)
+    member.setPassword(req.body.password)
       .then(() => {
-        user.resetEmailAddressVerification();
-        return user.save();
+        member.resetEmailAddressVerification();
+        return member.save();
       })
       .then((doc) => {
         // TODO: Send welcome email.
         // TODO: Send verification email.
-
-        console.log([
-          'Verify email here:',
-          `http://localhost:4200/account/verify/${doc.emailAddressVerificationToken}`
-        ].join(' '));
-
         res.json({
           data: {
-            userId: doc._id
+            member_id: doc.id
           },
           message: 'Registration successful! Please log in below.'
         });
       })
-      .catch((err) => {
-        if (err.name === 'ValidationError') {
-          const error = new RegistrationValidationError();
-          error.errors = err.errors;
-          next(error);
-          return;
-        }
-
-        next(err);
-      });
+      .catch(next);
   }
 ];
 
 const login = [
   function checkEmptyCredentials(req, res, next) {
-    if (req.body.emailAddress && req.body.password) {
+    if (req.body.email_address && req.body.password) {
       next();
       return;
     }
 
-    const error = new LoginValidationError('Please provide an email address and password.');
+    const error = new LoginValidationError(
+      'Please provide an email address and password.'
+    );
     next(error);
   },
 
@@ -147,7 +133,7 @@ const login = [
       req.user = user;
 
       authResponse({
-        message: `Welcome, ${req.user.firstName}!`
+        message: `Welcome, ${req.user.first_name}!`
       })(req, res, next);
     })(req, res, next);
   }
@@ -155,18 +141,19 @@ const login = [
 
 const forgotten = [
   function checkEmptyEmailAddress(req, res, next) {
-    if (req.body.emailAddress) {
+    if (req.body.email_address) {
       next();
       return;
     }
 
-    const error = new ForgottenPasswordValidationError('Please provide an email address.');
-    next(error);
+    next(new ForgottenPasswordValidationError(
+      'Please provide an email address.'
+    ));
   },
 
   function requestResetPasswordToken(req, res, next) {
-    User
-      .find({ emailAddress: req.body.emailAddress })
+    Member
+      .find({ email_address: req.body.email_address })
       .limit(1)
       .then((docs) => {
         const user = docs[0];
@@ -239,12 +226,12 @@ const resetPassword = [
 
   function resetPassword(req, res, next) {
     if (req.body.resetPasswordToken) {
-      getUserByResetPasswordToken(req.body.resetPasswordToken)
-        .then((user) => updatePasswordForUser(user)(req, res, next))
+      getMemberByResetPasswordToken(req.body.resetPasswordToken)
+        .then((user) => updatePasswordForMember(user)(req, res, next))
         .catch((err) => handleResetPasswordError(err, next));
     } else {
       req.user.confirmPassword(req.body.currentPassword)
-        .then((user) => updatePasswordForUser(req.user)(req, res, next))
+        .then((user) => updatePasswordForMember(req.user)(req, res, next))
         .catch((err) => handleResetPasswordError(err, next));
     }
   }
@@ -306,8 +293,8 @@ const verifyEmailAddress = [
 const deleteAccount = [
   authenticateJwt,
   function deleteAccount(req, res, next) {
-    User
-      .confirmUserOwnership(req.body.userId, req.user._id)
+    Member
+      .confirmMemberOwnership(req.body.userId, req.user._id)
       .then((user) => user.confirmPassword(req.body.password))
       .then((user) => user.remove())
       .then(() => {

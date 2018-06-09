@@ -1,43 +1,40 @@
 const LocalStrategy = require('passport-local').Strategy;
-const { User } = require('../database/models/user');
+const db = require('../database');
+const { Member } = require('../database/models/member');
 
 const strategyConfig = {
-  usernameField: 'emailAddress'
+  usernameField: 'email_address'
 };
 
-const verify = (emailAddress, password, done) => {
-  User
-    .find({ emailAddress })
-    .limit(1)
-    .then((results) => {
-      const user = results[0];
+function verify(emailAddress, password, done) {
+  db.query(
+    `SELECT
+      id, first_name, last_name, email_address, password
+    FROM member
+    WHERE email_address=$1`,
+    [emailAddress]
+  )
+    .then((result) => {
+      if (result.rows.length > 0) {
+        const member = new Member(result.rows[0]);
 
-      if (!user) {
-        done(null, false, {
-          message: 'A user with that email address was not found.'
-        });
-        return;
+        return member.confirmPassword(password)
+          .then(() => {
+            // TODO: Update user's date last logged in!
+            member.set('date_last_logged_in', new Date());
+            return member.save();
+          });
       }
 
-      user
-        .confirmPassword(password)
-        .then(() => {
-          user.dateLastLoggedIn = new Date();
-          user
-            .save()
-            .then(() => done(null, user));
-        })
-        .catch(() => {
-          done(null, false, {
-            message: [
-              'The email address and password you entered',
-              'did not match an account in our records.'
-            ].join(' ')
-          })
-        });
+      done(null, false, {
+        message: 'A member with that email address was not found.'
+      });
     })
-    .catch((err) => done(err));
-};
+    .then((member) => {
+      done(null, member);
+    })
+    .catch(done);
+}
 
 const strategy = new LocalStrategy(strategyConfig, verify);
 

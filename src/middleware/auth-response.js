@@ -9,7 +9,7 @@ module.exports = (data) => {
       return;
     }
 
-    const payload = { id: req.user._id };
+    const payload = { id: req.user.id };
 
     const token = jwt.sign(
       payload,
@@ -22,12 +22,12 @@ module.exports = (data) => {
     response.authResponse = {};
     response.authResponse.token = token;
     response.authResponse.user = {
-      _id: req.user._id,
-      facebookId: req.user.facebookId,
-      firstName: req.user.firstName,
-      lastName: req.user.lastName,
-      emailAddress: req.user.emailAddress,
-      emailAddressVerified: req.user.emailAddressVerified
+      id: req.user.id,
+      facebook_id: req.user.facebook_id,
+      first_name: req.user.first_name,
+      last_name: req.user.last_name,
+      email_address: req.user.email_address,
+      email_address_verified: req.user.email_address_verified
     };
 
     res.json(response);

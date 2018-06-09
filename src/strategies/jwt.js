@@ -1,7 +1,6 @@
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
-
-const { User } = require('../database/models/user');
+const db = require('../database');
 
 const strategyConfig = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderWithScheme('JWT'),
@@ -12,26 +11,31 @@ const strategyConfig = {
   }
 }
 
-const verify = (req, payload, done) => {
-  User
-    .find({ _id: payload.id })
-    .limit(1)
-    .then((results) => {
-      const user = results[0];
+function verify(req, payload, done) {
+  db.query(
+    `SELECT
+      id, first_name, last_name, email_address, password
+    FROM member
+    WHERE id=$1`,
+    [payload.id]
+  )
+    .then((result) => {
+      if (result.rows.length > 0) {
+        const user = result.rows[0];
 
-      if (!user) {
-        done(undefined, false, {
-          message: 'A user was not found that matched that access token.'
-        });
+        // Save user to the request so middleware can access it.
+        req.user = user;
+
+        done(undefined, user);
         return;
       }
 
-      req.user = user;
-
-      done(undefined, user);
+      done(undefined, false, {
+        message: 'A user was not found that matched that access token.'
+      });
     })
-    .catch((err) => done(err, false));
-};
+    .catch(done);
+}
 
 const strategy = new JwtStrategy(strategyConfig, verify);
 
