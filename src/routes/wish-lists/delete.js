@@ -5,8 +5,7 @@ const {
 } = require('../../database/models/wish-list');
 
 function deleteWishList(req, res, next) {
-  WishList
-    .confirmUserOwnership(req.params.wishListId, req.user._id)
+  WishList.confirmUserOwnership(req.params.wishListId, req.user._id)
     .then((wishList) => wishList.remove())
     .then(() => {
       authResponse({

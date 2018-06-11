@@ -22,7 +22,7 @@ module.exports = (data) => {
     response.authResponse = {};
     response.authResponse.token = token;
     response.authResponse.user = {
-      _id: req.user._id,
+      id: req.user._id,
       facebookId: req.user.facebookId,
       firstName: req.user.firstName,
       lastName: req.user.lastName,

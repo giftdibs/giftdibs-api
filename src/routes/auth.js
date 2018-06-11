@@ -83,8 +83,7 @@ const register = [
       dateLastLoggedIn: new Date()
     });
 
-    user
-      .setPassword(req.body.password)
+    user.setPassword(req.body.password)
       .then(() => {
         user.resetEmailAddressVerification();
         return user.save();
@@ -125,7 +124,9 @@ const login = [
       return;
     }
 
-    const error = new LoginValidationError('Please provide an email address and password.');
+    const error = new LoginValidationError(
+      'Please provide an email address and password.'
+    );
     next(error);
   },
 

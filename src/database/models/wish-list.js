@@ -7,6 +7,11 @@ const {
 } = require('../../shared/errors');
 
 const {
+  GiftNotFoundError,
+  GiftPermissionError
+} = require('../../shared/errors');
+
+const {
   ConfirmUserOwnershipPlugin
 } = require('../plugins/confirm-user-ownership');
 
@@ -18,15 +23,15 @@ const {
   updateDocument
 } = require('../utils/update-document');
 
-const populateGiftFields = 'budget dibs isReceived name priority quantity';
+const {
+  giftSchema
+} = require('./gift');
+
+// const populateGiftFields = 'budget dibs isReceived name priority quantity';
 const populateUserFields = 'firstName lastName';
 
 const Schema = mongoose.Schema;
 const wishListSchema = new Schema({
-  _gifts: [{
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'Gift'
-  }],
   _user: {
     type: mongoose.SchemaTypes.ObjectId,
     ref: 'User',
@@ -35,6 +40,9 @@ const wishListSchema = new Schema({
       'A user ID must be provided.'
     ]
   },
+  gifts: [
+    giftSchema
+  ],
   name: {
     type: String,
     required: [
@@ -66,6 +74,14 @@ const wishListSchema = new Schema({
   }
 });
 
+/**
+ * Manual function to check if user can view wish list.
+ * This is used, instead of a query, in order to alert
+ * the user if they do not have permission (instead of
+ * just returning a 404).
+ * @param {string} userId
+ * @param {*} wishList
+ */
 function isUserAuthorizedToViewWishList(userId, wishList) {
   const isOwner = (wishList._user._id.toString() === userId.toString());
   const privacy = wishList.privacy;
@@ -102,7 +118,6 @@ function findOneAuthorizedByQuery(query, userId) {
 
   return wishListModel.find(query)
     .limit(1)
-    .populate('_gifts', populateGiftFields)
     .populate('_user', populateUserFields)
     .lean()
     .then((objects) => {
@@ -132,42 +147,6 @@ function findOneAuthorizedByQuery(query, userId) {
     });
 }
 
-function formatWishListResponse(wishList, userId) {
-  const { formatGiftResponse } = require('./gift');
-
-  wishList.user = wishList._user;
-  delete wishList._user;
-
-  wishList.gifts = wishList._gifts;
-  delete wishList._gifts;
-
-  const privacy = wishList.privacy || {};
-  wishList.privacy = Object.assign({
-    type: 'everyone',
-    _allow: []
-  }, privacy);
-
-  if (wishList.gifts) {
-    wishList.gifts = wishList.gifts.map((gift) => {
-      return formatGiftResponse(gift, wishList, userId);
-    });
-  }
-
-  return wishList;
-}
-
-function removeReferencedDocuments(doc, next) {
-  const { Gift } = require('./gift');
-
-  Gift
-    .find({ _id: doc._gifts })
-    .then((gifts) => {
-      gifts.forEach((gift) => gift.remove());
-      next();
-    })
-    .catch(next);
-}
-
 wishListSchema.statics.findAuthorized = function (
   userId,
   query = {},
@@ -179,7 +158,7 @@ wishListSchema.statics.findAuthorized = function (
     $and: [
       query,
       {
-        // Privacy
+        // Only return results the current user can view.
         $or: [
           { _user: userId },
           { 'privacy.type': 'everyone' },
@@ -192,29 +171,12 @@ wishListSchema.statics.findAuthorized = function (
   const promise = wishListModel.find(combined);
 
   if (!raw) {
-    promise.populate('_gifts', populateGiftFields)
-      .populate('_user', populateUserFields)
+    promise.populate('_user', populateUserFields)
       .sort('-dateUpdated')
       .lean();
   }
 
-  return promise.then((wishLists) => {
-    return wishLists
-      // TODO: We now have two different ways to check authorized?
-      // .filter((wishList) => {
-      //   return isUserAuthorizedToViewWishList(
-      //     userId,
-      //     wishList
-      //   );
-      // })
-      .map((wishList) => {
-        if (raw) {
-          return wishList;
-        }
-
-        return formatWishListResponse(wishList, userId);
-      });
-  });
+  return promise;
 };
 
 wishListSchema.statics.findAuthorizedById = function (wishListId, userId) {
@@ -222,43 +184,15 @@ wishListSchema.statics.findAuthorizedById = function (wishListId, userId) {
     this,
     { _id: wishListId },
     userId
-  ).then((wishList) => formatWishListResponse(wishList, userId));
+  );
 };
 
 wishListSchema.statics.findAuthorizedByGiftId = function (giftId, userId) {
   return findOneAuthorizedByQuery.call(
     this,
-    { _gifts: giftId },
+    { 'gifts._id': giftId },
     userId
-  ).then((wishList) => formatWishListResponse(wishList, userId));
-};
-
-wishListSchema.statics.sanitizeRequest = function (reqBody) {
-  const clone = { ...reqBody };
-
-  clone.privacy = clone.privacy || {};
-
-  if (clone.privacy.type === 'custom') {
-    if (
-      !clone.privacy.allowedUserIds ||
-      clone.privacy.allowedUserIds.length === 0
-    ) {
-      throw new WishListValidationError('Please select at least one user.');
-    } else {
-      // Filter out any duplicate user ids.
-      // https://stackoverflow.com/a/15868720/6178885
-      clone.privacy.allowedUserIds = [...new Set(clone.privacy.allowedUserIds)];
-    }
-  } else {
-    // Make sure to clear out the allowedUserIds array.
-    clone.privacy.allowedUserIds = [];
-  }
-
-  // Map the request fields to the database fields:
-  clone.privacy._allow = clone.privacy.allowedUserIds;
-  delete clone.privacy.allowedUserIds;
-
-  return clone;
+  );
 };
 
 wishListSchema.methods.updateSync = function (values) {
@@ -267,9 +201,9 @@ wishListSchema.methods.updateSync = function (values) {
     'privacy'
   ];
 
-  // TODO: If gift owner changes privacy of wish list,
+  // TODO: If owner changes privacy of wish list,
   // remove dibs of people that no longer have permission!
-  // (Need to alert user of this with a confirm.)
+  // (Need to alert user of this with a confirm in the app.)
 
   updateDocument(this, fields, values);
 
@@ -279,11 +213,35 @@ wishListSchema.methods.updateSync = function (values) {
 wishListSchema.methods.addGiftSync = function (gift) {
   const instance = this;
 
-  instance._gifts.push(gift._id);
+  instance.gifts.push(gift);
 
-  // Filter out any duplicate user ids.
+  // Filter out any duplicate gifts.
   // https://stackoverflow.com/a/15868720/6178885
-  instance._gifts = [...new Set(instance._gifts)];
+  instance.gifts = [...new Set(instance.gifts)];
+};
+
+wishListSchema.statics.confirmUserOwnershipByGiftId = function (
+  giftId,
+  userId
+) {
+  return WishList
+    .find({
+      'gifts._id': giftId
+    })
+    .limit(1)
+    .then((docs) => {
+      const wishList = docs[0];
+
+      if (!wishList) {
+        return Promise.reject(new GiftNotFoundError());
+      }
+
+      if (userId.toString() !== wishList._user.toString()) {
+        return Promise.reject(new GiftPermissionError());
+      }
+
+      return wishList;
+    });
 };
 
 wishListSchema.plugin(MongoDbErrorHandlerPlugin);
@@ -295,11 +253,8 @@ wishListSchema.plugin(ConfirmUserOwnershipPlugin, {
   }
 });
 
-wishListSchema.post('remove', removeReferencedDocuments);
-
 const WishList = mongoose.model('WishList', wishListSchema);
 
 module.exports = {
-  WishList,
-  removeReferencedDocuments
+  WishList
 };

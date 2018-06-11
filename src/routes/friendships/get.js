@@ -6,13 +6,7 @@ const {
   FriendshipValidationError
 } = require('../../shared/errors');
 
-function formatFriendshipResponse(friendship) {
-  friendship.friend = friendship._friend;
-  friendship.user = friendship._user;
-  delete friendship._friend;
-  delete friendship._user;
-  return friendship;
-}
+const { formatFriendshipResponse } = require('./shared');
 
 function getFriendships(req, res, next) {
   if (!req.query.userId) {
@@ -22,8 +16,7 @@ function getFriendships(req, res, next) {
     return;
   }
 
-  Friendship
-    .getFriendshipsByUserId(req.query.userId)
+  Friendship.getFriendshipsByUserId(req.query.userId)
     .then((friendships) => {
       authResponse({
         data: {

@@ -49,24 +49,6 @@ const dibSchema = new Schema({
   }
 });
 
-function formatDibResponse(dib, userId) {
-  const dibId = dib._user._id || dib._user;
-
-  const isDibOwner = (
-    dibId.toString() === userId.toString()
-  );
-
-  if (dib.isAnonymous && !isDibOwner) {
-    dib.user = {};
-  } else {
-    dib.user = dib._user;
-  }
-
-  delete dib._user;
-
-  return dib;
-};
-
 dibSchema.methods.updateSync = function (values) {
   const fields = [
     'isAnonymous',
@@ -95,6 +77,5 @@ dibSchema.methods.updateSync = function (values) {
 dibSchema.plugin(MongoDbErrorHandlerPlugin);
 
 module.exports = {
-  dibSchema,
-  formatDibResponse
+  dibSchema
 };

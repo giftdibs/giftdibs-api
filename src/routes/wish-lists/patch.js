@@ -5,14 +5,17 @@ const {
 } = require('../../database/models/wish-list');
 
 const {
-  handleError
+  handleError,
+  sanitizeRequestBody
 } = require('./shared');
 
 function updateWishList(req, res, next) {
-  req.body = WishList.sanitizeRequest(req.body);
+  const wishListId = req.params.wishListId;
+  const userId = req.user._id;
 
-  WishList
-    .confirmUserOwnership(req.params.wishListId, req.user._id)
+  req.body = sanitizeRequestBody(req.body);
+
+  WishList.confirmUserOwnership(wishListId, userId)
     .then((wishList) => {
       wishList.updateSync(req.body);
       return wishList.save();

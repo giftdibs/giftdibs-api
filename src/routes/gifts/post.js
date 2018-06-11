@@ -1,10 +1,6 @@
 const authResponse = require('../../middleware/auth-response');
 
 const {
-  Gift
-} = require('../../database/models/gift');
-
-const {
   WishList
 } = require('../../database/models/wish-list');
 
@@ -25,23 +21,15 @@ function createGift(req, res, next) {
     );
   }
 
-  let wishList;
-
-  WishList
-    .confirmUserOwnership(wishListId, req.user._id)
-    .then((_wishList) => {
-      wishList = _wishList;
-
-      const gift = new Gift({
+  WishList.confirmUserOwnership(wishListId, req.user._id)
+    .then((wishList) => {
+      const gift = wishList.gifts.create({
         name: req.body.name
       });
 
-      return gift.save();
-    })
-    .then((giftDoc) => {
-      wishList.addGiftSync(giftDoc);
+      wishList.gifts.push(gift);
 
-      return wishList.save().then(() => giftDoc);
+      return wishList.save().then(() => gift);
     })
     .then((gift) => {
       authResponse({

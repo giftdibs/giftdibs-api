@@ -1,17 +1,22 @@
 const authResponse = require('../../middleware/auth-response');
 
 const {
-  Gift
-} = require('../../database/models/gift');
+  WishList
+} = require('../../database/models/wish-list');
 
 const {
   handleError
 } = require('./shared');
 
 function deleteGift(req, res, next) {
-  Gift
-    .confirmUserOwnership(req.params.giftId, req.user._id)
-    .then((gift) => gift.remove())
+  const giftId = req.params.giftId;
+  const userId = req.user._id;
+
+  WishList.confirmUserOwnershipByGiftId(giftId, userId)
+    .then((wishList) => {
+      wishList.gifts.id(giftId).remove();
+      return wishList.save();
+    })
     .then(() => {
       authResponse({
         data: { },

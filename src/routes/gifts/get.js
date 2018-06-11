@@ -1,16 +1,29 @@
 const authResponse = require('../../middleware/auth-response');
 
 const {
-  Gift
-} = require('../../database/models/gift');
+  formatGiftResponse
+} = require('./shared');
+
+const {
+  WishList
+} = require('../../database/models/wish-list');
 
 const {
   handleError
 } = require('./shared');
 
 function getGift(req, res, next) {
-  Gift
-    .findAuthorizedById(req.params.giftId, req.user._id)
+  const giftId = req.params.giftId.toString();
+  const userId = req.user._id.toString();
+
+  WishList.findAuthorizedByGiftId(giftId, userId)
+    .then((wishList) => {
+      const gift = wishList.gifts.find((gift) => {
+        return (gift._id.toString() === giftId);
+      });
+
+      return formatGiftResponse(gift, wishList, userId);
+    })
     .then((gift) => {
       authResponse({
         data: { gift }

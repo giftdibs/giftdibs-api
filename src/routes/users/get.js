@@ -45,6 +45,9 @@ function getUser(req, res, next) {
         return Promise.reject(new UserNotFoundError());
       }
 
+      user.id = user._id;
+      delete user._id;
+
       authResponse({
         data: { user }
       })(req, res, next);
@@ -60,6 +63,11 @@ function getUsers(req, res, next) {
     .select(selectFields)
     .lean()
     .then((users) => {
+      users = users.map((user) => {
+        user.id = user._id;
+        delete user._id;
+        return user;
+      });
       authResponse({
         data: { users }
       })(req, res, next);

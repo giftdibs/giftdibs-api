@@ -6,6 +6,27 @@ const {
 //   Gift
 // } = require('../../database/models/gift');
 
+function formatDibResponse(dib, userId) {
+  const dibId = dib._user._id || dib._user;
+
+  const isDibOwner = (
+    dibId.toString() === userId.toString()
+  );
+
+  if (dib.isAnonymous && !isDibOwner) {
+    dib.user = {};
+  } else {
+    dib.user = dib._user;
+  }
+
+  dib.id = dib._id;
+
+  delete dib._user;
+  delete dib._id;
+
+  return dib;
+}
+
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
     const error = new DibValidationError();
@@ -54,6 +75,7 @@ function validateDibQuantity(gift, req) {
 }
 
 module.exports = {
+  formatDibResponse,
   handleError,
   validateDibQuantity
 };

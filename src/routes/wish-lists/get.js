@@ -4,9 +4,15 @@ const {
   WishList
 } = require('../../database/models/wish-list');
 
+const {
+  formatWishListResponse
+} = require('./shared');
+
 function getWishList(req, res, next) {
-  WishList
-    .findAuthorizedById(req.params.wishListId, req.user._id)
+  const userId = req.user._id;
+
+  WishList.findAuthorizedById(req.params.wishListId, userId)
+    .then((wishList) => formatWishListResponse(wishList, userId))
     .then((wishList) => {
       authResponse({
         data: { wishList }
@@ -16,14 +22,19 @@ function getWishList(req, res, next) {
 }
 
 function getWishLists(req, res, next) {
+  const userId = req.user._id;
   const query = {};
 
   if (req.query.userId) {
     query._user = req.query.userId;
   }
 
-  WishList
-    .findAuthorized(req.user._id, query)
+  WishList.findAuthorized(userId, query)
+    .then((wishLists) => {
+      return wishLists.map((wishList) => {
+        return formatWishListResponse(wishList, userId);
+      });
+    })
     .then((wishLists) => {
       authResponse({
         data: { wishLists }

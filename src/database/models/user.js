@@ -116,13 +116,14 @@ const userSchema = new Schema({
 });
 
 userSchema.methods.confirmPassword = function (password) {
-  const error = new Error('That password did not match what we have on record.');
+  const error = new Error(
+    'That password did not match what we have on record.'
+  );
   error.status = 400;
   error.code = 101;
 
   return new Promise((resolve, reject) => {
-    bcrypt
-      .compare(password, this.password)
+    bcrypt.compare(password, this.password)
       .then((valid) => {
         if (valid) {
           resolve(this);
@@ -163,11 +164,11 @@ userSchema.methods.setPassword = function (password) {
       `Your password must be between ${PASSWORD_MIN_LENGTH}`,
       `and ${PASSWORD_MAX_LENGTH} characters long.`
     ].join(' ');
+
     return Promise.reject(error);
   }
 
-  return bcrypt
-    .hash(password, saltRounds)
+  return bcrypt.hash(password, saltRounds)
     .then((hash) => {
       this.password = hash;
       return this;

@@ -1,18 +1,24 @@
 const authResponse = require('../../middleware/auth-response');
 
 const {
-  Gift
-} = require('../../database/models/gift');
+  WishList
+} = require('../../database/models/wish-list');
 
 const {
   handleError
 } = require('./shared');
 
 function updateGift(req, res, next) {
-  Gift
-    .confirmUserOwnership(req.params.giftId, req.user._id)
-    .then((gift) => {
-      const wishListId = req.body.wishListId;
+  const giftId = req.params.giftId;
+  const userId = req.user._id;
+  const wishListId = req.body.wishListId;
+
+  let wishList;
+
+  WishList.confirmUserOwnershipByGiftId(giftId, userId)
+    .then((_wishList) => {
+      wishList = _wishList;
+      const gift = wishList.gifts.id(giftId);
 
       if (wishListId) {
         return gift.moveToWishList(wishListId, req.user._id);
@@ -22,8 +28,7 @@ function updateGift(req, res, next) {
     })
     .then((result) => {
       result.gift.updateSync(req.body);
-      result.gift.save();
-      return result;
+      return wishList.save().then(() => result);
     })
     .then((result) => {
       const data = {
