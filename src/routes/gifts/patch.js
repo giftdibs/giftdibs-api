@@ -15,7 +15,8 @@ function updateGift(req, res, next) {
 
   let wishList;
 
-  WishList.confirmUserOwnershipByGiftId(giftId, userId)
+  WishList
+    .confirmUserOwnershipByGiftId(giftId, userId)
     .then((_wishList) => {
       wishList = _wishList;
       const gift = wishList.gifts.id(giftId);

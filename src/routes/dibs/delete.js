@@ -1,6 +1,6 @@
 const {
-  Gift
-} = require('../../database/models/gift');
+  WishList
+} = require('../../database/models/wish-list');
 
 const authResponse = require('../../middleware/auth-response');
 
@@ -9,13 +9,10 @@ const {
 } = require('./shared');
 
 function deleteDib(req, res, next) {
-  Gift
-    .findByDibId(req.params.dibId, req.user._id)
-    .then((gift) => {
-      const dib = gift.dibs.id(req.params.dibId);
-      dib.remove();
-      return gift.save();
-    })
+  const dibId = req.params.dibId;
+  const userId = req.user._id;
+
+  WishList.removeDibById(dibId, userId)
     .then(() => {
       authResponse({
         message: 'Dib successfully removed.'

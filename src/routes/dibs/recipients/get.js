@@ -1,13 +1,12 @@
 const authResponse = require('../../../middleware/auth-response');
 
 const {
-  formatGiftResponse,
-  Gift
-} = require('../../../database/models/gift');
-
-const {
   WishList
 } = require('../../../database/models/wish-list');
+
+const {
+  formatWishListResponse
+} = require('../../wish-lists/shared');
 
 function getSumBudget(recipient) {
   let total = 0;
@@ -15,6 +14,7 @@ function getSumBudget(recipient) {
   recipient.wishLists.forEach((wishList) => {
     wishList.gifts.forEach((gift) => {
       let alreadyPaid = false;
+
       gift.dibs.forEach((dib) => {
         if (dib.pricePaid !== undefined) {
           alreadyPaid = true;
@@ -35,54 +35,40 @@ function getDibsRecipients(req, res, next) {
   const recipients = [];
   const userId = req.user._id;
 
-  let dibbedGifts;
-  let dibbedGiftIds;
-
-  Gift
-    .find({
-      'dibs._user': userId
-    })
-    .populate('dibs._user', 'firstName lastName')
-    .lean()
-    .then((gifts) => {
-      dibbedGifts = gifts;
-      dibbedGiftIds = gifts.map((gift) => gift._id.toString());
-
-      return WishList.findAuthorized(userId, {
-        '_gifts': {
-          '$in': dibbedGiftIds
-        }
-      });
+  // Get all wish lists that include the session user's dibs.
+  WishList
+    .findAuthorized(userId, {
+      'gifts.dibs._user': userId
     })
     .then((wishLists) => {
-      wishLists.forEach((wishList) => {
-        // Remove all gifts except those that were dibbed.
-        wishList.gifts = wishList.gifts.filter((gift) => {
-          return (dibbedGiftIds.indexOf(gift._id.toString()) > -1);
-        });
+      wishLists = wishLists.map((wishList) => {
+        const gifts = [];
 
-        // Map the populated dibbed gift to the gifts in the wish list.
-        wishList.gifts = wishList.gifts.map((gift) => {
-          const found = dibbedGifts.find((dibbedGift) => {
-            return (dibbedGift._id.toString() === gift._id.toString());
-          });
-
+        wishList.gifts.forEach((gift) => {
           // Remove any dibs that do not belong to session user.
-          found.dibs = found.dibs.filter((dib) => {
+          const foundDib = gift.dibs.find((dib) => {
             return (dib._user._id.toString() === userId.toString());
           });
 
-          // Format the gifts response.
-          return formatGiftResponse(found, wishList, userId);
+          // Remove all gifts except those that were dibbed.
+          if (foundDib) {
+            gift.dibs = [foundDib];
+            gifts.push(gift);
+          }
         });
 
-        // Format the wish list response.
-        delete wishList.privacy;
+        wishList.gifts = gifts;
+
+        return formatWishListResponse(wishList, userId);
+      });
+
+      // Create the recipients array.
+      wishLists.forEach((wishList) => {
+        const foundRecipient = recipients.find((recipient) => {
+          return (recipient.id.toString() === wishList.user.id.toString());
+        });
 
         // Add to existing recipient?
-        const foundRecipient = recipients.find((recipient) => {
-          return (recipient._id.toString() === wishList.user._id.toString());
-        });
         if (foundRecipient) {
           foundRecipient.wishLists.push(wishList);
           return;
@@ -90,7 +76,7 @@ function getDibsRecipients(req, res, next) {
 
         // Add a new recipient.
         recipients.push({
-          _id: wishList.user._id,
+          id: wishList.user.id,
           firstName: wishList.user.firstName,
           lastName: wishList.user.lastName,
           wishLists: [wishList]
@@ -105,8 +91,7 @@ function getDibsRecipients(req, res, next) {
       authResponse({
         data: { recipients }
       })(req, res, next);
-    })
-    .catch(next);
+    });
 }
 
 module.exports = {

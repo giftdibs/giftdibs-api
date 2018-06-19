@@ -21,10 +21,14 @@ function createGift(req, res, next) {
     );
   }
 
-  WishList.confirmUserOwnership(wishListId, req.user._id)
+  WishList
+    .confirmUserOwnership(wishListId, req.user._id)
     .then((wishList) => {
       const gift = wishList.gifts.create({
-        name: req.body.name
+        name: req.body.name,
+        priority: req.body.priority,
+        budget: req.body.budget,
+        quantity: req.body.quantity
       });
 
       wishList.gifts.push(gift);

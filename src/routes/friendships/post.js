@@ -7,7 +7,9 @@ const {
 
 function createFriendship(req, res, next) {
   const friendId = req.body.friendId;
-  validateFriendRequest(friendId, req.user._id)
+  const userId = req.user._id;
+
+  validateFriendRequest(friendId, userId)
     .then((friendship) => friendship.save())
     .then((doc) => {
       authResponse({

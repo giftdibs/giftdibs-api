@@ -12,12 +12,12 @@ const {
 function updateWishList(req, res, next) {
   const wishListId = req.params.wishListId;
   const userId = req.user._id;
+  const attributes = sanitizeRequestBody(req.body);
 
-  req.body = sanitizeRequestBody(req.body);
-
-  WishList.confirmUserOwnership(wishListId, userId)
+  WishList
+    .confirmUserOwnership(wishListId, userId)
     .then((wishList) => {
-      wishList.updateSync(req.body);
+      wishList.updateSync(attributes);
       return wishList.save();
     })
     .then(() => {

@@ -7,27 +7,29 @@ const {
 } = require('../gifts/shared');
 
 function formatWishListResponse(wishList, userId) {
-  if (wishList.gifts) {
-    wishList.gifts = wishList.gifts.map((gift) => {
-      return formatGiftResponse(gift, wishList, userId);
+  const clone = { ...wishList };
+
+  if (clone.gifts) {
+    clone.gifts = clone.gifts.map((gift) => {
+      return formatGiftResponse(gift, clone, userId);
     });
   }
 
-  const privacy = wishList.privacy || {};
-  wishList.privacy = Object.assign({
+  const privacy = clone.privacy || {};
+  clone.privacy = Object.assign({
     type: 'everyone',
     _allow: []
   }, privacy);
 
-  wishList.user = { ...wishList._user };
-  wishList.user.id = wishList.user._id;
-  wishList.id = wishList._id;
+  clone.user = { ...clone._user };
+  clone.user.id = clone.user._id;
+  clone.id = clone._id;
 
-  delete wishList._user;
-  delete wishList.user._id;
-  delete wishList._id;
+  delete clone._user;
+  delete clone.user._id;
+  delete clone._id;
 
-  return wishList;
+  return clone;
 }
 
 function handleError(err, next) {

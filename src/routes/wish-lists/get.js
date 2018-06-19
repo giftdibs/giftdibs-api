@@ -11,7 +11,8 @@ const {
 function getWishList(req, res, next) {
   const userId = req.user._id;
 
-  WishList.findAuthorizedById(req.params.wishListId, userId)
+  WishList
+    .findAuthorizedById(req.params.wishListId, userId)
     .then((wishList) => formatWishListResponse(wishList, userId))
     .then((wishList) => {
       authResponse({
@@ -29,7 +30,8 @@ function getWishLists(req, res, next) {
     query._user = req.query.userId;
   }
 
-  WishList.findAuthorized(userId, query)
+  WishList
+    .findAuthorized(userId, query)
     .then((wishLists) => {
       return wishLists.map((wishList) => {
         return formatWishListResponse(wishList, userId);

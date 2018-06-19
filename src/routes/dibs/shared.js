@@ -2,29 +2,28 @@ const {
   DibValidationError
 } = require('../../shared/errors');
 
-// const {
-//   Gift
-// } = require('../../database/models/gift');
-
 function formatDibResponse(dib, userId) {
-  const dibId = dib._user._id || dib._user;
+  const clone = { ...dib };
+  const dibId = clone._user._id || clone._user;
 
   const isDibOwner = (
     dibId.toString() === userId.toString()
   );
 
-  if (dib.isAnonymous && !isDibOwner) {
-    dib.user = {};
+  if (clone.isAnonymous && !isDibOwner) {
+    clone.user = {};
   } else {
-    dib.user = dib._user;
+    clone.user = { ...clone._user };
+    clone.user.id = clone.user._id;
   }
 
-  dib.id = dib._id;
+  clone.id = clone._id;
 
-  delete dib._user;
-  delete dib._id;
+  delete clone._user;
+  delete clone._id;
+  delete clone.user._id;
 
-  return dib;
+  return clone;
 }
 
 function handleError(err, next) {
@@ -38,44 +37,7 @@ function handleError(err, next) {
   next(err);
 }
 
-function validateDibQuantity(gift, req) {
-  if (req.body.quantity === undefined) {
-    req.body.quantity = 1;
-  }
-
-  let totalDibs = req.body.quantity;
-
-  return new Promise((resolve, reject) => {
-    gift.dibs.forEach((dib) => {
-      // Don't count the quantity of a dib that's being updated.
-      if (req.params.dibId === dib._id.toString()) {
-        return;
-      }
-
-      totalDibs += parseInt(dib.quantity, 10);
-    });
-
-    if (totalDibs > gift.quantity) {
-      const err = new DibValidationError();
-
-      err.errors = [{
-        message: [
-          'Dib quantity is more than are available.',
-          'Please choose a smaller amount.'
-        ].join(' '),
-        field: 'quantity'
-      }];
-
-      reject(err);
-      return;
-    }
-
-    resolve(gift);
-  });
-}
-
 module.exports = {
   formatDibResponse,
-  handleError,
-  validateDibQuantity
+  handleError
 };

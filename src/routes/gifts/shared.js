@@ -7,25 +7,28 @@ const {
 } = require('../dibs/shared');
 
 function formatGiftResponse(gift, wishList, userId) {
+  const clone = { ...gift };
+
   // Remove dibs if session user is owner of gift.
   const isGiftOwner = (wishList._user._id.toString() === userId.toString());
+
   if (isGiftOwner) {
-    gift.dibs = [];
+    clone.dibs = [];
   }
 
-  if (gift.dibs) {
-    gift.dibs = gift.dibs.map((dib) => formatDibResponse(dib, userId));
+  if (clone.dibs) {
+    clone.dibs = clone.dibs.map((dib) => formatDibResponse(dib, userId));
   }
 
-  gift.wishListId = wishList._id;
-  gift.user = { ...wishList._user };
-  gift.user.id = gift.user._id;
-  gift.id = gift._id;
+  clone.wishListId = wishList._id;
+  clone.user = { ...wishList._user };
+  clone.user.id = clone.user._id;
+  clone.id = clone._id;
 
-  delete gift.user._id;
-  delete gift._id;
+  delete clone.user._id;
+  delete clone._id;
 
-  return gift;
+  return clone;
 }
 
 function handleError(err, next) {
