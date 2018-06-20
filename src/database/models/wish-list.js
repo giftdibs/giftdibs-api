@@ -443,6 +443,17 @@ wishListSchema.statics.updateDibById = function (
     });
 };
 
+wishListSchema.statics.findDibsByUserId = function (userId) {
+  const raw = true;
+
+  return this.findAuthorized(userId, {
+    'gifts.dibs._user': userId
+  }, raw)
+    .populate('_user', populateUserFields)
+    .populate('gifts.dibs._user', populateUserFields)
+    .lean();
+};
+
 wishListSchema.plugin(MongoDbErrorHandlerPlugin);
 wishListSchema.plugin(ConfirmUserOwnershipPlugin, {
   errors: {

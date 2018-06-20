@@ -9,6 +9,10 @@ const {
 } = require('./external-url');
 
 const {
+  commentSchema
+} = require('./comment');
+
+const {
   dibSchema
 } = require('./dib');
 
@@ -32,6 +36,9 @@ const giftSchema = new Schema({
       'The gift\'s budget must be less than 1,000,000,000,000.'
     ]
   },
+  comments: [
+    commentSchema
+  ],
   dibs: [
     dibSchema
   ],

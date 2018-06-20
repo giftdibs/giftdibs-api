@@ -20,6 +20,10 @@ const dibSchema = new Schema({
     type: Boolean,
     default: true
   },
+  isDelivered: {
+    type: Boolean,
+    default: false
+  },
   notes: {
     type: String,
     trim: true,
@@ -52,6 +56,7 @@ const dibSchema = new Schema({
 dibSchema.methods.updateSync = function (values) {
   const fields = [
     'isAnonymous',
+    'isDelivered',
     'notes',
     'pricePaid',
     'quantity'
@@ -61,7 +66,7 @@ dibSchema.methods.updateSync = function (values) {
     values.quantity = 1;
   }
 
-  // Update the date delivered if user marks the dib as delivered
+  // Only update the date delivered if user marks the dib as delivered
   // (for the first time).
   if (values.isDelivered === true && !this.dateDelivered) {
     this.set('dateDelivered', new Date());
