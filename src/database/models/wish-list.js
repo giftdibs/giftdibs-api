@@ -7,6 +7,8 @@ const {
 } = require('../../shared/errors');
 
 const {
+  CommentNotFoundError,
+  CommentPermissionError,
   DibNotFoundError,
   DibPermissionError,
   DibValidationError,
@@ -127,7 +129,8 @@ function findOneAuthorizedByQuery(
   const promise = wishListModel.find(query)
     .limit(1)
     .populate('_user', populateUserFields)
-    .populate('gifts.dibs._user', populateUserFields);
+    .populate('gifts.dibs._user', populateUserFields)
+    .populate('gifts.comments._user', populateUserFields);
 
   if (!raw) {
     promise.lean();
@@ -158,10 +161,7 @@ function findOneAuthorizedByQuery(
     });
 }
 
-function getDibById(
-  dibId,
-  wishList
-) {
+function getDibById(dibId, wishList) {
   let dib;
   wishList.gifts.find((gift) => {
     dib = gift.dibs.id(dibId);
@@ -171,11 +171,7 @@ function getDibById(
   return dib;
 }
 
-function confirmDibUserOwnership(
-  wishList,
-  dibId,
-  userId
-) {
+function confirmDibUserOwnership(wishList, dibId, userId) {
   if (!wishList) {
     return Promise.reject(new DibNotFoundError());
   }
@@ -189,11 +185,31 @@ function confirmDibUserOwnership(
   return Promise.resolve(dib);
 }
 
-function validateDibQuantity(
-  gift,
-  quantity = 1,
-  dibId
-) {
+function getCommentById(commentId, wishList) {
+  let comment;
+  wishList.gifts.find((gift) => {
+    comment = gift.comments.id(commentId);
+    return (comment !== undefined);
+  });
+
+  return comment;
+}
+
+function confirmCommentUserOwnership(wishList, commentId, userId) {
+  if (!wishList) {
+    return Promise.reject(new CommentNotFoundError());
+  }
+
+  const comment = getCommentById(commentId, wishList);
+
+  if (userId.toString() !== comment._user._id.toString()) {
+    return Promise.reject(new CommentPermissionError());
+  }
+
+  return Promise.resolve(comment);
+}
+
+function validateDibQuantity(gift, quantity = 1, dibId) {
   let totalDibs = quantity;
 
   return new Promise((resolve, reject) => {
@@ -252,7 +268,7 @@ wishListSchema.statics.findAuthorized = function (
     promise
       .populate('_user', populateUserFields)
       .populate('gifts.dibs._user', populateUserFields)
-      .sort('-dateUpdated')
+      .populate('gifts.comments._user', populateUserFields)
       .lean();
   }
 
@@ -280,7 +296,13 @@ wishListSchema.statics.findAuthorizedByGiftId = function (
     { 'gifts._id': giftId },
     userId,
     raw
-  );
+  ).then((wishList) => {
+    if (!wishList) {
+      throw new GiftNotFoundError();
+    }
+
+    return wishList;
+  });
 };
 
 wishListSchema.methods.updateSync = function (values) {
@@ -312,10 +334,7 @@ wishListSchema.statics.confirmUserOwnershipByGiftId = function (
   giftId,
   userId
 ) {
-  return WishList
-    .find({
-      'gifts._id': giftId
-    })
+  return this.find({ 'gifts._id': giftId })
     .limit(1)
     .then((docs) => {
       const wishList = docs[0];
@@ -332,19 +351,12 @@ wishListSchema.statics.confirmUserOwnershipByGiftId = function (
     });
 };
 
-wishListSchema.statics.createDib = function (
-  attributes,
-  userId
-) {
+wishListSchema.statics.createDib = function (attributes, userId) {
   const giftId = attributes.giftId;
   const raw = true;
 
-  return WishList.findAuthorizedByGiftId(giftId, userId, raw)
+  return this.findAuthorizedByGiftId(giftId, userId, raw)
     .then((wishList) => {
-      if (!wishList) {
-        throw new GiftNotFoundError();
-      }
-
       if (wishList._user._id.toString() === userId.toString()) {
         throw new DibValidationError(
           'You cannot dib your own gift.'
@@ -393,10 +405,7 @@ wishListSchema.statics.removeDibById = function (
   dibId,
   userId
 ) {
-  return WishList
-    .find({
-      'gifts.dibs._id': dibId
-    })
+  return this.find({ 'gifts.dibs._id': dibId })
     .limit(1)
     .then((docs) => {
       const wishList = docs[0];
@@ -414,10 +423,7 @@ wishListSchema.statics.updateDibById = function (
   userId,
   attributes
 ) {
-  return WishList
-    .find({
-      'gifts.dibs._id': dibId
-    })
+  return this.find({ 'gifts.dibs._id': dibId })
     .limit(1)
     .then((docs) => {
       const wishList = docs[0];
@@ -443,15 +449,73 @@ wishListSchema.statics.updateDibById = function (
     });
 };
 
-wishListSchema.statics.findDibsByUserId = function (userId) {
+wishListSchema.statics.removeCommentById = function (
+  commentId,
+  userId
+) {
+  return this.find({ 'gifts.comments._id': commentId })
+    .limit(1)
+    .then((docs) => {
+      const wishList = docs[0];
+
+      return confirmCommentUserOwnership(wishList, commentId, userId)
+        .then((dib) => {
+          dib.remove();
+          return wishList.save();
+        });
+    });
+};
+
+wishListSchema.statics.createComment = function (attributes, userId) {
+  const giftId = attributes.giftId;
   const raw = true;
 
-  return this.findAuthorized(userId, {
-    'gifts.dibs._user': userId
-  }, raw)
-    .populate('_user', populateUserFields)
-    .populate('gifts.dibs._user', populateUserFields)
-    .lean();
+  return this.findAuthorizedByGiftId(giftId, userId, raw)
+    .then((wishList) => {
+      const gift = wishList.gifts.id(giftId);
+
+      gift.comments.push({
+        _user: userId,
+        body: attributes.body
+      });
+
+      return wishList.save();
+    })
+    .then((wishList) => {
+      const gift = wishList.gifts.id(giftId);
+      const commentId = gift.comments[gift.comments.length - 1]._id;
+
+      return commentId;
+    });
+};
+
+wishListSchema.statics.updateCommentById = function (
+  commentId,
+  userId,
+  attributes
+) {
+  return this.find({ 'gifts.comments._id': commentId })
+    .limit(1)
+    .then((docs) => {
+      const wishList = docs[0];
+
+      return confirmCommentUserOwnership(wishList, commentId, userId)
+        .then((comment) => {
+          comment.updateSync(attributes);
+          return wishList.save();
+        });
+    });
+};
+
+wishListSchema.statics.getCommentsByGiftId = function (giftId, userId) {
+  const raw = false;
+
+  return this.findAuthorizedByGiftId(giftId, userId, raw)
+    .then((wishList) => {
+      const gift = wishList.gifts.id(giftId);
+
+      return gift.comments;
+    });
 };
 
 wishListSchema.plugin(MongoDbErrorHandlerPlugin);

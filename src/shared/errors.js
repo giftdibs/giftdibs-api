@@ -116,6 +116,24 @@ const definitions = [
     status: 403
   },
   {
+    name: 'CommentNotFoundError',
+    message: 'Comment not found.',
+    code: 500,
+    status: 404
+  },
+  {
+    name: 'CommentValidationError',
+    message: 'Comment validation failed.',
+    code: 501,
+    status: 400
+  },
+  {
+    name: 'CommentPermissionError',
+    message: 'Permission denied to modify comment.',
+    code: 502,
+    status: 403
+  },
+  {
     name: 'DibNotFoundError',
     message: 'Dib not found.',
     code: 500,

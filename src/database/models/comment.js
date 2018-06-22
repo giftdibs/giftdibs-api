@@ -31,7 +31,9 @@ const commentSchema = new Schema({
 });
 
 commentSchema.methods.updateSync = function (values) {
-  const fields = [];
+  const fields = [
+    'body'
+  ];
 
   updateDocument(this, fields, values);
 

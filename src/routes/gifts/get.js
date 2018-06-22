@@ -16,8 +16,7 @@ function getGift(req, res, next) {
   const giftId = req.params.giftId.toString();
   const userId = req.user._id.toString();
 
-  WishList
-    .findAuthorizedByGiftId(giftId, userId)
+  WishList.findAuthorizedByGiftId(giftId, userId)
     .then((wishList) => {
       const gift = wishList.gifts.find((gift) => {
         return (gift._id.toString() === giftId);

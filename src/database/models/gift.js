@@ -16,16 +16,6 @@ const {
   dibSchema
 } = require('./dib');
 
-// const {
-//   DibNotFoundError,
-//   DibPermissionError
-// } = require('../../shared/errors');
-
-// const {
-//   GiftNotFoundError,
-//   GiftPermissionError
-// } = require('../../shared/errors');
-
 const Schema = mongoose.Schema;
 const giftSchema = new Schema({
   budget: {
@@ -76,29 +66,6 @@ const giftSchema = new Schema({
     updatedAt: 'dateUpdated'
   }
 });
-
-// // function findByDibId(dibId, userId) {
-// //   // return Gift
-// //   //   .find({
-// //   //     'dibs._id': dibId
-// //   //   })
-// //   //   .limit(1)
-// //   //   .then((gifts) => {
-// //   //     const gift = gifts[0];
-
-// //   //     if (!gift) {
-// //   //       throw new DibNotFoundError();
-// //   //     }
-
-// //   //     // Make sure the session user owns the dib.
-// //   //     const dib = gift.dibs.id(dibId);
-// //   //     if (dib._user.toString() !== userId.toString()) {
-// //   //       throw new DibPermissionError();
-// //   //     }
-
-// //   //     return gift;
-// //   //   });
-// // }
 
 giftSchema.methods.moveToWishList = function (wishListId, userId) {
   const instance = this;
@@ -152,6 +119,7 @@ giftSchema.methods.updateSync = function (values) {
   const instance = this;
   const fields = [
     'budget',
+    'externalUrls',
     'isReceived',
     'name',
     'priority',

@@ -30,7 +30,11 @@ const externalUrlSchema = new Schema({
 });
 
 externalUrlSchema.methods.updateSync = function (values) {
-  const fields = ['url', 'price', 'dateScraped'];
+  const fields = [
+    'url',
+    'price',
+    'dateScraped'
+  ];
 
   // Reset the date scraped if the URL has changed.
   if (values.url && values.url !== this.url) {

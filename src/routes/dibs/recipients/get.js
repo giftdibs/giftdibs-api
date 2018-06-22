@@ -36,7 +36,9 @@ function getDibsRecipients(req, res, next) {
   const userId = req.user._id;
 
   // Get all wish lists that include the session user's dibs.
-  WishList.findDibsByUserId(userId)
+  WishList.findAuthorized(userId, {
+    'gifts.dibs._user': userId
+  })
     .then((wishLists) => {
       wishLists = wishLists.map((wishList) => {
         const gifts = [];

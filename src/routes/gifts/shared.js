@@ -3,6 +3,10 @@ const {
 } = require('../../shared/errors');
 
 const {
+  formatCommentResponse
+} = require('../comments/shared');
+
+const {
   formatDibResponse
 } = require('../dibs/shared');
 
@@ -14,6 +18,12 @@ function formatGiftResponse(gift, wishList, userId) {
 
   if (isGiftOwner) {
     clone.dibs = [];
+  }
+
+  if (clone.comments) {
+    clone.comments = clone.comments.map((comment) => {
+      return formatCommentResponse(comment);
+    });
   }
 
   if (clone.dibs) {
