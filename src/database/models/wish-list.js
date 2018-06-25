@@ -305,6 +305,23 @@ wishListSchema.statics.findAuthorizedByGiftId = function (
   });
 };
 
+wishListSchema.statics.findAuthorizedByCommentId = function (
+  commentId,
+  userId
+) {
+  return findOneAuthorizedByQuery.call(
+    this,
+    { 'gifts.comments._id': commentId },
+    userId
+  ).then((wishList) => {
+    if (!wishList) {
+      throw new CommentNotFoundError();
+    }
+
+    return wishList;
+  });
+};
+
 wishListSchema.methods.updateSync = function (values) {
   const fields = [
     'name',

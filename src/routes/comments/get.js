@@ -13,6 +13,36 @@ const {
   handleError
 } = require('./shared');
 
+function getComment(req, res, next) {
+  const commentId = req.params.commentId;
+  const userId = req.user._id;
+
+  WishList.findAuthorizedByCommentId(commentId, userId)
+    .then((wishList) => {
+      let foundComment;
+
+      wishList.gifts.find((gift) => {
+        if (!gift.comments || !gift.comments.length) {
+          return;
+        }
+
+        foundComment = gift.comments.find((comment) => {
+          return (comment._id.toString() === commentId.toString());
+        });
+
+        return foundComment;
+      });
+
+      return formatCommentResponse(foundComment);
+    })
+    .then((comment) => {
+      authResponse({
+        data: { comment }
+      })(req, res, next);
+    })
+    .catch((err) => handleError(err, next));
+}
+
 function getComments(req, res, next) {
   const giftId = req.query.giftId;
   const userId = req.user._id;
@@ -37,5 +67,6 @@ function getComments(req, res, next) {
 }
 
 module.exports = {
+  getComment,
   getComments
 };

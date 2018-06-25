@@ -4,7 +4,7 @@ const authenticateJwt = require('../../middleware/authenticate-jwt');
 
 const { createComment } = require('./post');
 const { deleteComment } = require('./delete');
-const { getComments } = require('./get');
+const { getComment, getComments } = require('./get');
 const { updateComment } = require('./patch');
 
 const router = express.Router();
@@ -15,6 +15,7 @@ router.route('/comments')
   .post(createComment);
 
 router.route('/comments/:commentId')
+  .get(getComment)
   .patch(updateComment)
   .delete(deleteComment);
 
