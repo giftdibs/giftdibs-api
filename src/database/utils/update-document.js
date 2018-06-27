@@ -14,15 +14,19 @@ const updateSubDocuments = (doc, values) => {
     }
 
     // Remove subdocuments that are not included with the form data.
+    const deleteIds = [];
     field.forEach((subdoc) => {
-      const found = formData.filter((data) => {
+      const found = formData.find((data) => {
         return (subdoc._id.toString() === data._id);
-      })[0];
+      });
 
       if (!found) {
-        subdoc.remove();
+        deleteIds.push(subdoc._id);
       }
     });
+
+    // Need to delete each document individually so all middleware is run.
+    deleteIds.forEach((deleteId) => field.id(deleteId).remove());
 
     // Add a new subdocument if no _id provided.
     formData.forEach((data) => {
@@ -53,6 +57,12 @@ function updateDocument(doc, fields, values) {
 
   fields.forEach((field) => {
     if (values[field] === undefined) {
+      return;
+    }
+
+    // Don't update subdocuments in this step!
+    // (They have their own method, below.)
+    if (doc[field] && typeof doc[field].id === 'function') {
       return;
     }
 

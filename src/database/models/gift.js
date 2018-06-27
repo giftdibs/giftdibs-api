@@ -119,7 +119,6 @@ giftSchema.methods.updateSync = function (values) {
   const instance = this;
   const fields = [
     'budget',
-    'externalUrls',
     'isReceived',
     'name',
     'priority',

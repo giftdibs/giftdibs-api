@@ -226,24 +226,16 @@ userSchema.methods.updateSync = function (values) {
 function removeReferencedDocuments(user, next) {
   const { WishList } = require('./wish-list');
   const { Friendship } = require('./friendship');
-  const { Dib } = require('./dib');
 
   const userId = user._id;
 
-  const removeDocs = (docs) => {
-    docs.forEach((doc) => doc.remove());
-  };
-
-  Promise.all([
-    WishList.find({ _user: userId }).then(removeDocs),
-    Dib.find({ _user: userId }).then(removeDocs),
-    Friendship.find({
+  WishList.remove({ _user: userId })
+    .then(() => Friendship.remove({
       $or: [
         { _user: userId },
         { _friend: userId }
       ]
-    }).then(removeDocs)
-  ])
+    }))
     .then(() => next())
     .catch(next);
 }

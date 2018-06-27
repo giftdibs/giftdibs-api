@@ -97,6 +97,8 @@ const register = [
           `http://localhost:4200/account/verify/${doc.emailAddressVerificationToken}`
         ].join(' '));
 
+        // TODO: Consider automatically logging in the user after reg?
+
         res.json({
           data: {
             userId: doc._id
