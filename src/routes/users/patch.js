@@ -11,8 +11,7 @@ function updateWithFacebookProfile(user, reqBody) {
     return Promise.resolve(user);
   }
 
-  return facebook
-    .verifyUserAccessToken(reqBody.facebookUserAccessToken)
+  return facebook.verifyUserAccessToken(reqBody.facebookUserAccessToken)
     .then(() => facebook.getProfile(reqBody.facebookUserAccessToken))
     .then((profile) => {
       user.firstName = profile.first_name;
@@ -26,8 +25,7 @@ function updateWithFacebookProfile(user, reqBody) {
 }
 
 function updateUser(req, res, next) {
-  User
-    .confirmUserOwnership(req.params.userId, req.user._id)
+  User.confirmUserOwnership(req.params.userId, req.user._id)
     .then((user) => updateWithFacebookProfile(user, req.body))
     .then((user) => {
       // Skip this step if user is updating their profile using Facebook.

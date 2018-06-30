@@ -9,26 +9,23 @@ const {
 } = require('../../wish-lists/shared');
 
 function getSumBudget(recipient) {
-  let total = 0;
+  let budgeted = 0;
+  let pricePaid = 0;
 
   recipient.wishLists.forEach((wishList) => {
     wishList.gifts.forEach((gift) => {
-      let alreadyPaid = false;
+      budgeted += parseInt(gift.budget, 10) || 0;
 
       gift.dibs.forEach((dib) => {
         if (dib.pricePaid !== undefined) {
-          alreadyPaid = true;
-          total += parseInt(dib.pricePaid, 10);
+          pricePaid += parseInt(dib.pricePaid, 10);
         }
       });
-
-      if (!alreadyPaid && gift.budget !== undefined) {
-        total += parseInt(gift.budget, 10);
-      }
     });
   });
 
-  recipient.budget = total;
+  recipient.totalBudgeted = budgeted;
+  recipient.totalPricePaid = pricePaid;
 }
 
 function getDibsRecipients(req, res, next) {

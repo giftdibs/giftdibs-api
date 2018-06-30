@@ -5,7 +5,7 @@ mongoose.Promise = Promise;
 
 describe('Gift schema', () => {
   describe('fields', () => {
-    let Gift;
+    let MockGift;
     let updateDocumentUtil;
     let _giftDefinition;
 
@@ -22,24 +22,25 @@ describe('Gift schema', () => {
       spyOn(updateDocumentUtil, 'updateDocument').and.returnValue();
       spyOn(console, 'log').and.returnValue();
 
-      Gift = mock.reRequire('./gift').Gift;
+      // Load up a mock model with the schema we wish to test:
+      MockGift = mongoose.model('MockGift', mock.reRequire('./gift').giftSchema);
     });
 
     afterEach(() => {
-      delete mongoose.models.Gift;
-      delete mongoose.modelSchemas.Gift;
+      delete mongoose.models.MockGift;
+      delete mongoose.modelSchemas.MockGift;
       mock.stopAll();
     });
 
     it('should validate a document', () => {
-      let gift = new Gift(_giftDefinition);
+      let gift = new MockGift(_giftDefinition);
       const err = gift.validateSync();
       expect(err).toBeUndefined();
     });
 
     it('should trim the name', () => {
       _giftDefinition.name = '   foo ';
-      let gift = new Gift(_giftDefinition);
+      let gift = new MockGift(_giftDefinition);
       const err = gift.validateSync();
       expect(err).toBeUndefined();
       expect(gift.name).toEqual('foo');
@@ -47,7 +48,7 @@ describe('Gift schema', () => {
 
     it('should be invalid if name is undefined', () => {
       _giftDefinition.name = undefined;
-      let gift = new Gift(_giftDefinition);
+      let gift = new MockGift(_giftDefinition);
       const err = gift.validateSync();
       expect(err.errors.name.properties.type).toEqual('required');
     });
@@ -59,39 +60,32 @@ describe('Gift schema', () => {
       }
 
       _giftDefinition.name = name;
-      let gift = new Gift(_giftDefinition);
+      let gift = new MockGift(_giftDefinition);
       const err = gift.validateSync();
       expect(err.errors.name.properties.type).toEqual('maxlength');
     });
 
     it('should be invalid if budget is less than zero', () => {
       _giftDefinition.budget = -1;
-      let gift = new Gift(_giftDefinition);
+      let gift = new MockGift(_giftDefinition);
       const err = gift.validateSync();
       expect(err.errors.budget.properties.type).toEqual('min');
     });
 
     it('should be invalid if budget is greater than 1 trillion', () => {
       _giftDefinition.budget = 111111111111111;
-      let gift = new Gift(_giftDefinition);
+      let gift = new MockGift(_giftDefinition);
       const err = gift.validateSync();
       expect(err.errors.budget.properties.type).toEqual('max');
     });
 
     it('should generate timestamps automatically', () => {
-      expect(Gift.schema.paths.dateCreated).toBeDefined();
-      expect(Gift.schema.paths.dateUpdated).toBeDefined();
-    });
-
-    it('should beautify native mongo errors', () => {
-      let found = Gift.schema.plugins.filter((plugin) => {
-        return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
-      })[0];
-      expect(found).toBeDefined();
+      expect(MockGift.schema.paths.dateCreated).toBeDefined();
+      expect(MockGift.schema.paths.dateUpdated).toBeDefined();
     });
 
     it('should update certain fields', () => {
-      const gift = new Gift(_giftDefinition);
+      const gift = new MockGift(_giftDefinition);
       const formData = {};
 
       gift.updateSync(formData);
@@ -99,11 +93,9 @@ describe('Gift schema', () => {
       expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
         gift,
         [
-          '_wishList',
           'budget',
           'isReceived',
           'name',
-          'orderInWishList',
           'priority',
           'quantity'
         ],
@@ -111,74 +103,20 @@ describe('Gift schema', () => {
       );
     });
 
-    it('should be invalid if order is less than zero', () => {
-      _giftDefinition.orderInWishList = -1;
-      let gift = new Gift(_giftDefinition);
-      const err = gift.validateSync();
-      expect(err.errors.orderInWishList.properties.type).toEqual('min');
-    });
+    xit('should replace newlines in the name field', () => {});
 
     it('should be invalid if priority is less than zero', () => {
       _giftDefinition.priority = -1;
-      let gift = new Gift(_giftDefinition);
+      let gift = new MockGift(_giftDefinition);
       const err = gift.validateSync();
       expect(err.errors.priority.properties.type).toEqual('min');
     });
 
     it('should be invalid if priority is greater than 10', () => {
       _giftDefinition.priority = 11;
-      let gift = new Gift(_giftDefinition);
+      let gift = new MockGift(_giftDefinition);
       const err = gift.validateSync();
       expect(err.errors.priority.properties.type).toEqual('max');
-    });
-  });
-
-  describe('remove referenced documents', () => {
-    const { MockDib } = require('../../shared/testing');
-
-    beforeEach(() => {
-      delete mongoose.models.Gift;
-      delete mongoose.modelSchemas.Gift;
-
-      MockDib.reset();
-
-      mock('./dib', { Dib: MockDib });
-    });
-
-    afterEach(() => {
-      mock.stopAll();
-    });
-
-    it('should also remove referenced documents', (done) => {
-      const dib = new MockDib({});
-      const spy = spyOn(dib, 'remove');
-
-      spyOn(MockDib, 'find').and.returnValue(
-        Promise.resolve([dib])
-      );
-
-      const { removeReferencedDocuments } = mock.reRequire('./gift');
-
-      removeReferencedDocuments({}, (err) => {
-        expect(spy).toHaveBeenCalledWith();
-        expect(err).toBeUndefined();
-        done();
-      });
-    });
-
-    it('should handle errors', (done) => {
-      spyOn(MockDib, 'find').and.returnValue(
-        Promise.reject(
-          new Error('Some error')
-        )
-      );
-
-      const { removeReferencedDocuments } = mock.reRequire('./gift');
-
-      removeReferencedDocuments({}, (err) => {
-        expect(err.message).toEqual('Some error');
-        done();
-      });
     });
   });
 });

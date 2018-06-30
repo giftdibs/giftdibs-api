@@ -41,6 +41,6 @@ describe('Facebook service', () => {
       expect(_opts[0].qs.grant_type).toEqual('client_credentials');
       expect(_opts[1].qs.input_token).toEqual('myuseraccesstoken');
       done();
-    });
+    }).catch(done.fail);
   });
 });

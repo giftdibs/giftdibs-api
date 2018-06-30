@@ -32,13 +32,6 @@ function getGift(req, res, next) {
     .catch((err) => handleError(err, next));
 }
 
-function getGifts(req, res, next) {
-  authResponse({
-    data: { gifts: [] }
-  })(req, res, next);
-}
-
 module.exports = {
-  getGift,
-  getGifts
+  getGift
 };

@@ -100,6 +100,10 @@ class MockDocument {
   }
 }
 
+MockDocument.remove = function () {
+  return Promise.resolve();
+};
+
 class MockWishList extends MockDocument {
   constructor(definition = {}) {
     super();
@@ -117,48 +121,86 @@ class MockWishList extends MockDocument {
       MockWishList.overrides.constructorDefinition
     );
 
+    this.gifts = this.gifts || [];
+
+    this.gifts.create = (giftDefinition) => {
+      return Object.assign({
+        _id: new mongoose.Types.ObjectId()
+      }, giftDefinition);
+    };
+
+    this.gifts.id = (id) => {
+      const found = this.gifts.find(gift => gift._id === id);
+      return found;
+    };
+
+    this.gifts.forEach((gift) => {
+      gift.remove = () => {};
+      gift.updateSync = () => {};
+    });
+
     this.set = () => {};
   }
 }
 
-MockWishList.confirmPrivacySetting = function (privacy) {
-  return Promise.resolve(privacy);
+MockWishList.confirmUserOwnershipByGiftId = function () {};
+
+MockWishList.findAuthorized = function () {
+  return Promise.resolve([]);
 };
 
-class MockGift extends MockDocument {
-  constructor(definition = {}) {
-    super();
+MockWishList.findAuthorizedById = function () {};
 
-    const defaults = {
-      externalUrls: []
-    };
+MockWishList.findAuthorizedByGiftId = function () {
+  return Promise.resolve();
+};
 
-    Object.assign(this, defaults, definition);
+MockWishList.removeDibById = function () {
+  return Promise.resolve();
+};
 
-    if (!this.externalUrls) {
-      this.externalUrls = [];
-    }
+MockWishList.updateDibById = function () {
+  return Promise.resolve();
+};
 
-    this.externalUrls.id = () => {};
-  }
-}
+MockWishList.createDib = function () {
+  return Promise.resolve();
+};
+
+// class MockGift extends MockDocument {
+//   constructor(definition = {}) {
+//     super();
+
+//     const defaults = {
+//       externalUrls: []
+//     };
+
+//     Object.assign(this, defaults, definition);
+
+//     if (!this.externalUrls) {
+//       this.externalUrls = [];
+//     }
+
+//     this.externalUrls.id = () => {};
+//   }
+// }
 
 class MockExternalUrl extends MockDocument {}
 
-class MockDib extends MockDocument {
-  constructor(definition = {}) {
-    super();
+// class MockDib extends MockDocument {
+//   constructor(definition = {}) {
+//     super();
 
-    const defaults = {};
+//     const defaults = {};
 
-    Object.assign(
-      this,
-      defaults,
-      definition,
-      MockDib.overrides.constructorDefinition
-    );
-  }
-}
+//     Object.assign(
+//       this,
+//       defaults,
+//       definition,
+//       MockDib.overrides.constructorDefinition
+//     );
+//   }
+// }
 
 class MockFriendship extends MockDocument {
   constructor(definition = {}) {
@@ -216,34 +258,34 @@ function MockResponse() {
 }
 
 assignFind(MockWishList);
-assignFind(MockGift);
-assignFind(MockDib);
+// assignFind(MockGift);
+// assignFind(MockDib);
 assignFind(MockFriendship);
 assignFind(MockUser);
 
 assignSave(MockWishList);
-assignSave(MockGift);
-assignSave(MockDib);
+// assignSave(MockGift);
+// assignSave(MockDib);
 assignSave(MockFriendship);
 assignSave(MockUser);
 
 assignReset(MockWishList);
-assignReset(MockGift);
-assignReset(MockDib);
+// assignReset(MockGift);
+// assignReset(MockDib);
 assignReset(MockFriendship);
 assignReset(MockUser);
 
 assignConfirmUserOwnership(MockWishList);
-assignConfirmUserOwnership(MockGift);
-assignConfirmUserOwnership(MockDib);
+// assignConfirmUserOwnership(MockGift);
+// assignConfirmUserOwnership(MockDib);
 assignConfirmUserOwnership(MockFriendship);
 assignConfirmUserOwnership(MockUser);
 
 module.exports = {
   tick,
-  MockDib,
+  // MockDib,
   MockFriendship,
-  MockGift,
+  // MockGift,
   MockWishList,
   MockExternalUrl,
   MockUser,

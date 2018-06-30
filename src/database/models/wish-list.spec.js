@@ -92,138 +92,91 @@ describe('WishList schema', () => {
     });
   });
 
-  describe('remove referenced documents', () => {
-    const { MockGift } = require('../../shared/testing');
+  // describe('confirmPrivacySetting', () => {
+  //   let WishList;
 
-    beforeEach(() => {
-      MockGift.reset();
+  //   beforeEach(() => {
+  //     WishList = mock.reRequire('./wish-list').WishList;
+  //   });
 
-      mock('./gift', { Gift: MockGift });
-    });
+  //   afterEach(() => {
+  //     delete mongoose.models.WishList;
+  //     delete mongoose.modelSchemas.WishList;
+  //     mock.stopAll();
+  //   });
 
-    afterEach(() => {
-      delete mongoose.models.WishList;
-      delete mongoose.modelSchemas.WishList;
-      mock.stopAll();
-    });
+  //   it('should handle undefined privacy', (done) => {
+  //     WishList.confirmPrivacySetting({})
+  //       .then((attributes) => {
+  //         expect(attributes).toEqual({});
+  //         done();
+  //       })
+  //       .catch(done.fail);
+  //   });
 
-    it('should also remove referenced documents', (done) => {
-      const gift = new MockGift({});
-      const spy = spyOn(gift, 'remove');
+  //   it('should fail if privacy is custom, but no users set', (done) => {
+  //     WishList
+  //       .confirmPrivacySetting({
+  //         privacy: {
+  //           type: 'custom',
+  //           _allow: []
+  //         }
+  //       })
+  //       .catch((err) => {
+  //         expect(err.name).toEqual('WishListValidationError');
+  //         expect(err.message).toEqual('Please select at least one user.');
 
-      spyOn(MockGift, 'find').and.returnValue(
-        Promise.resolve([gift])
-      );
+  //         return WishList.confirmPrivacySetting({
+  //           privacy: {
+  //             type: 'custom',
+  //             _allow: undefined
+  //           }
+  //         });
+  //       })
+  //       .catch((err) => {
+  //         expect(err.name).toEqual('WishListValidationError');
+  //         expect(err.message).toEqual('Please select at least one user.');
+  //         done();
+  //       });
+  //   });
 
-      const { removeReferencedDocuments } = mock.reRequire('./wish-list');
+  //   it('should clear _allow if not custom type', (done) => {
+  //     WishList.confirmPrivacySetting({
+  //       privacy: {
+  //         type: 'me',
+  //         _allow: [mongoose.Types.ObjectId()]
+  //       }
+  //     }).then((attributes) => {
+  //       expect(attributes.privacy._allow).toEqual([]);
+  //       done();
+  //     }).catch(done.fail);
+  //   });
 
-      removeReferencedDocuments({}, (err) => {
-        expect(spy).toHaveBeenCalledWith();
-        expect(err).toBeUndefined();
-        done();
-      });
-    });
+  //   it('should remove duplicate ids in _allow', (done) => {
+  //     const userId = mongoose.Types.ObjectId();
+  //     const fooId = mongoose.Types.ObjectId();
+  //     WishList.confirmPrivacySetting({
+  //       privacy: {
+  //         type: 'custom',
+  //         _allow: [userId, userId, fooId]
+  //       }
+  //     }).then((attributes) => {
+  //       expect(attributes.privacy._allow).toEqual([userId, fooId]);
+  //       done();
+  //     }).catch(done.fail);
+  //   });
 
-    it('should handle errors', (done) => {
-      spyOn(MockGift, 'find').and.returnValue(
-        Promise.reject(
-          new Error('Some error')
-        )
-      );
-
-      const { removeReferencedDocuments } = mock.reRequire('./wish-list');
-
-      removeReferencedDocuments({}, (err) => {
-        expect(err.message).toEqual('Some error');
-        done();
-      });
-    });
-  });
-
-  describe('confirmPrivacySetting', () => {
-    let WishList;
-
-    beforeEach(() => {
-      WishList = mock.reRequire('./wish-list').WishList;
-    });
-
-    afterEach(() => {
-      delete mongoose.models.WishList;
-      delete mongoose.modelSchemas.WishList;
-      mock.stopAll();
-    });
-
-    it('should handle undefined privacy', (done) => {
-      WishList.confirmPrivacySetting({})
-        .then((attributes) => {
-          expect(attributes).toEqual({});
-          done();
-        });
-    });
-
-    it('should fail if privacy is custom, but no users set', (done) => {
-      WishList
-        .confirmPrivacySetting({
-          privacy: {
-            type: 'custom',
-            _allow: []
-          }
-        })
-        .catch((err) => {
-          expect(err.name).toEqual('WishListValidationError');
-          expect(err.message).toEqual('Please select at least one user.');
-
-          return WishList.confirmPrivacySetting({
-            privacy: {
-              type: 'custom',
-              _allow: undefined
-            }
-          });
-        })
-        .catch((err) => {
-          expect(err.name).toEqual('WishListValidationError');
-          expect(err.message).toEqual('Please select at least one user.');
-          done();
-        });
-    });
-
-    it('should clear _allow if not custom type', (done) => {
-      WishList.confirmPrivacySetting({
-        privacy: {
-          type: 'me',
-          _allow: [mongoose.Types.ObjectId()]
-        }
-      }).then((attributes) => {
-        expect(attributes.privacy._allow).toEqual([]);
-        done();
-      });
-    });
-
-    it('should remove duplicate ids in _allow', (done) => {
-      const userId = mongoose.Types.ObjectId();
-      const fooId = mongoose.Types.ObjectId();
-      WishList.confirmPrivacySetting({
-        privacy: {
-          type: 'custom',
-          _allow: [userId, userId, fooId]
-        }
-      }).then((attributes) => {
-        expect(attributes.privacy._allow).toEqual([userId, fooId]);
-        done();
-      });
-    });
-
-    it('should ignore proper custom settings', (done) => {
-      const privacy = {
-        type: 'custom',
-        _allow: [mongoose.Types.ObjectId()]
-      };
-      WishList.confirmPrivacySetting({
-        privacy
-      }).then((attributes) => {
-        expect(attributes.privacy).toEqual(privacy);
-        done();
-      });
-    });
-  });
+  //   it('should ignore proper custom settings', (done) => {
+  //     const privacy = {
+  //       type: 'custom',
+  //       _allow: [mongoose.Types.ObjectId()]
+  //     };
+  //     WishList.confirmPrivacySetting({
+  //       privacy
+  //     }).then((attributes) => {
+  //       expect(attributes.privacy).toEqual(privacy);
+  //       done();
+  //     }).catch(done.fail);
+  //   });
+  // });
 });

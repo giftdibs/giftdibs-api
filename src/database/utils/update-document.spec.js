@@ -69,11 +69,16 @@ describe('Update document database util', () => {
 
   it('should remove subdocuments that are not paired with form data', () => {
     const { updateDocument } = mock.reRequire('./update-document');
-    const changes = { children: [
-      { _id: 'efj' },
-      { _id: '123' }
-    ] };
+
+    const changes = {
+      children: [
+        { _id: 'efj' },
+        { _id: '123' }
+      ]
+    };
+
     const fields = ['foo'];
+
     doc.children = [{
       _id: 'abc',
       remove() {}
@@ -81,7 +86,11 @@ describe('Update document database util', () => {
       _id: '123',
       remove() {}
     }];
-    doc.children.id = () => {};
+
+    doc.children.id = (id) => {
+      return doc.children.find((child) => child._id === id);
+    };
+
     spyOn(doc.children[0], 'remove');
     updateDocument(doc, fields, changes);
     expect(doc.children[0].remove).toHaveBeenCalledWith();
@@ -89,9 +98,11 @@ describe('Update document database util', () => {
 
   it('should add a new subdocument', () => {
     const { updateDocument } = mock.reRequire('./update-document');
-    const changes = { children: [
-      { name: 'abc' }
-    ] };
+    const changes = {
+      children: [
+        { name: 'abc' }
+      ]
+    };
     const fields = ['foo'];
     doc.children = [];
     doc.children.id = () => {};

@@ -2,8 +2,7 @@ const express = require('express');
 const authenticateJwt = require('../../middleware/authenticate-jwt');
 
 const {
-  getGift,
-  getGifts
+  getGift
 } = require('./get');
 
 const { createGift } = require('./post');
@@ -13,7 +12,6 @@ const { updateGift } = require('./patch');
 const router = express.Router();
 router.use(authenticateJwt);
 router.route('/gifts')
-  .get(getGifts)
   .post(createGift)
 router.route('/gifts/:giftId')
   .get(getGift)

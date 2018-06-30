@@ -16,13 +16,15 @@ function createGift(req, res, next) {
   const wishListId = req.body.wishListId;
 
   if (!wishListId) {
-    throw new GiftValidationError(
-      'Please provide a wish list ID.'
+    next(
+      new GiftValidationError(
+        'Please provide a wish list ID.'
+      )
     );
+    return;
   }
 
-  WishList
-    .confirmUserOwnership(wishListId, req.user._id)
+  WishList.confirmUserOwnership(wishListId, req.user._id)
     .then((wishList) => {
       const gift = wishList.gifts.create({
         name: req.body.name,

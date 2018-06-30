@@ -14,15 +14,16 @@ function updateWishList(req, res, next) {
   const userId = req.user._id;
   const attributes = sanitizeRequestBody(req.body);
 
-  WishList
-    .confirmUserOwnership(wishListId, userId)
+  WishList.confirmUserOwnership(wishListId, userId)
     .then((wishList) => {
       wishList.updateSync(attributes);
       return wishList.save();
     })
-    .then(() => {
+    .then((wishList) => {
       authResponse({
-        data: {},
+        data: {
+          wishListId: wishList._id
+        },
         message: 'Wish list updated.'
       })(req, res, next);
     })

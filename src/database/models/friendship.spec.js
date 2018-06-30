@@ -94,7 +94,8 @@ describe('Friendship schema', () => {
             fields: 'firstName lastName'
           });
           done();
-        });
+        })
+        .catch(done.fail);
     });
 
     it('should fail if user id not provided', (done) => {

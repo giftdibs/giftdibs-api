@@ -38,7 +38,7 @@ describe('Users router', () => {
     searchUsers(_req, _res, () => { });
 
     tick(() => {
-      expect(MockUser.selectedFields).toEqual('firstName lastName _id');
+      expect(MockUser.selectedFields).toEqual('firstName lastName');
       expect(MockUser.limit).toEqual(15);
       expect(Array.isArray(_res.json.output.data.results)).toEqual(true);
       done();
