@@ -28,7 +28,7 @@ const dibSchema = new Schema({
     type: String,
     trim: true,
     maxlength: [
-      1001,
+      1000,
       'Notes cannot be longer than 1000 characters.'
     ]
   },

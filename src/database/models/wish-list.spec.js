@@ -4,28 +4,28 @@ const mock = require('mock-require');
 mongoose.Promise = Promise;
 
 describe('WishList schema', () => {
+  let WishList;
+  let updateDocumentUtil;
+  let _wishListDefinition;
+
+  beforeEach(() => {
+    _wishListDefinition = {
+      _user: mongoose.Types.ObjectId(),
+      name: 'Foo'
+    };
+    updateDocumentUtil = mock.reRequire('../utils/update-document');
+    spyOn(updateDocumentUtil, 'updateDocument').and.returnValue();
+    spyOn(console, 'log').and.returnValue();
+    WishList = mock.reRequire('./wish-list').WishList;
+  });
+
+  afterEach(() => {
+    delete mongoose.models.WishList;
+    delete mongoose.modelSchemas.WishList;
+    mock.stopAll();
+  });
+
   describe('fields', () => {
-    let WishList;
-    let updateDocumentUtil;
-    let _wishListDefinition;
-
-    beforeEach(() => {
-      _wishListDefinition = {
-        _user: mongoose.Types.ObjectId(),
-        name: 'Foo'
-      };
-      updateDocumentUtil = mock.reRequire('../utils/update-document');
-      spyOn(updateDocumentUtil, 'updateDocument').and.returnValue();
-      spyOn(console, 'log').and.returnValue();
-      WishList = mock.reRequire('./wish-list').WishList;
-    });
-
-    afterEach(() => {
-      delete mongoose.models.WishList;
-      delete mongoose.modelSchemas.WishList;
-      mock.stopAll();
-    });
-
     it('should validate a document', () => {
       let wishList = new WishList(_wishListDefinition);
       const err = wishList.validateSync();

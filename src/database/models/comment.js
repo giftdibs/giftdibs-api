@@ -19,7 +19,7 @@ const commentSchema = new Schema({
     type: String,
     trim: true,
     maxlength: [
-      2001,
+      2000,
       'Comments cannot be longer than 2000 characters.'
     ]
   }

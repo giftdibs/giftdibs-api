@@ -139,7 +139,7 @@ describe('Auth Facebook router', () => {
     loginWithFacebook(req, res, () => {});
   });
 
-  it('should handle validation errors from facebook profile', () => {
+  it('should handle validation errors from facebook profile', (done) => {
     MockUser.prototype.save = function () {
       const err = new Error('Invalid');
       err.name = 'ValidationError';
@@ -169,6 +169,7 @@ describe('Auth Facebook router', () => {
       expect(err).toBeDefined();
       expect(err.code).toEqual(110);
       expect(err.status).toEqual(400);
+      done();
     });
   });
 

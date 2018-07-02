@@ -71,48 +71,47 @@ giftSchema.methods.moveToWishList = function (wishListId, userId) {
   const instance = this;
   const { WishList } = require('./wish-list');
 
-  return WishList
-    .findAuthorized(
-      userId,
-      {
-        $or: [
-          { _id: wishListId },
-          { 'gifts._id': instance._id }
-        ]
-      },
-      true
-    )
-    .then((wishLists) => {
-      // The gift already belongs to the wish list.
-      if (wishLists.length === 1) {
-        return {
-          gift: instance
-        };
+  return WishList.findAuthorized(
+    userId,
+    {
+      $or: [
+        { _id: wishListId },
+        { 'gifts._id': instance._id }
+      ]
+    },
+    true
+  ).then((wishLists) => {
+    // The gift already belongs to the wish list.
+    // (The query attempts to find the gift's current wish list
+    // and the move-to wish list. If the wish list IDs match,
+    // do nothing.)
+    if (wishLists.length === 1) {
+      return {
+        gift: instance
+      };
+    }
+
+    wishLists.forEach((wishList) => {
+      const found = wishList.gifts.id(instance._id);
+
+      if (found) {
+        wishList.gifts.remove(instance);
+      } else {
+        wishList.gifts.push(instance);
       }
-
-      wishLists.forEach((wishList) => {
-        const found = wishList.gifts.id(instance._id);
-
-        if (found) {
-          wishList.gifts.remove(instance);
-        } else {
-          wishList.gifts.push(instance);
-        }
-      });
-
-      // Save wish lists and return the updated documents IDs.
-      return Promise
-        .all([
-          wishLists[0].save(),
-          wishLists[1].save()
-        ])
-        .then((results) => {
-          return {
-            gift: instance,
-            wishListIds: results.map((wishList) => wishList._id)
-          };
-        });
     });
+
+    // Save wish lists and return the updated documents IDs.
+    return Promise.all([
+      wishLists[0].save(),
+      wishLists[1].save()
+    ]).then((results) => {
+      return {
+        gift: instance,
+        wishListIds: results.map((wishList) => wishList._id)
+      };
+    });
+  });
 }
 
 giftSchema.methods.updateSync = function (values) {
@@ -129,19 +128,15 @@ giftSchema.methods.updateSync = function (values) {
     values.quantity = 1;
   }
 
+  if (values.name) {
+    // Replace newline characters.
+    values.name = values.name.replace(/\r?\n/g, ' ');
+  }
+
   updateDocument(instance, fields, values);
 
   return instance;
 };
-
-giftSchema.pre('validate', function (next) {
-  if (this.name) {
-    // Replace newline characters.
-    this.name = this.name.replace(/\r?\n/g, ' ');
-  }
-
-  next();
-});
 
 module.exports = {
   giftSchema

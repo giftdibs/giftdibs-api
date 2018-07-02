@@ -55,7 +55,7 @@ describe('Dib schema', () => {
 
   it('should fail if notes has more characters than allowed', () => {
     let test = '';
-    while (test.length < 1002) {
+    while (test.length < 1001) {
       test += '.';
     }
 

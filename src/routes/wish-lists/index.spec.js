@@ -1,5 +1,4 @@
 const mock = require('mock-require');
-const mongoose = require('mongoose');
 
 const {
   MockFriendship,
@@ -235,7 +234,9 @@ describe('Wish lists router', () => {
 
       // getWishList(_req, _res, (err) => {
       //   expect(err.name).toEqual('WishListPermissionError');
-      //   expect(err.message).toEqual('You are not authorized to view that wish list.');
+      //   expect(err.message).toEqual(
+      //     'You are not authorized to view that wish list.'
+      //   );
       //   done();
       // });
     });
@@ -315,9 +316,7 @@ describe('Wish lists router', () => {
 
       const { updateWishList } = mock.reRequire('./patch');
 
-      updateWishList(_req, _res, (err) => {
-        console.log(err);
-      });
+      updateWishList(_req, _res, () => {});
 
       tick(() => {
         expect(_res.json.output.data.wishListId).toEqual('wishlistid');

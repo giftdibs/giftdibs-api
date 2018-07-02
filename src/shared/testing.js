@@ -130,9 +130,14 @@ class MockWishList extends MockDocument {
     };
 
     this.gifts.id = (id) => {
-      const found = this.gifts.find(gift => gift._id === id);
+      const found = this.gifts.find((gift) => {
+        return (gift._id === id);
+      });
+
       return found;
     };
+
+    this.gifts.remove = () => {};
 
     this.gifts.forEach((gift) => {
       gift.remove = () => {};
