@@ -7,9 +7,11 @@ const { deleteFriendship } = require('./delete');
 
 const router = express.Router();
 router.use(authenticateJwt);
-router.route('/friendships')
+
+router.route('/users/:userId/friendships')
   .get(getFriendships)
-  .post(createFriendship)
+  .post(createFriendship);
+
 router.route('/friendships/:friendshipId')
   .delete(deleteFriendship);
 

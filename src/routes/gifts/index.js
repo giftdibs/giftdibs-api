@@ -10,9 +10,12 @@ const { deleteGift } = require('./delete');
 const { updateGift } = require('./patch');
 
 const router = express.Router();
+
 router.use(authenticateJwt);
-router.route('/gifts')
-  .post(createGift)
+
+router.route('/wish-lists/:wishListId/gifts')
+  .post(createGift);
+
 router.route('/gifts/:giftId')
   .get(getGift)
   .delete(deleteGift)

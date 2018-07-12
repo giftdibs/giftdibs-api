@@ -1,8 +1,4 @@
 const {
-  Friendship
-} = require('../../database/models/friendship');
-
-const {
   FriendshipValidationError
 } = require('../../shared/errors');
 
@@ -33,48 +29,7 @@ function handleError(err, next) {
   next(err);
 }
 
-function validateFriendRequest(friendId, userId) {
-  if (userId.toString() === friendId) {
-    return Promise.reject(
-      new FriendshipValidationError('You cannot follow yourself.')
-    );
-  }
-
-  if (!friendId) {
-    return Promise.reject(
-      new FriendshipValidationError(
-        'Please provide the user ID of the friend you wish to follow.'
-      )
-    );
-  }
-
-  // TODO: Prevent non-verified accounts from following people!
-
-  return Friendship
-    .find({
-      _user: userId,
-      _friend: friendId
-    })
-    .limit(1)
-    .lean()
-    .then((docs) => {
-      const friend = docs[0];
-
-      if (friend) {
-        return Promise.reject(
-          new FriendshipValidationError('You are already following that person.')
-        );
-      }
-
-      return new Friendship({
-        _user: userId,
-        _friend: friendId
-      });
-    });
-}
-
 module.exports = {
   formatFriendshipResponse,
-  handleError,
-  validateFriendRequest
+  handleError
 };

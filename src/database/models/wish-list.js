@@ -1,19 +1,16 @@
 const mongoose = require('mongoose');
 
 const {
-  WishListNotFoundError,
-  WishListPermissionError,
-  WishListValidationError
-} = require('../../shared/errors');
-
-const {
   CommentNotFoundError,
   CommentPermissionError,
   DibNotFoundError,
   DibPermissionError,
   DibValidationError,
   GiftNotFoundError,
-  GiftPermissionError
+  GiftPermissionError,
+  WishListNotFoundError,
+  WishListPermissionError,
+  WishListValidationError
 } = require('../../shared/errors');
 
 const {
@@ -77,6 +74,17 @@ const wishListSchema = new Schema({
     updatedAt: 'dateUpdated'
   }
 });
+
+// TODO:
+// Look for ways to optimize any database populations!
+
+function truncateText(text, length) {
+  if (text.length <= length) {
+    return text;
+  }
+
+  return text.substr(0, length) + '\u2026'
+}
 
 /**
  * Manual function to check if user can view wish list.
@@ -368,8 +376,7 @@ wishListSchema.statics.confirmUserOwnershipByGiftId = function (
     });
 };
 
-wishListSchema.statics.createDib = function (attributes, userId) {
-  const giftId = attributes.giftId;
+wishListSchema.statics.createDib = function (giftId, attributes, userId) {
   const raw = true;
 
   return this.findAuthorizedByGiftId(giftId, userId, raw)
@@ -483,24 +490,103 @@ wishListSchema.statics.removeCommentById = function (
     });
 };
 
-wishListSchema.statics.createComment = function (attributes, userId) {
-  const giftId = attributes.giftId;
+wishListSchema.statics.createComment = function (giftId, attributes, user) {
+  const {
+    Notification
+  } = require('./notification');
+
   const raw = true;
+  const userId = user._id;
+
+  let _gift;
+  let _comment;
 
   return this.findAuthorizedByGiftId(giftId, userId, raw)
     .then((wishList) => {
-      const gift = wishList.gifts.id(giftId);
+      _gift = wishList.gifts.id(giftId);
 
-      gift.comments.push({
+      _gift.comments.push({
         _user: userId,
         body: attributes.body
       });
 
+      _comment = _gift.comments[_gift.comments.length - 1];
+
       return wishList.save();
     })
     .then((wishList) => {
-      const gift = wishList.gifts.id(giftId);
-      const commentId = gift.comments[gift.comments.length - 1]._id;
+      // Get a list of all users who have commented on this gift.
+      // Send a notification to each user.
+      let userIds = _gift.comments.map((comment) => {
+        return comment._user._id.toString();
+      });
+
+      // Filter out duplicate user IDs.
+      userIds = [...new Set(userIds)];
+
+      // Remove userId if owner of new comment, or gift owner.
+      userIds = userIds.filter((uId) => {
+        return (
+          uId.toString() !== userId.toString() &&
+          uId.toString() !== wishList._user._id.toString()
+        );
+      });
+
+      // TODO: Need to rework comment notification logic.
+      // Owner of gift always receives a standard gift_comment notification.
+      // Owner of gift never receives a gift_comment_also notification.
+      // Visitors of gift who have commented receive
+      //   gift_comment_also notification when someone else comments
+      //   on the same gift.
+
+      const promises = userIds.map((uId) => {
+        return Notification.create({
+          _user: uId,
+          gift: {
+            id: _gift._id,
+            name: _gift.name,
+            comment: {
+              id: _comment._id,
+              user: {
+                id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName
+              },
+              summary: truncateText(_comment.body, 50)
+            }
+          },
+          type: 'gift_comment_also'
+        });
+      });
+
+      return Promise.all(promises).then(() => wishList);
+    })
+    .then((wishList) => {
+      // Ignore notification if commentor owns the gift.
+      if (wishList._user._id.toString() === userId.toString()) {
+        return;
+      }
+
+      return Notification.create({
+        _user: wishList._user._id,
+        gift: {
+          id: _gift._id,
+          name: _gift.name,
+          comment: {
+            id: _comment._id,
+            user: {
+              id: user._id,
+              firstName: user.firstName,
+              lastName: user.lastName
+            },
+            summary: truncateText(_comment.body, 50)
+          }
+        },
+        type: 'gift_comment'
+      });
+    })
+    .then(() => {
+      const commentId = _gift.comments[_gift.comments.length - 1]._id;
 
       return commentId;
     });

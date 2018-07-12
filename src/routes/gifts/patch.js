@@ -37,6 +37,8 @@ function updateGift(req, res, next) {
 
       data.wishListIds = result.wishListIds;
 
+      // TODO: Returning IDs is not consistent with other
+      // patch routes.
       authResponse({
         data,
         message: 'Gift successfully updated.'

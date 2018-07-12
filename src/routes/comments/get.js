@@ -4,9 +4,9 @@ const {
   WishList
 } = require('../../database/models/wish-list');
 
-const {
-  CommentNotFoundError
-} = require('../../shared/errors');
+// const {
+//   CommentNotFoundError
+// } = require('../../shared/errors');
 
 const {
   formatCommentResponse,
@@ -43,30 +43,30 @@ function getComment(req, res, next) {
     .catch((err) => handleError(err, next));
 }
 
-function getComments(req, res, next) {
-  const giftId = req.query.giftId;
-  const userId = req.user._id;
+// function getComments(req, res, next) {
+//   const giftId = req.query.giftId;
+//   const userId = req.user._id;
 
-  if (!giftId) {
-    throw new CommentNotFoundError(
-      'Please provide a gift ID.'
-    );
-  }
+//   if (!giftId) {
+//     throw new CommentNotFoundError(
+//       'Please provide a gift ID.'
+//     );
+//   }
 
-  WishList.getCommentsByGiftId(giftId, userId)
-    .then((comments) => {
-      return comments.map((comment) => formatCommentResponse(comment));
-    })
-    .then((comments) => {
-      authResponse({
-        data: { comments },
-        message: 'Comment successfully updated.'
-      })(req, res, next);
-    })
-    .catch((err) => handleError(err, next));
-}
+//   WishList.getCommentsByGiftId(giftId, userId)
+//     .then((comments) => {
+//       return comments.map((comment) => formatCommentResponse(comment));
+//     })
+//     .then((comments) => {
+//       authResponse({
+//         data: { comments },
+//         message: 'Comment successfully updated.'
+//       })(req, res, next);
+//     })
+//     .catch((err) => handleError(err, next));
+// }
 
 module.exports = {
-  getComment,
-  getComments
+  getComment
+  // getComments
 };

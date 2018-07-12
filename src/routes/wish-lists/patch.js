@@ -19,11 +19,9 @@ function updateWishList(req, res, next) {
       wishList.updateSync(attributes);
       return wishList.save();
     })
-    .then((wishList) => {
+    .then(() => {
       authResponse({
-        data: {
-          wishListId: wishList._id
-        },
+        data: { },
         message: 'Wish list updated.'
       })(req, res, next);
     })

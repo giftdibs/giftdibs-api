@@ -9,10 +9,10 @@ const {
 } = require('../../database/models/wish-list');
 
 function createComment(req, res, next) {
-  const userId = req.user._id;
+  const giftId = req.params.giftId;
   const attributes = req.body;
 
-  WishList.createComment(attributes, userId)
+  WishList.createComment(giftId, attributes, req.user)
     .then((commentId) => {
       authResponse({
         data: { commentId },

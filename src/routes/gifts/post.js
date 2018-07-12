@@ -13,7 +13,7 @@ const {
 } = require('./shared');
 
 function createGift(req, res, next) {
-  const wishListId = req.body.wishListId;
+  const wishListId = req.params.wishListId;
 
   if (!wishListId) {
     next(

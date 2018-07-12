@@ -25,8 +25,8 @@ function getWishLists(req, res, next) {
   const userId = req.user._id;
   const query = {};
 
-  if (req.query.userId) {
-    query._user = req.query.userId;
+  if (req.params.userId) {
+    query._user = req.params.userId;
   }
 
   WishList.findAuthorized(userId, query)

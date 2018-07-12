@@ -75,7 +75,7 @@ const definitions = [
   },
   {
     name: 'UserPermissionError',
-    message: 'Permission denied to modify user.',
+    message: 'Permission denied to access user.',
     code: 202,
     status: 403
   },
@@ -93,7 +93,7 @@ const definitions = [
   },
   {
     name: 'WishListPermissionError',
-    message: 'Permission denied to modify wish list.',
+    message: 'Permission denied to access wish list.',
     code: 302,
     status: 403
   },
@@ -111,7 +111,7 @@ const definitions = [
   },
   {
     name: 'GiftPermissionError',
-    message: 'Permission denied to modify gift.',
+    message: 'Permission denied to access gift.',
     code: 402,
     status: 403
   },
@@ -129,7 +129,7 @@ const definitions = [
   },
   {
     name: 'CommentPermissionError',
-    message: 'Permission denied to modify comment.',
+    message: 'Permission denied to access comment.',
     code: 502,
     status: 403
   },
@@ -147,7 +147,7 @@ const definitions = [
   },
   {
     name: 'DibPermissionError',
-    message: 'Permission denied to modify dib.',
+    message: 'Permission denied to access dib.',
     code: 502,
     status: 403
   },
@@ -165,8 +165,44 @@ const definitions = [
   },
   {
     name: 'FriendshipPermissionError',
-    message: 'Permission denied to modify friendship.',
+    message: 'Permission denied to access friendship.',
     code: 602,
+    status: 403
+  },
+  {
+    name: 'MessageNotFoundError',
+    message: 'Message not found.',
+    code: 500,
+    status: 404
+  },
+  {
+    name: 'MessageValidationError',
+    message: 'Message validation failed.',
+    code: 501,
+    status: 400
+  },
+  {
+    name: 'MessagePermissionError',
+    message: 'Permission denied to access message.',
+    code: 502,
+    status: 403
+  },
+  {
+    name: 'NotificationNotFoundError',
+    message: 'Notification not found.',
+    code: 500,
+    status: 404
+  },
+  {
+    name: 'NotificationValidationError',
+    message: 'Notification validation failed.',
+    code: 501,
+    status: 400
+  },
+  {
+    name: 'NotificationPermissionError',
+    message: 'Permission denied to access notification.',
+    code: 502,
     status: 403
   }
 ];

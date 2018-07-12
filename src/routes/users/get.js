@@ -56,10 +56,15 @@ function getUser(req, res, next) {
 }
 
 function getUsers(req, res, next) {
+  if (req.query.search) {
+    const { searchUsers } = require('./search');
+    searchUsers(req, res, next);
+    return;
+  }
+
   const selectFields = getSelectFields(req);
 
-  User
-    .find({})
+  User.find({})
     .select(selectFields)
     .lean()
     .then((users) => {

@@ -9,7 +9,7 @@ function escapeStringRegexp(str) {
 }
 
 function searchUsers(req, res, next) {
-  const searchText = decodeURIComponent(req.params.encodedSearchText);
+  const searchText = decodeURIComponent(req.query.search);
   const escapedSearchText = escapeStringRegexp(searchText);
   const regex = new RegExp(escapedSearchText, 'i');
 

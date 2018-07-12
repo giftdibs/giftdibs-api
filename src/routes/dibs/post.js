@@ -10,9 +10,10 @@ const {
 
 function createDib(req, res, next) {
   const userId = req.user._id;
+  const giftId = req.params.giftId;
   const attributes = req.body;
 
-  WishList.createDib(attributes, userId)
+  WishList.createDib(giftId, attributes, userId)
     .then((dibId) => {
       authResponse({
         data: { dibId },

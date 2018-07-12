@@ -11,7 +11,7 @@ const {
 } = require('./shared');
 
 function getFriendships(req, res, next) {
-  const userId = req.query.userId;
+  const userId = req.params.userId;
 
   if (!userId) {
     next(new FriendshipValidationError(
@@ -20,8 +20,7 @@ function getFriendships(req, res, next) {
     return;
   }
 
-  Friendship
-    .getFriendshipsByUserId(userId)
+  Friendship.getFriendshipsByUserId(userId)
     .then((friendships) => {
       authResponse({
         data: {

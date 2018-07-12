@@ -4,17 +4,22 @@ const authenticateJwt = require('../../middleware/authenticate-jwt');
 
 const { createComment } = require('./post');
 const { deleteComment } = require('./delete');
-const { getComment, getComments } = require('./get');
+
+const {
+  getComment
+  // getComments
+} = require('./get');
+
 const { updateComment } = require('./patch');
 
 const router = express.Router();
 router.use(authenticateJwt);
 
-router.route('/comments')
-  .get(getComments)
+router.route('/gifts/:giftId/comments')
+  // .get(getComments)
   .post(createComment);
 
-router.route('/comments/:commentId')
+router.route('/gifts/comments/:commentId')
   .get(getComment)
   .patch(updateComment)
   .delete(deleteComment);
