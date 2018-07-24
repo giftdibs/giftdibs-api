@@ -6,10 +6,6 @@ const {
   FriendshipValidationError
 } = require('../../shared/errors');
 
-const {
-  formatFriendshipResponse
-} = require('./shared');
-
 function getFriendships(req, res, next) {
   const userId = req.params.userId;
 
@@ -23,11 +19,7 @@ function getFriendships(req, res, next) {
   Friendship.getFriendshipsByUserId(userId)
     .then((friendships) => {
       authResponse({
-        data: {
-          friendships: friendships.map((friendship) => {
-            return formatFriendshipResponse(friendship);
-          })
-        }
+        data: { friendships }
       })(req, res, next);
     })
     .catch(next);

@@ -1,5 +1,5 @@
 const dotenv = require('dotenv');
-const logger = require('winston');
+const logger = require('./logger');
 
 const applyEnvironment = () => {
   // Production environments should set their own values.

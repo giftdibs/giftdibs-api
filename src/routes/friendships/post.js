@@ -10,8 +10,9 @@ const {
 
 function createFriendship(req, res, next) {
   const friendId = req.params.userId;
+  const userId = req.user._id;
 
-  Friendship.create(friendId, req.user)
+  Friendship.create(friendId, userId)
     .then((doc) => {
       authResponse({
         data: { friendshipId: doc._id },

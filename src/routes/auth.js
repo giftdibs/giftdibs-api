@@ -261,7 +261,7 @@ const resendEmailAddressVerification = [
     req.user
       .save()
       .then(() => {
-        // TODO: Send email here...
+        // TODO: Send email here.
         authResponse({
           message: [
             `Verification email sent to ${req.user.emailAddress}.`,

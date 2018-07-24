@@ -75,8 +75,7 @@ const wishListSchema = new Schema({
   }
 });
 
-// TODO:
-// Look for ways to optimize any database populations!
+// TODO: Look for ways to optimize any database populations!
 
 function truncateText(text, length) {
   if (text.length <= length) {
@@ -515,8 +514,9 @@ wishListSchema.statics.createComment = function (giftId, attributes, user) {
       return wishList.save();
     })
     .then((wishList) => {
+      const ownerId = wishList._user._id.toString();
+
       // Get a list of all users who have commented on this gift.
-      // Send a notification to each user.
       let userIds = _gift.comments.map((comment) => {
         return comment._user._id.toString();
       });
@@ -524,21 +524,15 @@ wishListSchema.statics.createComment = function (giftId, attributes, user) {
       // Filter out duplicate user IDs.
       userIds = [...new Set(userIds)];
 
-      // Remove userId if owner of new comment, or gift owner.
+      // Remove ID if it belongs to the commentor, or gift owner.
       userIds = userIds.filter((uId) => {
         return (
-          uId.toString() !== userId.toString() &&
-          uId.toString() !== wishList._user._id.toString()
+          uId !== userId.toString() &&
+          uId !== ownerId
         );
       });
 
-      // TODO: Need to rework comment notification logic.
-      // Owner of gift always receives a standard gift_comment notification.
-      // Owner of gift never receives a gift_comment_also notification.
-      // Visitors of gift who have commented receive
-      //   gift_comment_also notification when someone else comments
-      //   on the same gift.
-
+      // Send a notification to each user.
       const promises = userIds.map((uId) => {
         return Notification.create({
           _user: uId,
@@ -563,10 +557,13 @@ wishListSchema.statics.createComment = function (giftId, attributes, user) {
     })
     .then((wishList) => {
       // Ignore notification if commentor owns the gift.
-      if (wishList._user._id.toString() === userId.toString()) {
+      const ownerId = wishList._user._id.toString();
+      if (ownerId === userId.toString()) {
         return;
       }
 
+      // Owner of gift always receives a standard notification
+      // when someone comments on their gift.
       return Notification.create({
         _user: wishList._user._id,
         gift: {
@@ -586,9 +583,7 @@ wishListSchema.statics.createComment = function (giftId, attributes, user) {
       });
     })
     .then(() => {
-      const commentId = _gift.comments[_gift.comments.length - 1]._id;
-
-      return commentId;
+      return _comment._id;
     });
 };
 
