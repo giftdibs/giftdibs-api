@@ -7,5 +7,6 @@ module.exports = [
   require('./gifts').router,
   require('./notifications').router,
   require('./users').router,
-  require('./wish-lists').router
+  require('./wish-lists').router,
+  require('./assets').router
 ];
