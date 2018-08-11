@@ -13,6 +13,7 @@ function getSelectFields(req) {
 
   if (req.user._id.toString() === req.params.userId) {
     selectFields = [
+      'avatarUrl',
       'facebookId',
       'firstName',
       'lastName',
@@ -21,6 +22,7 @@ function getSelectFields(req) {
     ].join(' ');
   } else {
     selectFields = [
+      'avatarUrl',
       'firstName',
       'lastName',
       'emailAddressVerified'

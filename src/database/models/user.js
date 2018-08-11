@@ -32,6 +32,7 @@ const hasDuplicateChars = (str) => {
 
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
+  avatarUrl: String,
   firstName: {
     type: String,
     required: [true, 'Please provide a first name.'],
