@@ -35,6 +35,7 @@ const giftSchema = new Schema({
   externalUrls: [
     externalUrlSchema
   ],
+  imageUrl: String,
   isReceived: {
     type: Boolean,
     default: false

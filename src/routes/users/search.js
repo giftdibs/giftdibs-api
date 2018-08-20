@@ -21,7 +21,7 @@ function searchUsers(req, res, next) {
       ]
     })
     .limit(15)
-    .select('firstName lastName')
+    .select('firstName lastName avatarUrl')
     .lean()
     .then((docs) => {
       const results = docs.map((user) => {

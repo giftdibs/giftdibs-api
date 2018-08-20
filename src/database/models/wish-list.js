@@ -29,7 +29,7 @@ const {
   giftSchema
 } = require('./gift');
 
-const populateUserFields = 'firstName lastName';
+const populateUserFields = 'firstName lastName avatarUrl';
 
 const Schema = mongoose.Schema;
 const wishListSchema = new Schema({

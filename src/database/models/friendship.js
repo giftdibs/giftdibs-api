@@ -5,10 +5,6 @@ const {
 } = require('../plugins/mongodb-error-handler');
 
 const {
-  ConfirmUserOwnershipPlugin
-} = require('../plugins/confirm-user-ownership');
-
-const {
   FriendshipNotFoundError,
   FriendshipPermissionError,
   FriendshipValidationError
@@ -90,16 +86,18 @@ friendshipSchema.statics.create = function (friendId, userId) {
       ]);
     })
     .then((result) => {
+      const user = result[0][0];
+      const friend = result[1][0];
       const friendship = new Friendship({
         user: {
-          id: result[0]._id,
-          firstName: result[0].firstName,
-          lastName: result[0].lastName
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName
         },
         friend: {
-          id: result[1]._id,
-          firstName: result[1].firstName,
-          lastName: result[1].lastName
+          id: friend._id,
+          firstName: friend.firstName,
+          lastName: friend.lastName
         }
       });
 
@@ -146,13 +144,38 @@ friendshipSchema.statics.getFriendshipsByUserId = function (userId) {
 };
 
 friendshipSchema.plugin(MongoDbErrorHandlerPlugin);
-friendshipSchema.plugin(ConfirmUserOwnershipPlugin, {
-  errors: {
-    validation: new FriendshipValidationError('Please provide a friendship ID.'),
-    notFound: new FriendshipNotFoundError(),
-    permission: new FriendshipPermissionError()
+
+friendshipSchema.statics.confirmUserOwnership = function (docId, userId) {
+  if (!docId) {
+    return Promise.reject(
+      new FriendshipValidationError('Please provide a friendship ID.')
+    );
   }
-});
+
+  const model = this;
+
+  return model.find({ _id: docId })
+    .limit(1)
+    .then((docs) => {
+      const doc = docs[0];
+
+      if (!doc) {
+        return Promise.reject(
+          new FriendshipNotFoundError()
+        );
+      }
+
+      if (
+        userId.toString() !== doc.user.id.toString()
+      ) {
+        return Promise.reject(
+          new FriendshipPermissionError()
+        );
+      }
+
+      return doc;
+    });
+};
 
 const Friendship = mongoose.model('Friendship', friendshipSchema);
 
