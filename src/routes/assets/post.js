@@ -2,7 +2,7 @@ const multer = require('multer');
 const randomstring = require('randomstring');
 
 const authResponse = require('../../middleware/auth-response');
-const s3 = require('./s3');
+const fileHandler = require('../../shared/file-handler');
 
 const upload = multer();
 
@@ -10,19 +10,18 @@ function uploadAvatar(req, res, next) {
   const file = req.files[0];
   const fileName = req.user._id + '-' + randomstring.generate();
 
-  s3.putImageObject(file, fileName)
+  fileHandler.upload(file, fileName)
     .then((url) => {
       const oldAvatarUrl = req.user.avatarUrl;
 
       req.user.avatarUrl = url;
 
       return req.user.save().then(() => {
-        // Delete old image from S3.
         if (oldAvatarUrl) {
           const fragments = oldAvatarUrl.split('/');
           const fileName = fragments[fragments.length - 1];
 
-          return s3.deleteObject(fileName).then(() => url);
+          return fileHandler.remove(fileName).then(() => url);
         }
 
         return url;
@@ -59,7 +58,7 @@ function uploadGiftThumbnail(req, res, next) {
     .then((wishList) => {
       _wishList = wishList;
 
-      return s3.putImageObject(file, fileName)
+      return fileHandler.upload(file, fileName)
     })
     .then((url) => {
       const gift = _wishList.gifts.id(giftId);
@@ -68,12 +67,11 @@ function uploadGiftThumbnail(req, res, next) {
       gift.imageUrl = url;
 
       return _wishList.save().then(() => {
-        // Delete old image from S3.
         if (oldImageUrl) {
           const fragments = oldImageUrl.split('/');
           const fileName = fragments[fragments.length - 1];
 
-          return s3.deleteObject(fileName).then(() => url);
+          return fileHandler.remove(fileName).then(() => url);
         }
 
         return url;

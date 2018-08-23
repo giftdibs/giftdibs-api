@@ -2,6 +2,7 @@ const express = require('express');
 const passport = require('passport');
 
 const { User } = require('../database/models/user');
+
 const authResponse = require('../middleware/auth-response');
 const authenticateJwt = require('../middleware/authenticate-jwt');
 
@@ -14,6 +15,8 @@ const {
   LoginValidationError,
   ForgottenPasswordValidationError
 } = require('../shared/errors');
+
+const mailer = require('../shared/mailer');
 
 function handleResetPasswordError(err, next) {
   if (err.name === 'ValidationError') {
@@ -89,14 +92,13 @@ const register = [
         return user.save();
       })
       .then((doc) => {
+        return mailer.sendAccountVerificationEmail(
+          doc.emailAddress,
+          doc.emailAddressVerificationToken
+        ).then(() => doc);
+      })
+      .then((doc) => {
         // TODO: Send welcome email.
-        // TODO: Send verification email.
-
-        console.log([
-          'Verify email here:',
-          `http://localhost:4200/account/verify/${doc.emailAddressVerificationToken}`
-        ].join(' '));
-
         // TODO: Consider automatically logging in the user after reg?
 
         res.json({
@@ -192,8 +194,13 @@ const forgotten = [
 
         return user.save();
       })
+      .then((user) => {
+        return mailer.sendPasswordResetEmail(
+          user.emailAddress,
+          user.resetPasswordToken
+        );
+      })
       .then(() => {
-        // TODO: Send an email, here.
         return res.json({
           message: [
             'Email sent. Please check your spam folder if it does not appear',
@@ -258,10 +265,14 @@ const resendEmailAddressVerification = [
 
   function requestEmailAddressVerificationToken(req, res, next) {
     req.user.resetEmailAddressVerification();
-    req.user
-      .save()
+    req.user.save()
       .then(() => {
-        // TODO: Send email here.
+        return mailer.sendAccountVerificationEmail(
+          req.user.emailAddress,
+          req.user.emailAddressVerificationToken
+        );
+      })
+      .then(() => {
         authResponse({
           message: [
             `Verification email sent to ${req.user.emailAddress}.`,

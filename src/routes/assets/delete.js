@@ -1,6 +1,6 @@
 const authResponse = require('../../middleware/auth-response');
 
-const s3 = require('./s3');
+const fileHandler = require('../../shared/file-handler');
 
 function deleteAvatar(req, res, next) {
   const avatarUrl = req.user.avatarUrl;
@@ -15,7 +15,7 @@ function deleteAvatar(req, res, next) {
   const fragments = avatarUrl.split('/');
   const fileName = fragments[fragments.length - 1];
 
-  s3.deleteObject(fileName)
+  fileHandler.remove(fileName)
     .then(() => {
       req.user.avatarUrl = undefined;
       return req.user.save();
@@ -58,7 +58,7 @@ function deleteGiftThumbnail(req, res, next) {
       const fragments = imageUrl.split('/');
       const fileName = fragments[fragments.length - 1];
 
-      return s3.deleteObject(fileName)
+      return fileHandler.remove(fileName)
         .then(() => {
           gift.imageUrl = undefined;
           return wishList.save();

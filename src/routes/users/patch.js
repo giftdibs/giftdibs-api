@@ -1,6 +1,7 @@
 const facebook = require('../../lib/facebook');
 const authResponse = require('../../middleware/auth-response');
 const { handleError } = require('./shared');
+const mailer = require('../../shared/mailer');
 
 const {
   User
@@ -25,6 +26,7 @@ function updateWithFacebookProfile(user, reqBody) {
 }
 
 function updateUser(req, res, next) {
+  let _emailAddressChanged = false;
   User.confirmUserOwnership(req.params.userId, req.user._id)
     .then((user) => updateWithFacebookProfile(user, req.body))
     .then((user) => {
@@ -41,11 +43,20 @@ function updateUser(req, res, next) {
       // If the email address is being changed, need to re-verify.
       if (emailAddress && (user.emailAddress !== emailAddress)) {
         user.resetEmailAddressVerification();
+        _emailAddressChanged = true;
       }
 
       return user.updateSync(req.body);
     })
     .then((user) => user.save())
+    .then((doc) => {
+      if (_emailAddressChanged) {
+        return mailer.sendAccountVerificationEmail(
+          doc.emailAddress,
+          doc.emailAddressVerificationToken
+        );
+      }
+    })
     .then(() => {
       authResponse({
         data: {},

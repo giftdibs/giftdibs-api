@@ -9,7 +9,7 @@ const S3 = new aws.S3({
 
 const BUCKET = process.env.AWS_S3_BUCKET;
 
-function deleteObject(key) {
+function remove(key) {
   const params = {
     Bucket: BUCKET,
     Key: key
@@ -27,7 +27,7 @@ function deleteObject(key) {
   });
 }
 
-function putImageObject(file, fileName) {
+function upload(file, fileName) {
   const fileType = file.mimetype.toLowerCase();
 
   // Verify file type.
@@ -72,6 +72,6 @@ function putImageObject(file, fileName) {
 }
 
 module.exports = {
-  deleteObject,
-  putImageObject
+  remove,
+  upload
 };
