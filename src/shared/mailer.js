@@ -20,7 +20,6 @@ function sendMessage(to, subject, html) {
         return;
       }
 
-      console.log('MAILER:', body);
       resolve(body);
     });
   });

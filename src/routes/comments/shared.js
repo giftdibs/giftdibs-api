@@ -6,7 +6,7 @@ function formatCommentResponse(comment) {
   const clone = { ...comment };
 
   clone.id = clone._id;
-  clone.user = clone._user;
+  clone.user = { ...clone._user };
   clone.user.id = clone.user._id;
 
   delete clone._id;

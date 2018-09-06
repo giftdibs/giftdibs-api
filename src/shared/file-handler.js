@@ -44,9 +44,9 @@ function upload(file, fileName) {
   }
 
   return sharp(file.buffer)
-    .resize(400, undefined) // resize width only
+    .resize(600, undefined) // resize width only
     .jpeg({
-      quality: 65
+      quality: 75
     })
     .toBuffer()
     .then((buffer) => {

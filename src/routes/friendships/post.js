@@ -9,10 +9,10 @@ const {
 } = require('./shared');
 
 function createFriendship(req, res, next) {
-  const friendId = req.params.userId;
-  const userId = req.user._id;
+  const friendId = req.body.friendId;
+  const user = req.user;
 
-  Friendship.create(friendId, userId)
+  Friendship.create(friendId, user)
     .then((doc) => {
       authResponse({
         data: { friendshipId: doc._id },

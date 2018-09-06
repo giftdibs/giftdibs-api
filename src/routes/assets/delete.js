@@ -49,9 +49,6 @@ function deleteGiftThumbnail(req, res, next) {
       const imageUrl = gift.imageUrl;
 
       if (!imageUrl) {
-        authResponse({
-          message: 'No thumbnail to delete.'
-        })(req, res, next);
         return;
       }
 

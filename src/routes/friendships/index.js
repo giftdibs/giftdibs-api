@@ -9,10 +9,10 @@ const router = express.Router();
 router.use(authenticateJwt);
 
 router.route('/users/:userId/friendships')
-  .get(getFriendships)
-  .post(createFriendship);
+  .get(getFriendships);
 
-router.route('/friendships/:friendshipId')
+router.route('/friendships')
+  .post(createFriendship)
   .delete(deleteFriendship);
 
 module.exports = {

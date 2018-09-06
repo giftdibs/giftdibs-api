@@ -127,7 +127,6 @@ describe('Dib schema', () => {
       dib,
       [
         'isAnonymous',
-        'isDelivered',
         'notes',
         'pricePaid',
         'quantity'

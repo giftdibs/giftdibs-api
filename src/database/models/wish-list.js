@@ -78,6 +78,10 @@ const wishListSchema = new Schema({
 // TODO: Look for ways to optimize any database populations!
 
 function truncateText(text, length) {
+  if (!text) {
+    return text;
+  }
+
   if (text.length <= length) {
     return text;
   }
@@ -172,7 +176,7 @@ function getDibById(dibId, wishList) {
   let dib;
   wishList.gifts.find((gift) => {
     dib = gift.dibs.id(dibId);
-    return (dib !== undefined);
+    return (dib !== null);
   });
 
   return dib;
@@ -435,6 +439,12 @@ wishListSchema.statics.removeDibById = function (
 
       return confirmDibUserOwnership(wishList, dibId, userId)
         .then((dib) => {
+          if (dib.dateDelivered) {
+            throw new DibValidationError(
+              'You may not remove a dib for a gift that has already been delivered.'
+            );
+          }
+
           dib.remove();
           return wishList.save();
         });
@@ -459,7 +469,13 @@ wishListSchema.statics.updateDibById = function (
 
           if (gift.isReceived) {
             throw new DibValidationError(
-              'You cannot dib a gift that has been marked received.'
+              'You may not dib a gift that has been marked received.'
+            );
+          }
+
+          if (gift.dibs.id(dibId).dateDelivered) {
+            throw new DibValidationError(
+              'You may not modify a dib for a gift that has already been delivered.'
             );
           }
 
@@ -468,6 +484,31 @@ wishListSchema.statics.updateDibById = function (
               dib.updateSync(attributes);
               return wishList.save();
             });
+        });
+    });
+};
+
+wishListSchema.statics.markDibAsDelivered = function (
+  dibId,
+  userId
+) {
+  return this.find({
+    'gifts.dibs._id': dibId
+  })
+    .limit(1)
+    .then((docs) => {
+      const wishList = docs[0];
+
+      return confirmDibUserOwnership(wishList, dibId, userId)
+        .then((dib) => {
+          if (dib.dateDelivered) {
+            throw new DibValidationError(
+              'You have already marked that dib as delivered.'
+            );
+          }
+
+          dib.set('dateDelivered', new Date());
+          return wishList.save();
         });
     });
 };

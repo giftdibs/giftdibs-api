@@ -10,7 +10,9 @@ db.connect();
 const app = express();
 app.set('port', process.env.PORT);
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.use(bodyParser.json({
+  limit: '2mb'
+}));
 
 app.use(cors({
   methods: 'GET,POST,PATCH,DELETE,OPTIONS',

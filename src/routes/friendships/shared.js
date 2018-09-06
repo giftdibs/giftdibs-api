@@ -2,6 +2,15 @@ const {
   FriendshipValidationError
 } = require('../../shared/errors');
 
+function formatFriendshipResponse(friendship) {
+  const clone = { ...friendship };
+
+  clone.id = clone._id;
+  delete clone._id;
+
+  return clone;
+}
+
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
     const error = new FriendshipValidationError();
@@ -14,5 +23,6 @@ function handleError(err, next) {
 }
 
 module.exports = {
+  formatFriendshipResponse,
   handleError
 };

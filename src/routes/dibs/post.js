@@ -23,6 +23,21 @@ function createDib(req, res, next) {
     .catch((err) => handleError(err, next));
 }
 
+function markDibAsDelivered(req, res, next) {
+  const dibId = req.params.dibId;
+  const userId = req.user._id;
+
+  WishList.markDibAsDelivered(dibId, userId)
+    .then(() => {
+      authResponse({
+        data: { },
+        message: 'Dib successfully marked as delivered.'
+      })(req, res, next);
+    })
+    .catch((err) => handleError(err, next));
+}
+
 module.exports = {
-  createDib
+  createDib,
+  markDibAsDelivered
 };

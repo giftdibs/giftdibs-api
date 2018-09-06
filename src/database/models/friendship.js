@@ -12,26 +12,15 @@ const {
 
 const Schema = mongoose.Schema;
 const friendshipSchema = new Schema({
-  // Since user information rarely changes,
-  // let's denormalize the foreign references, to avoid
-  // complex joins later.
-  friend: {
-    id: {
-      type: mongoose.SchemaTypes.ObjectId,
-      ref: 'User',
-      required: [true, 'A friend ID must be provided.']
-    },
-    firstName: String,
-    lastName: String
+  _friend: {
+    type: mongoose.SchemaTypes.ObjectId,
+    ref: 'User',
+    required: [true, 'A friend ID must be provided.']
   },
-  user: {
-    id: {
-      type: mongoose.SchemaTypes.ObjectId,
-      ref: 'User',
-      required: [true, 'A user ID must be provided.']
-    },
-    firstName: String,
-    lastName: String
+  _user: {
+    type: mongoose.SchemaTypes.ObjectId,
+    ref: 'User',
+    required: [true, 'A user ID must be provided.']
   }
 }, {
   collection: 'friendship',
@@ -41,7 +30,9 @@ const friendshipSchema = new Schema({
   }
 });
 
-friendshipSchema.statics.create = function (friendId, userId) {
+friendshipSchema.statics.create = function (friendId, user) {
+  const userId = user._id;
+
   if (userId.toString() === friendId) {
     return Promise.reject(
       new FriendshipValidationError(
@@ -61,8 +52,8 @@ friendshipSchema.statics.create = function (friendId, userId) {
   // TODO: Prevent non-verified accounts from following people?
 
   return this.find({
-    'user.id': userId,
-    'friend.id': friendId
+    '_user': userId,
+    '_friend': friendId
   })
     .limit(1)
     .lean()
@@ -77,28 +68,9 @@ friendshipSchema.statics.create = function (friendId, userId) {
         );
       }
 
-      const { User } = require('./user');
-
-      // Fetch both friend and user data.
-      return Promise.all([
-        User.find({ _id: userId }).limit(1).lean(),
-        User.find({ _id: friendId }).limit(1).lean()
-      ]);
-    })
-    .then((result) => {
-      const user = result[0][0];
-      const friend = result[1][0];
       const friendship = new Friendship({
-        user: {
-          id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName
-        },
-        friend: {
-          id: friend._id,
-          firstName: friend.firstName,
-          lastName: friend.lastName
-        }
+        _user: userId,
+        _friend: friendId
       });
 
       return friendship.save();
@@ -110,11 +82,11 @@ friendshipSchema.statics.create = function (friendId, userId) {
 
       return Notification.create({
         type: 'friendship_new',
-        _user: doc.friend.id,
+        _user: doc._friend,
         follower: {
-          id: doc.user._id,
-          firstName: doc.user.firstName,
-          lastName: doc.user.lastName
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName
         }
       }).then(() => doc);
     });
@@ -129,32 +101,30 @@ friendshipSchema.statics.getFriendshipsByUserId = function (userId) {
     );
   }
 
-  const query = {
-    $or: [
-      {
-        'user.id': userId
-      },
-      {
-        'friend.id': userId
-      }
-    ]
-  };
-
-  return this.find(query).lean();
+  return Promise.all([
+    this.find({ '_user': userId }).populate('_friend', 'firstName lastName avatarUrl').lean(), // following
+    this.find({ '_friend': userId }).populate('_user', 'firstName lastName avatarUrl').lean() // followers
+  ]).then((result) => {
+    return {
+      following: result[0].map((friendship) => friendship._friend),
+      followers: result[1].map((friendship) => friendship._user)
+    };
+  });
 };
 
-friendshipSchema.plugin(MongoDbErrorHandlerPlugin);
-
-friendshipSchema.statics.confirmUserOwnership = function (docId, userId) {
-  if (!docId) {
+friendshipSchema.statics.confirmUserOwnership = function (friendId, userId) {
+  if (!friendId) {
     return Promise.reject(
-      new FriendshipValidationError('Please provide a friendship ID.')
+      new FriendshipValidationError('Please provide a user ID.')
     );
   }
 
   const model = this;
 
-  return model.find({ _id: docId })
+  return model.find({
+    '_friend': friendId,
+    '_user': userId
+  })
     .limit(1)
     .then((docs) => {
       const doc = docs[0];
@@ -165,17 +135,11 @@ friendshipSchema.statics.confirmUserOwnership = function (docId, userId) {
         );
       }
 
-      if (
-        userId.toString() !== doc.user.id.toString()
-      ) {
-        return Promise.reject(
-          new FriendshipPermissionError()
-        );
-      }
-
       return doc;
     });
 };
+
+friendshipSchema.plugin(MongoDbErrorHandlerPlugin);
 
 const Friendship = mongoose.model('Friendship', friendshipSchema);
 

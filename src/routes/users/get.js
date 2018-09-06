@@ -24,8 +24,7 @@ function getSelectFields(req) {
     selectFields = [
       'avatarUrl',
       'firstName',
-      'lastName',
-      'emailAddressVerified'
+      'lastName'
     ].join(' ');
   }
 

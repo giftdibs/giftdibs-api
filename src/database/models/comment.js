@@ -21,7 +21,19 @@ const commentSchema = new Schema({
     maxlength: [
       2000,
       'Comments cannot be longer than 2000 characters.'
-    ]
+    ],
+    validate: {
+      type: 'isEmpty',
+      validator: function (value) {
+        if (!value) {
+          return false;
+        }
+
+        return true;
+      },
+      message: 'Comments cannot be empty.',
+      isAsync: false
+    }
   }
 }, {
   timestamps: {

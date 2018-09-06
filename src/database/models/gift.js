@@ -119,7 +119,7 @@ giftSchema.methods.updateSync = function (values) {
   const instance = this;
   const fields = [
     'budget',
-    'isReceived',
+    'isReceived', // TODO: remove this and make a first class endpoint.
     'name',
     'priority',
     'quantity'
