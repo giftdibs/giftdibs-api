@@ -16,6 +16,7 @@ function getGift(req, res, next) {
   const giftId = req.params.giftId.toString();
   const userId = req.user._id.toString();
 
+  // TODO: Move this to a first-class method in the wish list schema.
   WishList.findAuthorizedByGiftId(giftId, userId)
     .then((wishList) => {
       const gift = wishList.gifts.find((gift) => {
@@ -32,6 +33,29 @@ function getGift(req, res, next) {
     .catch((err) => handleError(err, next));
 }
 
+function getGifts(req, res, next) {
+  const userId = req.user._id.toString();
+
+  WishList.findAuthorized(userId)
+    .then((wishLists) => {
+      let gifts = [];
+
+      wishLists.forEach((wishList) => {
+        const formatted = wishList.gifts.map((gift) => {
+          return formatGiftResponse(gift, wishList, userId);
+        });
+
+        gifts = gifts.concat(formatted);
+      });
+
+      authResponse({
+        data: { gifts }
+      })(req, res, next);
+    })
+    .catch(next);
+}
+
 module.exports = {
-  getGift
+  getGift,
+  getGifts
 };

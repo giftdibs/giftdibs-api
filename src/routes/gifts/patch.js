@@ -11,42 +11,33 @@ const {
 function updateGift(req, res, next) {
   const giftId = req.params.giftId;
   const userId = req.user._id;
-  const wishListId = req.body.wishListId;
+  const attributes = req.body;
 
-  let wishList;
-
-  WishList.confirmUserOwnershipByGiftId(giftId, userId)
-    .then((_wishList) => {
-      wishList = _wishList;
-      const gift = wishList.gifts.id(giftId);
-
-      if (wishListId) {
-        return gift.moveToWishList(wishListId, req.user._id);
-      }
-
-      return { gift };
-    })
-    .then((result) => {
-      result.gift.updateSync(req.body);
-      return wishList.save().then(() => result);
-    })
-    .then((result) => {
-      const data = {
-        giftId: result.gift._id
-      };
-
-      data.wishListIds = result.wishListIds;
-
-      // TODO: Returning IDs is not consistent with other
-      // patch routes.
+  WishList.updateGiftById(giftId, userId, attributes)
+    .then(() => {
       authResponse({
-        data,
+        data: {},
         message: 'Gift successfully updated.'
       })(req, res, next);
     })
     .catch((err) => handleError(err, next));
 }
 
+function markGiftAsReceived(req, res, next) {
+  const giftId = req.params.giftId;
+  const userId = req.user._id;
+
+  WishList.markGiftAsReceived(giftId, userId)
+    .then(() => {
+      authResponse({
+        data: {},
+        message: 'Gift successfully marked as received.'
+      })(req, res, next);
+    })
+    .catch((err) => handleError(err, next));
+}
+
 module.exports = {
+  markGiftAsReceived,
   updateGift
 };

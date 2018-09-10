@@ -15,6 +15,8 @@ const {
 function createGift(req, res, next) {
   const wishListId = req.params.wishListId;
 
+  // TODO: Move this to a first-class method in the wish list schema.
+
   if (!wishListId) {
     next(
       new GiftValidationError(

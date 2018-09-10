@@ -6,9 +6,12 @@ const {
 
 const {
   FriendshipNotFoundError,
-  FriendshipPermissionError,
   FriendshipValidationError
 } = require('../../shared/errors');
+
+const {
+  Notification
+} = require('./notification');
 
 const Schema = mongoose.Schema;
 const friendshipSchema = new Schema({
@@ -76,10 +79,6 @@ friendshipSchema.statics.create = function (friendId, user) {
       return friendship.save();
     })
     .then((doc) => {
-      const {
-        Notification
-      } = require('./notification');
-
       return Notification.create({
         type: 'friendship_new',
         _user: doc._friend,

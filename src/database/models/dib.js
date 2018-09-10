@@ -13,7 +13,10 @@ const dibSchema = new Schema({
   _user: {
     type: mongoose.SchemaTypes.ObjectId,
     ref: 'User',
-    required: [true, 'A user ID must be provided.']
+    required: [
+      true,
+      'A user ID must be provided.'
+    ]
   },
   dateDelivered: Date,
   isAnonymous: {
@@ -24,8 +27,8 @@ const dibSchema = new Schema({
     type: String,
     trim: true,
     maxlength: [
-      1000,
-      'Notes cannot be longer than 1000 characters.'
+      2000,
+      'Notes cannot be longer than 2000 characters.'
     ]
   },
   pricePaid: {

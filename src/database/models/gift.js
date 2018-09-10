@@ -29,6 +29,7 @@ const giftSchema = new Schema({
   comments: [
     commentSchema
   ],
+  dateReceived: Date,
   dibs: [
     dibSchema
   ],
@@ -36,15 +37,19 @@ const giftSchema = new Schema({
     externalUrlSchema
   ],
   imageUrl: String,
-  isReceived: {
-    type: Boolean,
-    default: false
-  },
   name: {
     type: String,
     required: [true, 'Please provide a gift name.'],
     trim: true,
     maxlength: [250, 'The gift\'s name cannot be longer than 250 characters.']
+  },
+  notes: {
+    type: String,
+    trim: true,
+    maxlength: [
+      2000,
+      'Notes cannot be longer than 2000 characters.'
+    ]
   },
   quantity: {
     type: Number,
@@ -119,8 +124,8 @@ giftSchema.methods.updateSync = function (values) {
   const instance = this;
   const fields = [
     'budget',
-    'isReceived', // TODO: remove this and make a first class endpoint.
     'name',
+    'notes',
     'priority',
     'quantity'
   ];

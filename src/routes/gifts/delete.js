@@ -12,6 +12,7 @@ function deleteGift(req, res, next) {
   const giftId = req.params.giftId;
   const userId = req.user._id;
 
+  // TODO: Move this to a first-class method in the wish list schema.
   WishList.confirmUserOwnershipByGiftId(giftId, userId)
     .then((wishList) => {
       wishList.gifts.id(giftId).remove();

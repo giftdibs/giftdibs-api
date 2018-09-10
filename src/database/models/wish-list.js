@@ -8,6 +8,7 @@ const {
   DibValidationError,
   GiftNotFoundError,
   GiftPermissionError,
+  GiftValidationError,
   WishListNotFoundError,
   WishListPermissionError,
   WishListValidationError
@@ -28,6 +29,10 @@ const {
 const {
   giftSchema
 } = require('./gift');
+
+const {
+  Notification
+} = require('./notification');
 
 const populateUserFields = 'firstName lastName avatarUrl';
 
@@ -189,7 +194,7 @@ function confirmDibUserOwnership(wishList, dibId, userId) {
 
   const dib = getDibById(dibId, wishList);
 
-  if (userId.toString() !== dib._user._id.toString()) {
+  if (userId.toString() !== dib._user.toString()) {
     return Promise.reject(new DibPermissionError());
   }
 
@@ -220,7 +225,11 @@ function confirmCommentUserOwnership(wishList, commentId, userId) {
   return Promise.resolve(comment);
 }
 
-function validateDibQuantity(gift, quantity = 1, dibId) {
+function validateDibQuantity(
+  gift,
+  quantity = 1,
+  dibId
+) {
   let totalDibs = quantity;
 
   return new Promise((resolve, reject) => {
@@ -294,7 +303,12 @@ wishListSchema.statics.findAuthorizedById = function (
     this,
     { _id: wishListId },
     userId
-  );
+  )
+    .then((wishList) => {
+      const _sortBy = require('lodash.orderby');
+      wishList.gifts = _sortBy(wishList.gifts, ['dateUpdated'], ['desc']);
+      return wishList;
+    });
 };
 
 wishListSchema.statics.findAuthorizedByGiftId = function (
@@ -379,7 +393,77 @@ wishListSchema.statics.confirmUserOwnershipByGiftId = function (
     });
 };
 
-wishListSchema.statics.createDib = function (giftId, attributes, userId) {
+wishListSchema.statics.updateGiftById = function (
+  giftId,
+  userId,
+  attributes
+) {
+  return this.confirmUserOwnershipByGiftId(giftId, userId)
+    .then((wishList) => {
+      const gift = wishList.gifts.id(giftId);
+      const wishListId = attributes.wishListId;
+
+      if (gift.dateReceived) {
+        throw new GiftValidationError(
+          'You may not edit a gift that has been received.'
+        );
+      }
+
+      if (wishListId) {
+        return gift.moveToWishList(wishListId, userId);
+      }
+
+      gift.updateSync(attributes);
+
+      return wishList.save();
+    });
+};
+
+wishListSchema.statics.markGiftAsReceived = function (
+  giftId,
+  userId
+) {
+  return this.confirmUserOwnershipByGiftId(giftId, userId)
+    .then((wishList) => {
+      const gift = wishList.gifts.id(giftId);
+
+      if (gift.dateReceived) {
+        throw new Error(
+          'You already marked this gift as received.'
+        );
+      }
+
+      gift.set('dateReceived', new Date());
+
+      return wishList.save().then(() => {
+        let promises = [];
+
+        // Send notification and email to dibbers
+        // of this gift to mark dib as delivered.
+        gift.dibs.forEach((dib) => {
+          const promise = Notification.create({
+            type: 'gift_received',
+            _user: dib._user,
+            gift: {
+              id: gift.id,
+              name: gift.name
+            }
+          });
+          promises.push(promise);
+        });
+
+        // TODO: Need to also send an email, here.
+
+        return Promise.all(promises);
+      });
+    });
+};
+
+wishListSchema.statics.createDib = function (
+  giftId,
+  attributes,
+  userId
+) {
   const raw = true;
 
   return this.findAuthorizedByGiftId(giftId, userId, raw)
@@ -391,7 +475,7 @@ wishListSchema.statics.createDib = function (giftId, attributes, userId) {
       }
 
       const gift = wishList.gifts.id(giftId);
-      if (gift.isReceived) {
+      if (gift.dateReceived) {
         throw new DibValidationError(
           'You cannot dib a gift that has been marked received.'
         );
@@ -467,9 +551,9 @@ wishListSchema.statics.updateDibById = function (
             return (gift.dibs.id(dibId));
           });
 
-          if (gift.isReceived) {
+          if (gift.dateReceived) {
             throw new DibValidationError(
-              'You may not dib a gift that has been marked received.'
+              'You may not modify a dib for a gift that has been marked received.'
             );
           }
 
@@ -492,9 +576,7 @@ wishListSchema.statics.markDibAsDelivered = function (
   dibId,
   userId
 ) {
-  return this.find({
-    'gifts.dibs._id': dibId
-  })
+  return this.find({ 'gifts.dibs._id': dibId })
     .limit(1)
     .then((docs) => {
       const wishList = docs[0];
@@ -508,8 +590,60 @@ wishListSchema.statics.markDibAsDelivered = function (
           }
 
           dib.set('dateDelivered', new Date());
-          return wishList.save();
-        });
+
+          const gift = wishList.gifts.find((gift) => {
+            return (gift.dibs.id(dibId) !== null);
+          });
+
+          let sendNotification = false;
+
+          // If gift quantity is greater than 1 and all other
+          // dibs are delivered, send notification and email to gift
+          // owner to mark gift as received.
+          if (gift.quantity === 1) {
+            sendNotification = true;
+          } else {
+            let numDibbed = 0;
+            gift.dibs.forEach((dib) => {
+              numDibbed += dib.quantity;
+            });
+
+            if (numDibbed >= gift.quantity) {
+              sendNotification = true;
+            }
+          }
+
+          if (sendNotification) {
+            const dibs = gift.dibs.map((dib) => {
+              const result = {
+                isAnonymous: !!dib.isAnonymous
+              };
+
+              if (dib.isAnonymous) {
+                result.firstName = '';
+                result.lastName = '';
+                result.id = '';
+              }
+
+              return result;
+            });
+
+            // TODO: Need to also send an email, here.
+
+            return Notification.create({
+              type: 'gift_delivered',
+              _user: wishList._user,
+              gift: {
+                id: gift.id,
+                name: gift.name,
+                dibs
+              }
+            });
+          }
+
+          return Promise.resolve();
+        })
+        .then(() => wishList.save());
     });
 };
 
@@ -530,7 +664,11 @@ wishListSchema.statics.removeCommentById = function (
     });
 };
 
-wishListSchema.statics.createComment = function (giftId, attributes, user) {
+wishListSchema.statics.createComment = function (
+  giftId,
+  attributes,
+  user
+) {
   const {
     Notification
   } = require('./notification');
