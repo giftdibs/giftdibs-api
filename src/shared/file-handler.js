@@ -34,10 +34,11 @@ function upload(file, fileName) {
   if (
     fileType !== 'image/jpeg' &&
     fileType !== 'image/png' &&
-    fileType !== 'image/gif'
+    fileType !== 'image/gif' &&
+    fileType !== 'image/webp'
   ) {
     const err = new Error(
-      'Please provide an image of type JPG, PNG, or GIF.'
+      'Please provide an image of type JPG, PNG, GIF, or WebP.'
     );
     err.status = 400;
     return Promise.reject(err);
