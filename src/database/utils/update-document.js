@@ -1,21 +1,25 @@
-const updateSubDocuments = (doc, values) => {
+const updateSubDocuments = (doc, fields, values) => {
   const schemaFields = Object.keys(doc.toObject());
 
   schemaFields.forEach((key) => {
-    const field = doc[key];
+    const subdocs = doc[key];
     const formData = values[key];
 
-    if (!Array.isArray(formData) || !Array.isArray(field)) {
+    if (fields.indexOf(key) === -1) {
       return;
     }
 
-    if (typeof field.id !== 'function') {
+    if (!Array.isArray(formData) || !Array.isArray(subdocs)) {
+      return;
+    }
+
+    if (typeof subdocs.id !== 'function') {
       return;
     }
 
     // Remove subdocuments that are not included with the form data.
     const deleteIds = [];
-    field.forEach((subdoc) => {
+    subdocs.forEach((subdoc) => {
       const found = formData.find((data) => {
         return (subdoc._id.toString() === data._id);
       });
@@ -26,7 +30,7 @@ const updateSubDocuments = (doc, values) => {
     });
 
     // Need to delete each document individually so all middleware is run.
-    deleteIds.forEach((deleteId) => field.id(deleteId).remove());
+    deleteIds.forEach((deleteId) => subdocs.id(deleteId).remove());
 
     // Add a new subdocument if no _id provided.
     formData.forEach((data) => {
@@ -34,7 +38,7 @@ const updateSubDocuments = (doc, values) => {
         return;
       }
 
-      field.push(data);
+      subdocs.push(data);
     });
 
     // Update existing subdocuments.
@@ -43,7 +47,7 @@ const updateSubDocuments = (doc, values) => {
         return;
       }
 
-      const subdoc = field.id(data._id);
+      const subdoc = subdocs.id(data._id);
 
       if (subdoc && typeof subdoc.updateSync === 'function') {
         subdoc.updateSync(data);
@@ -80,7 +84,7 @@ function updateDocument(doc, fields, values) {
     doc.set(key, changes[key]);
   }
 
-  updateSubDocuments(doc, values);
+  updateSubDocuments(doc, fields, values);
 }
 
 module.exports = { updateDocument };

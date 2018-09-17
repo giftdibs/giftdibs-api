@@ -124,6 +124,7 @@ giftSchema.methods.updateSync = function (values) {
   const instance = this;
   const fields = [
     'budget',
+    'externalUrls',
     'name',
     'notes',
     'priority',
@@ -136,6 +137,7 @@ giftSchema.methods.updateSync = function (values) {
 
   if (values.name) {
     // Replace newline characters.
+    // TODO: Move this to a pre validate hook?
     values.name = values.name.replace(/\r?\n/g, ' ');
   }
 
