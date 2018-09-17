@@ -10,8 +10,7 @@ function ConfirmUserOwnershipPlugin(schema, options) {
 
     const model = this;
 
-    return model
-      .find({ _id: docId })
+    return model.find({ _id: docId })
       .limit(1)
       .then((docs) => {
         const doc = docs[0];
@@ -20,7 +19,10 @@ function ConfirmUserOwnershipPlugin(schema, options) {
           return Promise.reject(options.errors.notFound);
         }
 
-        if (userId.toString() !== doc[options.userIdField].toString()) {
+        if (
+          doc[options.userIdField] &&
+          userId.toString() !== doc[options.userIdField].toString()
+        ) {
           return Promise.reject(options.errors.permission);
         }
 

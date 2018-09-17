@@ -1,7 +1,6 @@
 const mock = require('mock-require');
 
 const {
-  MockGift,
   MockWishList,
   MockRequest,
   MockResponse,
@@ -13,7 +12,6 @@ describe('Gifts router', () => {
   let _res;
 
   beforeEach(() => {
-    MockGift.reset();
     MockWishList.reset();
 
     _req = new MockRequest({
@@ -22,6 +20,7 @@ describe('Gifts router', () => {
         giftId: 'giftid'
       }
     });
+
     _res = new MockResponse();
 
     mock('../../middleware/auth-response', function authResponse(data) {
@@ -34,7 +33,6 @@ describe('Gifts router', () => {
     mock('../../database/models/wish-list', {
       WishList: MockWishList
     });
-    mock('../../database/models/gift', { Gift: MockGift });
   });
 
   afterEach(() => {
@@ -47,108 +45,49 @@ describe('Gifts router', () => {
   });
 
   describe('GET /gifts', () => {
-    it('should get an unsorted array of all gifts', (done) => {
-      const { getGifts } = mock.reRequire('./get');
+    it('should get a gift by id', (done) => {
+      const { getGift } = mock.reRequire('./get');
 
-      MockGift.overrides.find.returnWith = () => {
-        return Promise.resolve([
-          new MockGift({
-            _wishList: 'wishlistid',
-            name: 'foo',
-            orderInWishList: 1
-          }),
-          new MockGift({
-            _wishList: 'wishlistid',
-            name: 'bar',
-            orderInWishList: 0
+      const spy = spyOn(MockWishList, 'findAuthorizedByGiftId').and.returnValue(
+        Promise.resolve(
+          new MockWishList({
+            name: 'Dave',
+            gifts: [
+              {
+                _id: 'giftid',
+                name: 'foo'
+              }
+            ]
           })
-        ]);
-      };
+        )
+      );
 
-      getGifts(_req, _res, () => { });
+      _req.params.giftId = 'giftid';
+      _req.user._id = 'userid';
+
+      getGift(_req, _res, () => {});
 
       tick(() => {
-        expect(Array.isArray(_res.json.output.data.gifts)).toEqual(true);
-        expect(_res.json.output.data.gifts[0].name).toEqual('foo');
-        done();
-      });
-    });
-
-    it('should get an array of all gifts in a wish list, ordered', (done) => {
-      const { getGifts } = mock.reRequire('./get');
-
-      MockGift.overrides.find.returnWith = () => {
-        return Promise.resolve([
-          new MockGift({
-            _wishList: 'wishlistid',
-            name: 'd',
-            orderInWishList: 2
-          }),
-          new MockGift({
-            _wishList: 'wishlistid',
-            name: 'a',
-            orderInWishList: 0
-          }),
-          new MockGift({
-            _wishList: 'wishlistid',
-            name: 'e'
-          }),
-          new MockGift({
-            _wishList: 'wishlistid',
-            name: 'c',
-            orderInWishList: 1
-          }),
-          new MockGift({
-            _wishList: 'wishlistid',
-            name: 'b',
-            orderInWishList: 0
-          }),
-          new MockGift({
-            _wishList: 'wishlistid',
-            name: 'f'
-          })
-        ]);
-      };
-
-      _req.query.wishListId = 'wishlistid';
-
-      getGifts(_req, _res, () => { });
-
-      tick(() => {
-        const gifts = _res.json.output.data.gifts;
-        expect(gifts[0].name).toEqual('a');
-        expect(gifts[1].name).toEqual('b');
-        expect(gifts[2].name).toEqual('c');
-        expect(gifts[3].name).toEqual('d');
-        expect(gifts[4].name).toEqual('e');
-        expect(gifts[5].name).toEqual('f');
-        done();
-      });
-    });
-
-    it('should handle wish list not found', (done) => {
-      const { getGifts } = mock.reRequire('./get');
-
-      MockWishList.overrides.find.returnWith = () => {
-        return Promise.resolve([]);
-      };
-
-      _req.query.wishListId = 'wishlistid';
-
-      getGifts(_req, _res, (err) => {
-        expect(err.name).toEqual('WishListNotFoundError');
+        expect(spy).toHaveBeenCalledWith('giftid', 'userid');
+        expect(_res.json.output.data.gift.name).toEqual('foo');
+        expect(_res.json.output.data.gift.id).toEqual('giftid');
         done();
       });
     });
 
     it('should handle errors', (done) => {
-      const { getGifts } = mock.reRequire('./get');
+      const { getGift } = mock.reRequire('./get');
 
-      MockGift.overrides.find.returnWith = () => {
-        return Promise.reject(new Error('Some error'));
-      };
+      spyOn(MockWishList, 'findAuthorizedByGiftId').and.returnValue(
+        Promise.reject(
+          new Error('Some error')
+        )
+      );
 
-      getGifts(_req, _res, (err) => {
+      _req.params.giftId = 'giftid';
+      _req.user._id = 'userid';
+
+      getGift(_req, _res, (err) => {
         expect(err.message).toEqual('Some error');
         done();
       });
@@ -157,29 +96,57 @@ describe('Gifts router', () => {
 
   describe('POST /gifts', () => {
     it('should create a gift', (done) => {
-      MockGift.overrides.save.returnWith = () => Promise.resolve({
-        _id: 'newgiftid'
+      const mockWishList = new MockWishList({
+        _id: 'wishlistid',
+        gifts: []
       });
+
+      const createSpy = spyOn(mockWishList.gifts, 'create').and.callThrough();
+      const saveSpy = spyOn(mockWishList, 'save').and.callThrough();
+      const ownershipSpy = spyOn(MockWishList, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(mockWishList)
+      );
 
       const { createGift } = mock.reRequire('./post');
 
+      _req.body.wishListId = 'wishlistid';
       _req.body.name = 'New gift';
+      _req.user._id = 'userid';
 
-      createGift(_req, _res, () => { });
+      createGift(_req, _res, () => {});
 
       tick(() => {
-        expect(_res.json.output.data.giftId).toEqual('newgiftid');
-        expect(MockGift.lastTouched.name).toEqual('New gift');
+        const newGift = createSpy.calls.first().returnValue;
+        expect(newGift.name).toEqual('New gift');
+        expect(newGift._id).toEqual(_res.json.output.data.giftId);
+        expect(ownershipSpy).toHaveBeenCalledWith('wishlistid', 'userid');
+        expect(saveSpy).toHaveBeenCalledWith();
+        done();
+      });
+    });
+
+    it('should fail if wish list ID not provided', (done) => {
+      const { createGift } = mock.reRequire('./post');
+
+      _req.body.wishListId = undefined;
+
+      createGift(_req, _res, (err) => {
+        expect(err.name).toEqual('GiftValidationError');
+        expect(err.message).toEqual('Please provide a wish list ID.');
         done();
       });
     });
 
     it('should handle errors', (done) => {
-      MockGift.overrides.save.returnWith = () => {
-        return Promise.reject(new Error('Some error'));
-      };
+      spyOn(MockWishList, 'confirmUserOwnership').and.returnValue(
+        Promise.reject(
+          new Error('Some error')
+        )
+      );
 
       const { createGift } = mock.reRequire('./post');
+
+      _req.body.wishListId = 'wishlistid';
 
       createGift(_req, _res, (err) => {
         expect(err.message).toEqual('Some error');
@@ -188,13 +155,16 @@ describe('Gifts router', () => {
     });
 
     it('should handle validation errors', (done) => {
-      MockGift.overrides.save.returnWith = () => {
-        const err = new Error();
-        err.name = 'ValidationError';
-        return Promise.reject(err);
-      };
+      const error = new Error('Some error');
+      error.name = 'ValidationError';
+
+      spyOn(MockWishList, 'confirmUserOwnership').and.returnValue(
+        Promise.reject(error)
+      );
 
       const { createGift } = mock.reRequire('./post');
+
+      _req.body.wishListId = 'wishlistid';
 
       createGift(_req, _res, (err) => {
         expect(err.name).toEqual('GiftValidationError');
@@ -205,28 +175,38 @@ describe('Gifts router', () => {
 
   describe('DELETE /gifts/:giftId', () => {
     it('should delete a gift', (done) => {
-      const gift = new MockGift({});
-      const spy = spyOn(gift, 'remove');
+      const mockWishList = new MockWishList({
+        _id: 'wishlistid',
+        gifts: [
+          {
+            _id: 'giftid'
+          }
+        ]
+      });
 
-      spyOn(MockGift, 'confirmUserOwnership').and.returnValue(
-        Promise.resolve(gift)
+      const ownershipSpy = spyOn(MockWishList, 'confirmUserOwnershipByGiftId').and.returnValue(
+        Promise.resolve(mockWishList)
       );
 
+      const removeSpy = spyOn(mockWishList.gifts[0], 'remove').and.callThrough();
+
       _req.params.giftId = 'giftid';
+      _req.user._id = 'userid';
 
       const { deleteGift } = mock.reRequire('./delete');
 
-      deleteGift(_req, _res, () => {});
+      deleteGift(_req, _res, () => { });
 
       tick(() => {
-        expect(spy).toHaveBeenCalledWith();
+        expect(ownershipSpy).toHaveBeenCalledWith('giftid', 'userid');
+        expect(removeSpy).toHaveBeenCalledWith();
         expect(_res.json.output.message).toEqual('Gift successfully deleted.');
         done();
       });
     });
 
     it('should handle errors', (done) => {
-      spyOn(MockGift, 'confirmUserOwnership').and.returnValue(
+      spyOn(MockWishList, 'confirmUserOwnershipByGiftId').and.returnValue(
         Promise.reject(new Error('Some error'))
       );
 
@@ -241,40 +221,43 @@ describe('Gifts router', () => {
 
   describe('PATCH /gifts/:giftId', () => {
     it('should update a gift', (done) => {
-      const gift = new MockGift({
-        name: 'Old name',
-        _id: 'giftid'
+      const mockWishList = new MockWishList({
+        _id: 'wishlistid',
+        gifts: [
+          {
+            _id: 'giftid'
+          }
+        ]
       });
 
-      const updateSpy = spyOn(gift, 'updateSync');
-      const saveSpy = spyOn(gift, 'save');
-
-      spyOn(MockGift, 'confirmUserOwnership').and.returnValue(
-        Promise.resolve(gift)
+      const ownershipSpy = spyOn(MockWishList, 'confirmUserOwnershipByGiftId').and.returnValue(
+        Promise.resolve(mockWishList)
       );
 
-      spyOn(MockGift, 'find').and.returnValue({
-        limit: () => {
-          return Promise.resolve([gift]);
-        }
-      });
+      const updateSpy = spyOn(mockWishList.gifts[0], 'updateSync').and.callThrough();
+      const saveSpy = spyOn(mockWishList, 'save').and.callThrough();
 
       _req.params.giftId = 'giftid';
       _req.body.name = 'Updated name';
+      _req.user._id = 'userid';
 
       const { updateGift } = mock.reRequire('./patch');
 
       updateGift(_req, _res, () => {});
 
       tick(() => {
+        expect(ownershipSpy).toHaveBeenCalledWith('giftid', 'userid');
         expect(updateSpy).toHaveBeenCalledWith(_req.body);
+        expect(_res.json.output.data.giftId).toEqual('giftid');
+        expect(_res.json.output.data.wishListds).toBeUndefined();
+        expect(_res.json.output.message).toEqual('Gift successfully updated.');
         expect(saveSpy).toHaveBeenCalledWith();
         done();
       });
     });
 
     it('should handle errors', (done) => {
-      spyOn(MockGift, 'confirmUserOwnership').and.returnValue(
+      spyOn(MockWishList, 'confirmUserOwnershipByGiftId').and.returnValue(
         Promise.reject(new Error('Some error'))
       );
 

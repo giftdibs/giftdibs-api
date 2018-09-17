@@ -27,7 +27,9 @@ describe('Database service', () => {
       }
     });
     const db = mock.reRequire('./index');
-    db.connect().then(() => done());
+    db.connect()
+      .then(() => done())
+      .catch(done.fail);
   });
 
   it('should log a message if the database successfully connects', (done) => {
@@ -37,10 +39,12 @@ describe('Database service', () => {
       connect: () => Promise.resolve()
     });
     const db = mock.reRequire('./index');
-    db.connect().then(() => {
-      expect(logger.info).toHaveBeenCalledWith('Database connected at uri');
-      done();
-    });
+    db.connect()
+      .then(() => {
+        expect(logger.info).toHaveBeenCalledWith('Database connected at uri');
+        done();
+      })
+      .catch(done.fail);
   });
 
   it('should log an error if the database fails to connect', (done) => {
@@ -49,10 +53,12 @@ describe('Database service', () => {
       connect: () => Promise.reject(new Error('Invalid.'))
     });
     const db = mock.reRequire('./index');
-    db.connect().then(() => {
-      expect(logger.error)
-        .toHaveBeenCalledWith('Database connection error: Invalid.');
-      done();
-    });
+    db.connect()
+      .then(() => {
+        expect(logger.error)
+          .toHaveBeenCalledWith('Database connection error: Invalid.');
+        done();
+      })
+      .catch(done.fail);
   });
 });

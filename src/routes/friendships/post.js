@@ -1,14 +1,18 @@
 const authResponse = require('../../middleware/auth-response');
 
 const {
-  handleError,
-  validateFriendRequest
+  Friendship
+} = require('../../database/models/friendship');
+
+const {
+  handleError
 } = require('./shared');
 
 function createFriendship(req, res, next) {
-  const friendId = req.body.attributes.friendId;
-  validateFriendRequest(friendId, req.user._id)
-    .then((friendship) => friendship.save())
+  const friendId = req.body.friendId;
+  const user = req.user;
+
+  Friendship.create(friendId, user)
     .then((doc) => {
       authResponse({
         data: { friendshipId: doc._id },

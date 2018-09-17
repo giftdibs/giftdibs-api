@@ -1,20 +1,19 @@
 const authResponse = require('../../middleware/auth-response');
 
 const {
-  handleError,
-  validateDibQuantity
+  handleError
 } = require('./shared');
 
-const { Dib } = require('../../database/models/dib');
+const {
+  WishList
+} = require('../../database/models/wish-list');
 
 function updateDib(req, res, next) {
-  Dib
-    .confirmUserOwnership(req.params.dibId, req.user._id)
-    .then((dib) => validateDibQuantity(req).then(() => dib))
-    .then((dib) => {
-      dib.updateSync(req.body);
-      return dib.save();
-    })
+  const dibId = req.params.dibId;
+  const userId = req.user._id;
+  const attributes = req.body;
+
+  WishList.updateDibById(dibId, userId, attributes)
     .then(() => {
       authResponse({
         data: { },

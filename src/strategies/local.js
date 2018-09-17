@@ -6,6 +6,11 @@ const strategyConfig = {
 };
 
 const verify = (emailAddress, password, done) => {
+  const message = [
+    'The email address and password you entered',
+    'did not match an account in our records.'
+  ].join(' ');
+
   User
     .find({ emailAddress })
     .limit(1)
@@ -13,27 +18,18 @@ const verify = (emailAddress, password, done) => {
       const user = results[0];
 
       if (!user) {
-        done(null, false, {
-          message: 'A user with that email address was not found.'
-        });
+        done(null, false, { message });
         return;
       }
 
-      user
-        .confirmPassword(password)
+      user.confirmPassword(password)
         .then(() => {
           user.dateLastLoggedIn = new Date();
-          user
-            .save()
+          return user.save()
             .then(() => done(null, user));
         })
         .catch(() => {
-          done(null, false, {
-            message: [
-              'The email address and password you entered',
-              'did not match an account in our records.'
-            ].join(' ')
-          })
+          done(null, false, { message });
         });
     })
     .catch((err) => done(err));

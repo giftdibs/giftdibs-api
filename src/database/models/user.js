@@ -32,6 +32,7 @@ const hasDuplicateChars = (str) => {
 
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
+  avatarUrl: String,
   firstName: {
     type: String,
     required: [true, 'Please provide a first name.'],
@@ -116,13 +117,14 @@ const userSchema = new Schema({
 });
 
 userSchema.methods.confirmPassword = function (password) {
-  const error = new Error('That password did not match what we have on record.');
+  const error = new Error(
+    'That password did not match what we have on record.'
+  );
   error.status = 400;
   error.code = 101;
 
   return new Promise((resolve, reject) => {
-    bcrypt
-      .compare(password, this.password)
+    bcrypt.compare(password, this.password)
       .then((valid) => {
         if (valid) {
           resolve(this);
@@ -163,11 +165,11 @@ userSchema.methods.setPassword = function (password) {
       `Your password must be between ${PASSWORD_MIN_LENGTH}`,
       `and ${PASSWORD_MAX_LENGTH} characters long.`
     ].join(' ');
+
     return Promise.reject(error);
   }
 
-  return bcrypt
-    .hash(password, saltRounds)
+  return bcrypt.hash(password, saltRounds)
     .then((hash) => {
       this.password = hash;
       return this;
@@ -177,11 +179,6 @@ userSchema.methods.setPassword = function (password) {
 userSchema.methods.setResetPasswordToken = function () {
   this.resetPasswordToken = randomstring.generate();
   this.resetPasswordExpires = Date.now() + 3600000; // 1 hour
-  // TODO: Remove this after implementing email service.
-  console.log([
-    'Reset password here:',
-    `http://localhost:4200/account/reset-password/${this.resetPasswordToken}`
-  ].join(' '));
 };
 
 userSchema.methods.unsetResetPasswordToken = function () {
@@ -192,11 +189,6 @@ userSchema.methods.unsetResetPasswordToken = function () {
 userSchema.methods.resetEmailAddressVerification = function () {
   this.emailAddressVerified = false;
   this.emailAddressVerificationToken = randomstring.generate();
-  // TODO: Send email with token.
-  console.log([
-    'Verify email here:',
-    `http://localhost:4200/account/verify/${this.emailAddressVerificationToken}`
-  ].join(' '));
 };
 
 userSchema.methods.verifyEmailAddress = function (token) {
@@ -225,24 +217,16 @@ userSchema.methods.updateSync = function (values) {
 function removeReferencedDocuments(user, next) {
   const { WishList } = require('./wish-list');
   const { Friendship } = require('./friendship');
-  const { Dib } = require('./dib');
 
   const userId = user._id;
 
-  const removeDocs = (docs) => {
-    docs.forEach((doc) => doc.remove());
-  };
-
-  Promise.all([
-    WishList.find({ _user: userId }).then(removeDocs),
-    Dib.find({ _user: userId }).then(removeDocs),
-    Friendship.find({
+  WishList.remove({ _user: userId })
+    .then(() => Friendship.remove({
       $or: [
         { _user: userId },
         { _friend: userId }
       ]
-    }).then(removeDocs)
-  ])
+    }))
     .then(() => next())
     .catch(next);
 }

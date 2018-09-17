@@ -1,16 +1,30 @@
 const authResponse = require('../../middleware/auth-response');
-const { Gift } = require('../../database/models/gift');
+
+const {
+  WishList
+} = require('../../database/models/wish-list');
+
+const {
+  handleError
+} = require('./shared');
 
 function deleteGift(req, res, next) {
-  Gift
-    .confirmUserOwnership(req.params.giftId, req.user._id)
-    .then((gift) => gift.remove())
+  const giftId = req.params.giftId;
+  const userId = req.user._id;
+
+  // TODO: Move this to a first-class method in the wish list schema.
+  WishList.confirmUserOwnershipByGiftId(giftId, userId)
+    .then((wishList) => {
+      wishList.gifts.id(giftId).remove();
+      return wishList.save();
+    })
     .then(() => {
       authResponse({
+        data: { },
         message: 'Gift successfully deleted.'
       })(req, res, next);
     })
-    .catch(next);
+    .catch((err) => handleError(err, next));
 }
 
 module.exports = {

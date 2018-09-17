@@ -78,24 +78,8 @@ describe('ExternalUrl schema', () => {
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       externalUrl,
-      [ 'url', 'price', 'dateScraped' ],
+      [ 'url', 'price' ],
       formData
     );
-  });
-
-  it('should unset dateScraped if url is different', () => {
-    const externalUrl = new ExternalUrl(_externalUrlDefinition);
-    const formData = {
-      url: 'new'
-    };
-
-    externalUrl.updateSync(formData);
-
-    expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
-      externalUrl,
-      [ 'url', 'price', 'dateScraped' ],
-      formData
-    );
-    expect(formData.dateScraped).toEqual(null);
   });
 });

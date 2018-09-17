@@ -1,10 +1,30 @@
 const {
-  DibValidationError,
-  GiftNotFoundError
+  DibValidationError
 } = require('../../shared/errors');
 
-const { Gift } = require('../../database/models/gift');
-const { Dib } = require('../../database/models/dib');
+function formatDibResponse(dib, userId) {
+  const clone = { ...dib };
+  const dibId = clone._user._id || clone._user;
+
+  const isDibOwner = (
+    dibId.toString() === userId.toString()
+  );
+
+  if (clone.isAnonymous && !isDibOwner) {
+    clone.user = {};
+  } else {
+    clone.user = { ...clone._user };
+    clone.user.id = clone.user._id;
+  }
+
+  clone.id = clone._id;
+
+  delete clone._user;
+  delete clone._id;
+  delete clone.user._id;
+
+  return clone;
+}
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
@@ -17,53 +37,7 @@ function handleError(err, next) {
   next(err);
 }
 
-function validateDibQuantity(req) {
-  if (req.body.quantity === undefined) {
-    req.body.quantity = 1;
-  }
-
-  const giftId = req.body._gift;
-
-  return Promise.all([
-    Gift.find({ _id: giftId }).limit(1).lean(),
-    Dib.find({ _gift: giftId }).lean()
-  ])
-    .then((results) => {
-      const gift = results[0][0];
-      const dibs = results[1];
-
-      let totalDibs = req.body.quantity;
-
-      if (!gift) {
-        return Promise.reject(new GiftNotFoundError());
-      }
-
-      dibs.forEach((dib) => {
-        // Don't count the quantity of a dib that's being updated.
-        if (req.params.dibId === dib._id.toString()) {
-          return;
-        }
-
-        totalDibs += dib.quantity;
-      });
-
-      if (totalDibs > gift.quantity) {
-        const err = new DibValidationError();
-
-        err.errors = [{
-          message: [
-            'Dib quantity is more than are available.',
-            'Please choose a smaller amount.'
-          ].join(' '),
-          field: 'quantity'
-        }];
-
-        return Promise.reject(err);
-      }
-    });
-}
-
 module.exports = {
-  handleError,
-  validateDibQuantity
+  formatDibResponse,
+  handleError
 };

@@ -1,34 +1,23 @@
 const mongoose = require('mongoose');
 
-const { externalUrlSchema } = require('./external-url');
-const { updateDocument } = require('../utils/update-document');
+const {
+  updateDocument
+} = require('../utils/update-document');
 
 const {
-  GiftNotFoundError,
-  GiftPermissionError,
-  GiftValidationError
-} = require('../../shared/errors');
+  externalUrlSchema
+} = require('./external-url');
 
 const {
-  MongoDbErrorHandlerPlugin
-} = require('../plugins/mongodb-error-handler');
+  commentSchema
+} = require('./comment');
 
 const {
-  ConfirmUserOwnershipPlugin
-} = require('../plugins/confirm-user-ownership');
+  dibSchema
+} = require('./dib');
 
 const Schema = mongoose.Schema;
 const giftSchema = new Schema({
-  _user: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'User',
-    required: [true, 'A user ID must be provided.']
-  },
-  _wishList: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'WishList',
-    required: [true, 'A wish list ID must be provided.']
-  },
   budget: {
     type: Number,
     min: [0, 'The gift\'s budget must greater than zero.'],
@@ -37,16 +26,30 @@ const giftSchema = new Schema({
       'The gift\'s budget must be less than 1,000,000,000,000.'
     ]
   },
-  externalUrls: [externalUrlSchema],
-  isReceived: {
-    type: Boolean,
-    default: false
-  },
+  comments: [
+    commentSchema
+  ],
+  dateReceived: Date,
+  dibs: [
+    dibSchema
+  ],
+  externalUrls: [
+    externalUrlSchema
+  ],
+  imageUrl: String,
   name: {
     type: String,
     required: [true, 'Please provide a gift name.'],
     trim: true,
     maxlength: [250, 'The gift\'s name cannot be longer than 250 characters.']
+  },
+  notes: {
+    type: String,
+    trim: true,
+    maxlength: [
+      2000,
+      'Notes cannot be longer than 2000 characters.'
+    ]
   },
   quantity: {
     type: Number,
@@ -57,10 +60,6 @@ const giftSchema = new Schema({
     ],
     default: 1
   },
-  orderInWishList: {
-    type: Number,
-    min: [0, 'The gift\'s order must be greater than zero.']
-  },
   priority: {
     type: Number,
     min: [0, 'The gift\'s priority must be greater than zero.'],
@@ -68,57 +67,85 @@ const giftSchema = new Schema({
     default: 5
   }
 }, {
-  collection: 'gift',
   timestamps: {
     createdAt: 'dateCreated',
     updatedAt: 'dateUpdated'
   }
 });
 
+giftSchema.methods.moveToWishList = function (wishListId, userId) {
+  const instance = this;
+  const { WishList } = require('./wish-list');
+
+  return WishList.findAuthorized(
+    userId,
+    {
+      $or: [
+        { _id: wishListId },
+        { 'gifts._id': instance._id }
+      ]
+    },
+    true
+  ).then((wishLists) => {
+    // The gift already belongs to the wish list.
+    // (The query attempts to find the gift's current wish list
+    // and the move-to wish list. If the wish list IDs match,
+    // do nothing.)
+    if (wishLists.length === 1) {
+      return {
+        gift: instance
+      };
+    }
+
+    wishLists.forEach((wishList) => {
+      const found = wishList.gifts.id(instance._id);
+
+      if (found) {
+        wishList.gifts.remove(instance);
+      } else {
+        wishList.gifts.push(instance);
+      }
+    });
+
+    // Save wish lists and return the updated documents IDs.
+    return Promise.all([
+      wishLists[0].save(),
+      wishLists[1].save()
+    ]).then((results) => {
+      return {
+        gift: instance,
+        wishListIds: results.map((wishList) => wishList._id)
+      };
+    });
+  });
+}
+
 giftSchema.methods.updateSync = function (values) {
+  const instance = this;
   const fields = [
-    '_wishList',
     'budget',
-    'isReceived',
+    'externalUrls',
     'name',
-    'orderInWishList',
+    'notes',
     'priority',
     'quantity'
   ];
 
-  updateDocument(this, fields, values);
+  if (!values.quantity) {
+    values.quantity = 1;
+  }
 
-  return this;
+  if (values.name) {
+    // Replace newline characters.
+    // TODO: Move this to a pre validate hook?
+    values.name = values.name.replace(/\r?\n/g, ' ');
+  }
+
+  updateDocument(instance, fields, values);
+
+  return instance;
 };
 
-giftSchema.plugin(MongoDbErrorHandlerPlugin);
-
-giftSchema.plugin(ConfirmUserOwnershipPlugin, {
-  errors: {
-    validation: new GiftValidationError('Please provide a gift ID.'),
-    notFound: new GiftNotFoundError(),
-    permission: new GiftPermissionError()
-  }
-});
-
-function removeReferencedDocuments(doc, next) {
-  const { Dib } = require('./dib');
-
-  Dib
-    .find({ _gift: doc._id })
-    .then((dibs) => {
-      dibs.forEach((dib) => dib.remove());
-      next();
-    })
-    .catch(next);
-}
-
-giftSchema.post('remove', removeReferencedDocuments);
-
-const Gift = mongoose.model('Gift', giftSchema);
-
 module.exports = {
-  Gift,
-  giftSchema,
-  removeReferencedDocuments
+  giftSchema
 };

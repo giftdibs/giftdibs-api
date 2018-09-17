@@ -9,7 +9,7 @@ function escapeStringRegexp(str) {
 }
 
 function searchUsers(req, res, next) {
-  const searchText = decodeURIComponent(req.params.encodedSearchText);
+  const searchText = decodeURIComponent(req.query.search);
   const escapedSearchText = escapeStringRegexp(searchText);
   const regex = new RegExp(escapedSearchText, 'i');
 
@@ -21,12 +21,17 @@ function searchUsers(req, res, next) {
       ]
     })
     .limit(15)
-    .select('firstName lastName _id')
+    .select('firstName lastName avatarUrl')
     .lean()
     .then((docs) => {
+      const results = docs.map((user) => {
+        user.id = user._id;
+        delete user._id;
+        return user;
+      });
       authResponse({
         data: {
-          results: docs
+          results
         }
       })(req, res, next);
     })

@@ -1,63 +1,52 @@
 const authResponse = require('../../middleware/auth-response');
 
-const { Gift } = require('../../database/models/gift');
-const { WishList } = require('../../database/models/wish-list');
+const {
+  formatGiftResponse
+} = require('./shared');
 
 const {
-  WishListNotFoundError
-} = require('../../shared/errors');
+  WishList
+} = require('../../database/models/wish-list');
 
-function sortByOrder(gifts) {
-  gifts.sort((a, b) => {
-    if (b.orderInWishList === undefined) {
-      return -1;
-    }
+const {
+  handleError
+} = require('./shared');
 
-    if (a.orderInWishList === undefined) {
-      return 1;
-    }
+function getGift(req, res, next) {
+  const giftId = req.params.giftId.toString();
+  const userId = req.user._id.toString();
 
-    if (a.orderInWishList < b.orderInWishList) {
-      return -1;
-    }
+  // TODO: Move this to a first-class method in the wish list schema.
+  WishList.findAuthorizedByGiftId(giftId, userId)
+    .then((wishList) => {
+      const gift = wishList.gifts.find((gift) => {
+        return (gift._id.toString() === giftId);
+      });
 
-    if (a.orderInWishList > b.orderInWishList) {
-      return 1;
-    }
-
-    return 0;
-  });
+      return formatGiftResponse(gift, wishList, userId);
+    })
+    .then((gift) => {
+      authResponse({
+        data: { gift }
+      })(req, res, next);
+    })
+    .catch((err) => handleError(err, next));
 }
 
 function getGifts(req, res, next) {
-  const query = {};
-  const wishListId = req.query.wishListId;
+  const userId = req.user._id.toString();
 
-  let promise = Promise.resolve();
+  WishList.findAuthorized(userId)
+    .then((wishLists) => {
+      let gifts = [];
 
-  // If wish list ID set, verify that the wish list exists.
-  if (wishListId) {
-    query._wishList = wishListId;
-    promise = WishList
-      .find({ _id: wishListId })
-      .limit(1)
-      .lean()
-      .then((docs) => {
-        const wishList = docs[0];
+      wishLists.forEach((wishList) => {
+        const formatted = wishList.gifts.map((gift) => {
+          return formatGiftResponse(gift, wishList, userId);
+        });
 
-        if (!wishList) {
-          return Promise.reject(new WishListNotFoundError());
-        }
+        gifts = gifts.concat(formatted);
       });
-  }
-
-  // Get all gifts based on revised query:
-  promise
-    .then(() => Gift.find(query).lean())
-    .then((gifts) => {
-      if (wishListId) {
-        sortByOrder(gifts);
-      }
 
       authResponse({
         data: { gifts }
@@ -67,5 +56,6 @@ function getGifts(req, res, next) {
 }
 
 module.exports = {
+  getGift,
   getGifts
 };

@@ -4,12 +4,18 @@ const formatSchemaValidationError = (err, req, res, next) => {
     return;
   }
 
-  let errors = [];
+  const errors = [];
+
+  // Skip if error already formatted.
+  if (Array.isArray(err.errors)) {
+    next(err);
+    return;
+  }
 
   for (const field in err.errors) {
     errors.push({
       message: err.errors[field].message,
-      field: field
+      field
     });
   }
 

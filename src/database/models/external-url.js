@@ -20,8 +20,7 @@ const externalUrlSchema = new Schema({
       13,
       'The external URL\'s product price must be less than 1,000,000,000,000.'
     ]
-  },
-  dateScraped: Date
+  }
 }, {
   timestamps: {
     createdAt: 'dateCreated',
@@ -30,12 +29,10 @@ const externalUrlSchema = new Schema({
 });
 
 externalUrlSchema.methods.updateSync = function (values) {
-  const fields = ['url', 'price', 'dateScraped'];
-
-  // Reset the date scraped if the URL has changed.
-  if (values.url && values.url !== this.url) {
-    values.dateScraped = null;
-  }
+  const fields = [
+    'price',
+    'url'
+  ];
 
   updateDocument(this, fields, values);
 

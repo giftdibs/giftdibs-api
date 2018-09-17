@@ -8,6 +8,8 @@ const {
 } = require('../shared/testing');
 
 describe('Auth router', () => {
+  let _req;
+  let _res;
   let passport;
 
   beforeEach(() => {
@@ -19,6 +21,8 @@ describe('Auth router', () => {
     });
 
     passport = mock.reRequire('passport');
+    _req = new MockRequest({});
+    _res = new MockResponse();
   });
 
   afterEach(() => {
@@ -142,6 +146,8 @@ describe('Auth router', () => {
           save: () => Promise.resolve({ _id: 0 })
         };
       }
+
+      spyOn(console, 'log').and.callFake(() => {});
 
       mock('../database/models/user', { User });
 
@@ -777,14 +783,6 @@ describe('Auth router', () => {
   });
 
   describe('refresh-token', () => {
-    let _req;
-    let _res;
-
-    beforeEach(() => {
-      _req = new MockRequest({});
-      _res = new MockResponse();
-    });
-
     it('should require jwt', () => {
       const auth = mock.reRequire('./auth');
       const refreshToken = auth.middleware.refreshToken;

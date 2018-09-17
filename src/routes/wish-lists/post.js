@@ -1,4 +1,6 @@
-const { WishList } = require('../../database/models/wish-list');
+const {
+  WishList
+} = require('../../database/models/wish-list');
 
 const authResponse = require('../../middleware/auth-response');
 
@@ -9,8 +11,8 @@ const {
 function createWishList(req, res, next) {
   const wishList = new WishList({
     _user: req.user._id,
-    name: req.body.attributes.name,
-    privacy: req.body.attributes.privacy
+    name: req.body.name,
+    privacy: req.body.privacy
   });
 
   wishList

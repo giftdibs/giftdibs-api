@@ -1,184 +1,269 @@
 const mongoose = require('mongoose');
 const mock = require('mock-require');
 
+const {
+  MockWishList
+} = mock.reRequire('../../shared/testing');
+
 mongoose.Promise = Promise;
 
 describe('Gift schema', () => {
-  describe('fields', () => {
-    let Gift;
-    let updateDocumentUtil;
-    let _giftDefinition;
+  let MockGift;
+  let mockUpdateDocumentUtil;
+  let _giftDefinition;
 
-    beforeEach(() => {
-      _giftDefinition = {
-        _user: new mongoose.Types.ObjectId(),
-        _wishList: new mongoose.Types.ObjectId(),
-        budget: 1,
-        name: 'Foo'
-      };
+  function setupMock() {
+    // Load up a mock model with the schema we wish to test:
+    MockGift = mongoose.model('MockGift', mock.reRequire('./gift').giftSchema);
+  }
 
-      updateDocumentUtil = mock.reRequire('../utils/update-document');
+  beforeEach(() => {
+    _giftDefinition = {
+      budget: 1,
+      quantity: 1,
+      name: 'Foo'
+    };
 
-      spyOn(updateDocumentUtil, 'updateDocument').and.returnValue();
-      spyOn(console, 'log').and.returnValue();
+    mockUpdateDocumentUtil = {
+      updateDocument() {}
+    };
 
-      Gift = mock.reRequire('./gift').Gift;
-    });
+    mock('../utils/update-document', mockUpdateDocumentUtil);
 
-    afterEach(() => {
-      delete mongoose.models.Gift;
-      delete mongoose.modelSchemas.Gift;
-      mock.stopAll();
-    });
+    spyOn(console, 'log').and.returnValue();
 
-    it('should validate a document', () => {
-      let gift = new Gift(_giftDefinition);
-      const err = gift.validateSync();
-      expect(err).toBeUndefined();
-    });
-
-    it('should trim the name', () => {
-      _giftDefinition.name = '   foo ';
-      let gift = new Gift(_giftDefinition);
-      const err = gift.validateSync();
-      expect(err).toBeUndefined();
-      expect(gift.name).toEqual('foo');
-    });
-
-    it('should be invalid if name is undefined', () => {
-      _giftDefinition.name = undefined;
-      let gift = new Gift(_giftDefinition);
-      const err = gift.validateSync();
-      expect(err.errors.name.properties.type).toEqual('required');
-    });
-
-    it('should be invalid if name is too long', () => {
-      let name = '';
-      for (let i = 0, len = 251; i < len; ++i) {
-        name += 'a';
-      }
-
-      _giftDefinition.name = name;
-      let gift = new Gift(_giftDefinition);
-      const err = gift.validateSync();
-      expect(err.errors.name.properties.type).toEqual('maxlength');
-    });
-
-    it('should be invalid if budget is less than zero', () => {
-      _giftDefinition.budget = -1;
-      let gift = new Gift(_giftDefinition);
-      const err = gift.validateSync();
-      expect(err.errors.budget.properties.type).toEqual('min');
-    });
-
-    it('should be invalid if budget is greater than 1 trillion', () => {
-      _giftDefinition.budget = 111111111111111;
-      let gift = new Gift(_giftDefinition);
-      const err = gift.validateSync();
-      expect(err.errors.budget.properties.type).toEqual('max');
-    });
-
-    it('should generate timestamps automatically', () => {
-      expect(Gift.schema.paths.dateCreated).toBeDefined();
-      expect(Gift.schema.paths.dateUpdated).toBeDefined();
-    });
-
-    it('should beautify native mongo errors', () => {
-      let found = Gift.schema.plugins.filter((plugin) => {
-        return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
-      })[0];
-      expect(found).toBeDefined();
-    });
-
-    it('should update certain fields', () => {
-      const gift = new Gift(_giftDefinition);
-      const formData = {};
-
-      gift.updateSync(formData);
-
-      expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
-        gift,
-        [
-          '_wishList',
-          'budget',
-          'isReceived',
-          'name',
-          'orderInWishList',
-          'priority',
-          'quantity'
-        ],
-        formData
-      );
-    });
-
-    it('should be invalid if order is less than zero', () => {
-      _giftDefinition.orderInWishList = -1;
-      let gift = new Gift(_giftDefinition);
-      const err = gift.validateSync();
-      expect(err.errors.orderInWishList.properties.type).toEqual('min');
-    });
-
-    it('should be invalid if priority is less than zero', () => {
-      _giftDefinition.priority = -1;
-      let gift = new Gift(_giftDefinition);
-      const err = gift.validateSync();
-      expect(err.errors.priority.properties.type).toEqual('min');
-    });
-
-    it('should be invalid if priority is greater than 10', () => {
-      _giftDefinition.priority = 11;
-      let gift = new Gift(_giftDefinition);
-      const err = gift.validateSync();
-      expect(err.errors.priority.properties.type).toEqual('max');
-    });
+    MockWishList.reset();
   });
 
-  describe('remove referenced documents', () => {
-    const { MockDib } = require('../../shared/testing');
+  afterEach(() => {
+    delete mongoose.models.MockGift;
+    delete mongoose.modelSchemas.MockGift;
+    delete mongoose.models.WishList;
+    delete mongoose.modelSchemas.WishList;
+    mock.stopAll();
+  });
 
-    beforeEach(() => {
-      delete mongoose.models.Gift;
-      delete mongoose.modelSchemas.Gift;
+  it('should validate a document', () => {
+    setupMock();
+    const gift = new MockGift(_giftDefinition);
+    const err = gift.validateSync();
+    expect(err).toBeUndefined();
+  });
 
-      MockDib.reset();
+  it('should trim the name', () => {
+    setupMock();
 
-      mock('./dib', { Dib: MockDib });
+    _giftDefinition.name = '   foo ';
+    const gift = new MockGift(_giftDefinition);
+    gift.validate();
+    expect(gift.errors).toBeUndefined();
+    expect(gift.name).toEqual('foo');
+  });
+
+  it('should be invalid if name is undefined', () => {
+    setupMock();
+
+    _giftDefinition.name = undefined;
+    const gift = new MockGift(_giftDefinition);
+    const err = gift.validateSync();
+    expect(err.errors.name.properties.type).toEqual('required');
+  });
+
+  it('should be invalid if name is too long', () => {
+    setupMock();
+
+    let name = '';
+    for (let i = 0, len = 251; i < len; ++i) {
+      name += 'a';
+    }
+
+    _giftDefinition.name = name;
+    const gift = new MockGift(_giftDefinition);
+    const err = gift.validateSync();
+    expect(err.errors.name.properties.type).toEqual('maxlength');
+  });
+
+  it('should be invalid if budget is less than zero', () => {
+    setupMock();
+
+    _giftDefinition.budget = -1;
+    const gift = new MockGift(_giftDefinition);
+    const err = gift.validateSync();
+    expect(err.errors.budget.properties.type).toEqual('min');
+  });
+
+  it('should be invalid if budget is greater than 1 trillion', () => {
+    setupMock();
+
+    _giftDefinition.budget = 111111111111111;
+    const gift = new MockGift(_giftDefinition);
+    const err = gift.validateSync();
+    expect(err.errors.budget.properties.type).toEqual('max');
+  });
+
+  it('should generate timestamps automatically', () => {
+    setupMock();
+    expect(MockGift.schema.paths.dateCreated).toBeDefined();
+    expect(MockGift.schema.paths.dateUpdated).toBeDefined();
+  });
+
+  it('should update certain fields', () => {
+    const spy = spyOn(mockUpdateDocumentUtil, 'updateDocument').and.callThrough();
+
+    setupMock();
+
+    const gift = new MockGift(_giftDefinition);
+    const formData = {};
+
+    gift.updateSync(formData);
+
+    expect(spy).toHaveBeenCalledWith(
+      gift,
+      [
+        'budget',
+        'isReceived',
+        'name',
+        'priority',
+        'quantity'
+      ],
+      formData
+    );
+  });
+
+  it('should replace newlines in the name field', () => {
+    const spy = spyOn(mockUpdateDocumentUtil, 'updateDocument').and.callThrough();
+
+    setupMock();
+
+    const gift = new MockGift({
+      name: 'old name'
+    });
+    const formData = {
+      name: 'foo\nbar\r\nbaz'
+    };
+
+    gift.updateSync(formData);
+
+    expect(spy.calls.first().args[2].name).toEqual('foo bar baz');
+  });
+
+  it('should always set quantity to at least (1)', () => {
+    const spy = spyOn(mockUpdateDocumentUtil, 'updateDocument').and.callThrough();
+
+    setupMock();
+
+    const gift = new MockGift({
+      name: 'Foo',
+      quantity: 5
     });
 
-    afterEach(() => {
-      mock.stopAll();
+    const formData = {
+      quantity: 0
+    };
+
+    gift.updateSync(formData);
+    expect(spy.calls.first().args[2].quantity).toEqual(1);
+    spy.calls.reset();
+
+    formData.quantity = 3;
+    gift.updateSync(formData);
+    expect(spy.calls.first().args[2].quantity).toEqual(3);
+  });
+
+  it('should be invalid if priority is less than zero', () => {
+    setupMock();
+
+    _giftDefinition.priority = -1;
+    const gift = new MockGift(_giftDefinition);
+    const err = gift.validateSync();
+    expect(err.errors.priority.properties.type).toEqual('min');
+  });
+
+  it('should be invalid if priority is greater than 10', () => {
+    setupMock();
+
+    _giftDefinition.priority = 11;
+    const gift = new MockGift(_giftDefinition);
+    const err = gift.validateSync();
+    expect(err.errors.priority.properties.type).toEqual('max');
+  });
+
+  it('should move gift to different wish list', (done) => {
+    mock('./wish-list', {
+      WishList: MockWishList
     });
 
-    it('should also remove referenced documents', (done) => {
-      const dib = new MockDib({});
-      const spy = spyOn(dib, 'remove');
+    setupMock();
 
-      spyOn(MockDib, 'find').and.returnValue(
-        Promise.resolve([dib])
-      );
+    const oldWishListId = 'oldwishlistid';
+    const newWishListId = 'newwishlistid';
+    const userId = 'userid';
+    const gift = new MockGift({});
 
-      const { removeReferencedDocuments } = mock.reRequire('./gift');
+    const spy = spyOn(MockWishList, 'findAuthorized').and.returnValue(
+      Promise.resolve([
+        new MockWishList({
+          _id: oldWishListId,
+          gifts: [
+            gift
+          ]
+        }),
+        new MockWishList({
+          _id: newWishListId
+        })
+      ])
+    );
 
-      removeReferencedDocuments({}, (err) => {
-        expect(spy).toHaveBeenCalledWith();
-        expect(err).toBeUndefined();
+    gift.moveToWishList(newWishListId, userId)
+      .then((result) => {
+        expect(result.gift).toBeDefined();
+        expect(result.wishListIds[0]).toEqual(oldWishListId);
+        expect(result.wishListIds[1]).toEqual(newWishListId);
+        expect(spy).toHaveBeenCalledWith(
+          'userid',
+          {
+            $or: [
+              { _id: 'newwishlistid' },
+              { 'gifts._id': gift._id }
+            ]
+          },
+          true
+        );
         done();
-      });
+      })
+      .catch(done.fail);
+  });
+
+  it('should not move gift if new wish list ID matches current wish list ID', (done) => {
+    mock('./wish-list', {
+      WishList: MockWishList
     });
 
-    it('should handle errors', (done) => {
-      spyOn(MockDib, 'find').and.returnValue(
-        Promise.reject(
-          new Error('Some error')
-        )
-      );
+    setupMock();
 
-      const { removeReferencedDocuments } = mock.reRequire('./gift');
+    const wishListId = 'wishlistid';
+    const userId = 'userid';
+    const gift = new MockGift({});
 
-      removeReferencedDocuments({}, (err) => {
-        expect(err.message).toEqual('Some error');
+    spyOn(MockWishList, 'findAuthorized').and.returnValue(
+      Promise.resolve(
+        [
+          new MockWishList({
+            _id: wishListId,
+            gifts: [
+              gift
+            ]
+          })
+        ]
+      )
+    );
+
+    gift.moveToWishList(wishListId, userId)
+      .then((result) => {
+        expect(result.gift).toBeDefined();
+        expect(result.wishListIds).toBeUndefined();
         done();
-      });
-    });
+      })
+      .catch(done.fail);
   });
 });

@@ -1,40 +1,34 @@
 const mongoose = require('mongoose');
 
 const {
-  DibNotFoundError,
-  DibPermissionError,
-  DibValidationError
-} = require('../../shared/errors');
-
-const {
   MongoDbErrorHandlerPlugin
 } = require('../plugins/mongodb-error-handler');
 
 const {
-  ConfirmUserOwnershipPlugin
-} = require('../plugins/confirm-user-ownership');
-
-const { updateDocument } = require('../utils/update-document');
+  updateDocument
+} = require('../utils/update-document');
 
 const Schema = mongoose.Schema;
 const dibSchema = new Schema({
-  _gift: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'Gift',
-    required: [true, 'A gift ID must be provided.']
-  },
   _user: {
     type: mongoose.SchemaTypes.ObjectId,
     ref: 'User',
-    required: [true, 'A user ID must be provided.']
+    required: [
+      true,
+      'A user ID must be provided.'
+    ]
   },
   dateDelivered: Date,
+  isAnonymous: {
+    type: Boolean,
+    default: true
+  },
   notes: {
     type: String,
     trim: true,
     maxlength: [
-      1001,
-      'Notes cannot be longer than 1000 characters.'
+      2000,
+      'Notes cannot be longer than 2000 characters.'
     ]
   },
   pricePaid: {
@@ -52,7 +46,6 @@ const dibSchema = new Schema({
     ]
   }
 }, {
-  collection: 'dib',
   timestamps: {
     createdAt: 'dateCreated',
     updatedAt: 'dateUpdated'
@@ -61,17 +54,15 @@ const dibSchema = new Schema({
 
 dibSchema.methods.updateSync = function (values) {
   const fields = [
+    'isAnonymous',
     'notes',
     'pricePaid',
     'quantity'
   ];
 
-  // Update the date delivered if user marks the dib as delivered
-  // (for the first time).
-  if (values.isDelivered === true && !this.dateDelivered) {
-    this.set('dateDelivered', new Date());
-  } else if (values.isDelivered === false) {
-    this.set('dateDelivered', undefined);
+  // Default quantity to 1.
+  if (!values.quantity) {
+    values.quantity = 1;
   }
 
   updateDocument(this, fields, values);
@@ -80,14 +71,7 @@ dibSchema.methods.updateSync = function (values) {
 };
 
 dibSchema.plugin(MongoDbErrorHandlerPlugin);
-dibSchema.plugin(ConfirmUserOwnershipPlugin, {
-  errors: {
-    validation: new DibValidationError('Please provide a friendship ID.'),
-    notFound: new DibNotFoundError(),
-    permission: new DibPermissionError()
-  }
-});
 
-const Dib = mongoose.model('Dib', dibSchema);
-
-module.exports = { Dib };
+module.exports = {
+  dibSchema
+};

@@ -154,7 +154,7 @@ describe('Friendships router', () => {
 
       const { createFriendship } = mock.reRequire('./post');
 
-      _req.body.attributes.friendId = 'friendid';
+      _req.body.friendId = 'friendid';
 
       createFriendship(_req, _res, () => { });
 
@@ -173,7 +173,7 @@ describe('Friendships router', () => {
       };
 
       _req.user._id = 'requser';
-      _req.body.attributes.friendId = 'friendid';
+      _req.body.friendId = 'friendid';
 
       const { createFriendship } = mock.reRequire('./post');
 
@@ -186,7 +186,7 @@ describe('Friendships router', () => {
 
     it('should fail if request wants to follow itself', (done) => {
       _req.user._id = 'friendid';
-      _req.body.attributes.friendId = 'friendid';
+      _req.body.friendId = 'friendid';
 
       const { createFriendship } = mock.reRequire('./post');
 
@@ -213,7 +213,7 @@ describe('Friendships router', () => {
     });
 
     it('should handle errors', (done) => {
-      _req.body.attributes.friendId = 'friendid';
+      _req.body.friendId = 'friendid';
       MockFriendship.overrides.find.returnWith = () => {
         return Promise.resolve([]);
       };
@@ -231,7 +231,7 @@ describe('Friendships router', () => {
     });
 
     it('should handle validation errors', (done) => {
-      _req.body.attributes.friendId = 'friendid';
+      _req.body.friendId = 'friendid';
 
       const err = new Error();
       err.name = 'ValidationError';

@@ -13,6 +13,7 @@ function getSelectFields(req) {
 
   if (req.user._id.toString() === req.params.userId) {
     selectFields = [
+      'avatarUrl',
       'facebookId',
       'firstName',
       'lastName',
@@ -21,9 +22,9 @@ function getSelectFields(req) {
     ].join(' ');
   } else {
     selectFields = [
+      'avatarUrl',
       'firstName',
-      'lastName',
-      'emailAddressVerified'
+      'lastName'
     ].join(' ');
   }
 
@@ -45,6 +46,9 @@ function getUser(req, res, next) {
         return Promise.reject(new UserNotFoundError());
       }
 
+      user.id = user._id;
+      delete user._id;
+
       authResponse({
         data: { user }
       })(req, res, next);
@@ -53,13 +57,23 @@ function getUser(req, res, next) {
 }
 
 function getUsers(req, res, next) {
+  if (req.query.search) {
+    const { searchUsers } = require('./search');
+    searchUsers(req, res, next);
+    return;
+  }
+
   const selectFields = getSelectFields(req);
 
-  User
-    .find({})
+  User.find({})
     .select(selectFields)
     .lean()
     .then((users) => {
+      users = users.map((user) => {
+        user.id = user._id;
+        delete user._id;
+        return user;
+      });
       authResponse({
         data: { users }
       })(req, res, next);

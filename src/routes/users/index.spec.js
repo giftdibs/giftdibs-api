@@ -206,9 +206,7 @@ describe('Users router', () => {
       const { updateUser } = mock.reRequire('./patch');
 
       _req.body = {
-        attributes: {
-          firstName: 'NewName'
-        }
+        firstName: 'NewName'
       };
 
       spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
@@ -216,7 +214,7 @@ describe('Users router', () => {
       );
 
       updateUser(_req, {}, () => {
-        expect(spy).toHaveBeenCalledWith(_req.body.attributes);
+        expect(spy).toHaveBeenCalledWith(_req.body);
         done();
       });
     });
@@ -280,34 +278,30 @@ describe('Users router', () => {
       });
     });
 
-    it('should issue new email verification token if the email address changes',
-      (done) => {
-        const user = new MockUser({
-          emailAddress: 'my@email.com'
-        });
+    it('should issue new email verification token if the email address changes', (done) => {
+      const user = new MockUser({
+        emailAddress: 'my@email.com'
+      });
 
-        const { updateUser } = mock.reRequire('./patch');
+      const { updateUser } = mock.reRequire('./patch');
 
-        spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
-          Promise.resolve(user)
-        );
+      spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(user)
+      );
 
-        _req.body = {
-          attributes: {
-            emailAddress: 'new@email.com'
-          }
-        };
+      _req.body = {
+        emailAddress: 'new@email.com'
+      };
 
-        const spy = spyOn(user, 'resetEmailAddressVerification');
+      const spy = spyOn(user, 'resetEmailAddressVerification');
 
-        updateUser(_req, _res, () => {});
+      updateUser(_req, _res, () => {});
 
-        tick(() => {
-          expect(spy).toHaveBeenCalledWith();
-          done();
-        });
-      }
-    );
+      tick(() => {
+        expect(spy).toHaveBeenCalledWith();
+        done();
+      });
+    });
 
     it('should handle errors', (done) => {
       const { updateUser } = mock.reRequire('./patch');

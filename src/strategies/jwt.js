@@ -6,7 +6,10 @@ const { User } = require('../database/models/user');
 const strategyConfig = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderWithScheme('JWT'),
   secretOrKey: process.env.JWT_SECRET,
-  passReqToCallback: true
+  passReqToCallback: true,
+  jsonWebTokenOptions: {
+    maxAge: '15m'
+  }
 }
 
 const verify = (req, payload, done) => {

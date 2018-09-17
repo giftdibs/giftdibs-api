@@ -5,14 +5,13 @@ const {
 } = require('../plugins/mongodb-error-handler');
 
 const {
-  ConfirmUserOwnershipPlugin
-} = require('../plugins/confirm-user-ownership');
-
-const {
   FriendshipNotFoundError,
-  FriendshipPermissionError,
   FriendshipValidationError
 } = require('../../shared/errors');
+
+const {
+  Notification
+} = require('./notification');
 
 const Schema = mongoose.Schema;
 const friendshipSchema = new Schema({
@@ -34,9 +33,65 @@ const friendshipSchema = new Schema({
   }
 });
 
-friendshipSchema.statics.getFriendshipsByUserId = function (userId) {
-  const query = {};
+friendshipSchema.statics.create = function (friendId, user) {
+  const userId = user._id;
 
+  if (userId.toString() === friendId) {
+    return Promise.reject(
+      new FriendshipValidationError(
+        'You cannot follow yourself.'
+      )
+    );
+  }
+
+  if (!friendId) {
+    return Promise.reject(
+      new FriendshipValidationError(
+        'Please provide the user ID of the friend you wish to follow.'
+      )
+    );
+  }
+
+  // TODO: Prevent non-verified accounts from following people?
+
+  return this.find({
+    '_user': userId,
+    '_friend': friendId
+  })
+    .limit(1)
+    .lean()
+    .then((docs) => {
+      const friend = docs[0];
+
+      if (friend) {
+        return Promise.reject(
+          new FriendshipValidationError(
+            'You are already following that person.'
+          )
+        );
+      }
+
+      const friendship = new Friendship({
+        _user: userId,
+        _friend: friendId
+      });
+
+      return friendship.save();
+    })
+    .then((doc) => {
+      return Notification.create({
+        type: 'friendship_new',
+        _user: doc._friend,
+        follower: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName
+        }
+      }).then(() => doc);
+    });
+};
+
+friendshipSchema.statics.getFriendshipsByUserId = function (userId) {
   if (!userId) {
     return Promise.reject(
       new FriendshipValidationError(
@@ -45,26 +100,45 @@ friendshipSchema.statics.getFriendshipsByUserId = function (userId) {
     );
   }
 
-  query.$or = [{
-    _user: userId
-  }, {
-    _friend: userId
-  }];
+  return Promise.all([
+    this.find({ '_user': userId }).populate('_friend', 'firstName lastName avatarUrl').lean(), // following
+    this.find({ '_friend': userId }).populate('_user', 'firstName lastName avatarUrl').lean() // followers
+  ]).then((result) => {
+    return {
+      following: result[0].map((friendship) => friendship._friend),
+      followers: result[1].map((friendship) => friendship._user)
+    };
+  });
+};
 
-  return this.find(query)
-    .populate('_friend', 'firstName lastName')
-    .populate('_user', 'firstName lastName')
-    .lean();
+friendshipSchema.statics.confirmUserOwnership = function (friendId, userId) {
+  if (!friendId) {
+    return Promise.reject(
+      new FriendshipValidationError('Please provide a user ID.')
+    );
+  }
+
+  const model = this;
+
+  return model.find({
+    '_friend': friendId,
+    '_user': userId
+  })
+    .limit(1)
+    .then((docs) => {
+      const doc = docs[0];
+
+      if (!doc) {
+        return Promise.reject(
+          new FriendshipNotFoundError()
+        );
+      }
+
+      return doc;
+    });
 };
 
 friendshipSchema.plugin(MongoDbErrorHandlerPlugin);
-friendshipSchema.plugin(ConfirmUserOwnershipPlugin, {
-  errors: {
-    validation: new FriendshipValidationError('Please provide a friendship ID.'),
-    notFound: new FriendshipNotFoundError(),
-    permission: new FriendshipPermissionError()
-  }
-});
 
 const Friendship = mongoose.model('Friendship', friendshipSchema);
 

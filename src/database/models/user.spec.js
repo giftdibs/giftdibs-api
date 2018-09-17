@@ -167,12 +167,16 @@ describe('User schema', () => {
         password: '1234567',
         dateLastLoggedIn: new Date()
       });
-      user.setPassword('1234567').then(() => {
-        user.confirmPassword('1234567').then(() => {
-          expect(user.password).not.toEqual('1234567');
-          done();
-        });
-      });
+      user.setPassword('1234567')
+        .then(() => {
+          user.confirmPassword('1234567')
+            .then(() => {
+              expect(user.password).not.toEqual('1234567');
+              done();
+            })
+            .catch(done.fail);
+        })
+        .catch(done.fail);
     });
 
     it('should fail if the password is empty', (done) => {
@@ -368,7 +372,7 @@ describe('User schema', () => {
 
   describe('remove referenced documents', () => {
     const {
-      MockDib,
+      // MockDib,
       MockFriendship,
       MockWishList
     } = require('../../shared/testing');
@@ -377,11 +381,11 @@ describe('User schema', () => {
       delete mongoose.models.User;
       delete mongoose.modelSchemas.User;
 
-      MockDib.reset();
+      // MockDib.reset();
       MockFriendship.reset();
       MockWishList.reset();
 
-      mock('./dib', { Dib: MockDib });
+      // mock('./dib', { Dib: MockDib });
       mock('./friendship', { Friendship: MockFriendship });
       mock('./wish-list', { WishList: MockWishList });
     });
@@ -391,48 +395,43 @@ describe('User schema', () => {
     });
 
     it('should also remove referenced documents', (done) => {
-      const dib = new MockDib({});
-      const wishList = new MockWishList({});
-      const friendship = new MockFriendship({});
-
-      const dibSpy = spyOn(dib, 'remove');
-      const wishListSpy = spyOn(wishList, 'remove');
-      const friendshipSpy = spyOn(friendship, 'remove');
-
-      spyOn(MockDib, 'find').and.returnValue(
-        Promise.resolve([dib])
+      const wishListRemoveSpy = spyOn(MockWishList, 'remove').and.returnValue(
+        Promise.resolve()
       );
 
-      spyOn(MockWishList, 'find').and.returnValue(
-        Promise.resolve([wishList])
+      const friendshipRemoveSpy = spyOn(MockFriendship, 'remove').and.returnValue(
+        Promise.resolve()
       );
 
-      spyOn(MockFriendship, 'find').and.returnValue(
-        Promise.resolve([friendship])
-      );
+      const {
+        removeReferencedDocuments
+      } = mock.reRequire('./user');
 
-      const { removeReferencedDocuments } = mock.reRequire('./user');
-
-      removeReferencedDocuments({}, (err) => {
-        expect(dibSpy).toHaveBeenCalledWith();
-        expect(wishListSpy).toHaveBeenCalledWith();
-        expect(friendshipSpy).toHaveBeenCalledWith();
+      removeReferencedDocuments({
+        _id: 'userid'
+      }, (err) => {
+        expect(wishListRemoveSpy).toHaveBeenCalledWith({
+          _user: 'userid'
+        });
+        expect(friendshipRemoveSpy).toHaveBeenCalledWith({
+          $or: [
+            { _user: 'userid' },
+            { _friend: 'userid' }
+          ]
+        });
         expect(err).toBeUndefined();
         done();
       });
     });
 
     it('should handle errors', (done) => {
-      spyOn(MockWishList, 'find').and.returnValue(
-        Promise.reject(
-          new Error('Some error')
-        )
+      spyOn(MockWishList, 'remove').and.returnValue(
+        Promise.reject(new Error('Some error'))
       );
 
-      spyOn(MockDib, 'find').and.returnValue(Promise.resolve());
-      spyOn(MockFriendship, 'find').and.returnValue(Promise.resolve());
-
-      const { removeReferencedDocuments } = mock.reRequire('./user');
+      const {
+        removeReferencedDocuments
+      } = mock.reRequire('./user');
 
       removeReferencedDocuments({}, (err) => {
         expect(err.message).toEqual('Some error');

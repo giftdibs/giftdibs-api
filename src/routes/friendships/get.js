@@ -6,31 +6,31 @@ const {
   FriendshipValidationError
 } = require('../../shared/errors');
 
-function formatFriendshipResponse(friendship) {
-  friendship.friend = friendship._friend;
-  friendship.user = friendship._user;
-  delete friendship._friend;
-  delete friendship._user;
-  return friendship;
-}
+const {
+  formatFriendshipResponse
+} = require('./shared');
 
 function getFriendships(req, res, next) {
-  if (!req.query.userId) {
+  const userId = req.params.userId;
+
+  if (!userId) {
     next(new FriendshipValidationError(
       'Please provide a user ID.'
     ));
     return;
   }
 
-  Friendship
-    .getFriendshipsByUserId(req.query.userId)
+  Friendship.getFriendshipsByUserId(userId)
+    .then((friendships) => {
+      friendships.following =
+        friendships.following.map(formatFriendshipResponse);
+      friendships.followers =
+        friendships.followers.map(formatFriendshipResponse);
+      return friendships;
+    })
     .then((friendships) => {
       authResponse({
-        data: {
-          friendships: friendships.map((friendship) => {
-            return formatFriendshipResponse(friendship);
-          })
-        }
+        data: { friendships }
       })(req, res, next);
     })
     .catch(next);

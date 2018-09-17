@@ -1,75 +1,93 @@
 const authResponse = require('../../../middleware/auth-response');
 
-const { Gift } = require('../../../database/models/gift');
-const { Dib } = require('../../../database/models/dib');
+const {
+  WishList
+} = require('../../../database/models/wish-list');
+
+const {
+  formatWishListResponse
+} = require('../../wish-lists/shared');
 
 function getSumBudget(recipient) {
-  let total = 0;
+  let budgeted = 0;
+  let pricePaid = 0;
 
-  recipient.gifts.forEach((gift) => {
-    // `_dib` is added to the model manually by getDibsRecipients().
-    if (gift._dib.pricePaid !== undefined) {
-      total += parseInt(gift._dib.pricePaid, 10);
-      return;
-    }
+  recipient.wishLists.forEach((wishList) => {
+    wishList.gifts.forEach((gift) => {
+      budgeted += parseInt(gift.budget, 10) || 0;
 
-    if (gift.budget !== undefined) {
-      total += parseInt(gift.budget, 10);
-    }
+      gift.dibs.forEach((dib) => {
+        if (dib.pricePaid !== undefined) {
+          pricePaid += parseInt(dib.pricePaid, 10);
+        }
+      });
+    });
   });
 
-  recipient.budget = total;
+  recipient.totalBudgeted = budgeted;
+  recipient.totalPricePaid = pricePaid;
 }
 
 function getDibsRecipients(req, res, next) {
-  Dib
-    .find({ _user: req.user._id })
-    .lean()
-    .then((dibs) => {
-      const giftIds = dibs.map((dib) => dib._gift.toString());
-      const recipients = [];
+  const recipients = [];
+  const userId = req.user._id;
 
-      return Gift
-        .find({})
-        .where('_id')
-        .in(giftIds)
-        .populate('_user _wishList')
-        .lean()
-        .then((gifts) => {
-          gifts.forEach((gift) => {
-            // Match the specific dib to the gift.
-            dibs.forEach((dib) => {
-              if (dib._gift.toString() === gift._id.toString()) {
-                gift._dib = dib;
-              }
-            });
+  // Get all wish lists that include the session user's dibs.
+  WishList.findAuthorized(userId, {
+    'gifts.dibs._user': userId
+  })
+    .then((wishLists) => {
+      wishLists = wishLists.map((wishList) => {
+        const gifts = [];
 
-            const recipient = recipients.filter((recipient) => {
-              return (recipient._id.toString() === gift._user._id.toString());
-            })[0];
-
-            if (recipient) {
-              recipient.gifts.push(gift);
-              return;
-            }
-
-            // Add a new recipient.
-            recipients.push({
-              _id: gift._user._id,
-              firstName: gift._user.firstName,
-              lastName: gift._user.lastName,
-              gifts: [gift]
-            });
+        wishList.gifts.forEach((gift) => {
+          // Remove any dibs that do not belong to session user.
+          const foundDib = gift.dibs.find((dib) => {
+            return (dib._user._id.toString() === userId.toString());
           });
 
-          recipients.forEach(getSumBudget);
-
-          authResponse({
-            data: { recipients }
-          })(req, res, next);
+          // Remove all gifts except those that were dibbed.
+          if (foundDib) {
+            gift.dibs = [foundDib];
+            gifts.push(gift);
+          }
         });
+
+        wishList.gifts = gifts;
+
+        return formatWishListResponse(wishList, userId);
+      });
+
+      // Create the recipients array.
+      wishLists.forEach((wishList) => {
+        const foundRecipient = recipients.find((recipient) => {
+          return (recipient.id.toString() === wishList.user.id.toString());
+        });
+
+        // Add to existing recipient?
+        if (foundRecipient) {
+          foundRecipient.wishLists.push(wishList);
+          return;
+        }
+
+        // Add a new recipient.
+        recipients.push({
+          id: wishList.user.id,
+          firstName: wishList.user.firstName,
+          lastName: wishList.user.lastName,
+          wishLists: [wishList]
+        });
+      });
+
+      recipients.forEach(getSumBudget);
+
+      return recipients;
     })
-    .catch(next);
+    .then((recipients) => {
+      authResponse({
+        data: { recipients }
+      })(req, res, next);
+    });
 }
 
 module.exports = {
