@@ -25,9 +25,9 @@ function updateGift(req, res, next) {
 
 function markGiftAsReceived(req, res, next) {
   const giftId = req.params.giftId;
-  const userId = req.user._id;
+  const user = req.user;
 
-  WishList.markGiftAsReceived(giftId, userId)
+  WishList.markGiftAsReceived(giftId, user)
     .then(() => {
       authResponse({
         data: {},

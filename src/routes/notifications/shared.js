@@ -8,6 +8,12 @@ function formatNotificationResponse(notification) {
   clone.userId = clone._user;
   clone.id = clone._id;
 
+  if (clone.gift && clone.gift.dibs && clone.gift.dibs.length) {
+    clone.gift.dibs.forEach((dib) => {
+      delete dib._id;
+    });
+  }
+
   delete clone._user;
   delete clone._id;
 

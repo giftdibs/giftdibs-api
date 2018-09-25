@@ -194,7 +194,7 @@ function confirmDibUserOwnership(wishList, dibId, userId) {
 
   const dib = getDibById(dibId, wishList);
 
-  if (userId.toString() !== dib._user.toString()) {
+  if (userId.toString() !== dib._user._id.toString()) {
     return Promise.reject(new DibPermissionError());
   }
 
@@ -421,9 +421,9 @@ wishListSchema.statics.updateGiftById = function (
 
 wishListSchema.statics.markGiftAsReceived = function (
   giftId,
-  userId
+  user
 ) {
-  return this.confirmUserOwnershipByGiftId(giftId, userId)
+  return this.confirmUserOwnershipByGiftId(giftId, user._id)
     .then((wishList) => {
       const gift = wishList.gifts.id(giftId);
 
@@ -446,7 +446,12 @@ wishListSchema.statics.markGiftAsReceived = function (
             _user: dib._user,
             gift: {
               id: gift.id,
-              name: gift.name
+              name: gift.name,
+              user: {
+                id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName
+              }
             }
           });
           promises.push(promise);
@@ -576,11 +581,15 @@ wishListSchema.statics.markDibAsDelivered = function (
   dibId,
   userId
 ) {
-  return this.find({ 'gifts.dibs._id': dibId })
+  return this.find({
+    'gifts.dibs._id': dibId
+  })
     .limit(1)
+    .populate('gifts.dibs._user', 'firstName lastName')
     .then((docs) => {
       const wishList = docs[0];
 
+      console.log('mark dib delivered:', dibId, userId);
       return confirmDibUserOwnership(wishList, dibId, userId)
         .then((dib) => {
           if (dib.dateDelivered) {
@@ -616,13 +625,17 @@ wishListSchema.statics.markDibAsDelivered = function (
           if (sendNotification) {
             const dibs = gift.dibs.map((dib) => {
               const result = {
+                user: {
+                  firstName: '',
+                  lastName: ''
+                },
                 isAnonymous: !!dib.isAnonymous
               };
 
-              if (dib.isAnonymous) {
-                result.firstName = '';
-                result.lastName = '';
-                result.id = '';
+              if (!dib.isAnonymous) {
+                result.user.id = dib._user._id;
+                result.user.firstName = dib._user.firstName;
+                result.user.lastName = dib._user.lastName;
               }
 
               return result;

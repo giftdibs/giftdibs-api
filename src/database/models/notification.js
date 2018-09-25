@@ -18,6 +18,15 @@ const {
   updateDocument
 } = require('../utils/update-document');
 
+const userSubSchema = {
+  id: {
+    type: mongoose.SchemaTypes.ObjectId,
+    ref: 'User'
+  },
+  firstName: String,
+  lastName: String
+};
+
 const Schema = mongoose.Schema;
 const notificationSchema = new Schema({
   _user: {
@@ -45,41 +54,21 @@ const notificationSchema = new Schema({
   // Since notifications are simply read and deleted,
   // let's denormalize the foreign references, to avoid
   // complex joins later.
-  follower: {
-    id: {
-      type: mongoose.SchemaTypes.ObjectId,
-      ref: 'User'
-    },
-    firstName: String,
-    lastName: String
-  },
+  follower: userSubSchema,
   gift: {
     id: {
       type: mongoose.SchemaTypes.ObjectId,
       ref: 'WishList.gifts'
     },
     name: String,
+    user: userSubSchema,
     comment: {
-      user: {
-        id: {
-          type: mongoose.SchemaTypes.ObjectId,
-          ref: 'User'
-        },
-        firstName: String,
-        lastName: String
-      },
+      user: userSubSchema,
       summary: String
     },
     dibs: [{
-      user: {
-        id: {
-          type: mongoose.SchemaTypes.ObjectId,
-          ref: 'User'
-        },
-        firstName: String,
-        lastName: String,
-        isAnonymous: Boolean
-      }
+      isAnonymous: Boolean,
+      user: userSubSchema
     }]
   }
 }, {
