@@ -20,6 +20,7 @@ function updateWithFacebookProfile(user, reqBody) {
       user.emailAddress = profile.email;
       user.facebookId = profile.id;
       user.emailAddressVerified = true;
+      user.birthday = new Date(profile.birthday);
 
       return user;
     });

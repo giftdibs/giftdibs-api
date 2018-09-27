@@ -25,10 +25,23 @@ const {
   ConfirmUserOwnershipPlugin
 } = require('../plugins/confirm-user-ownership');
 
-const hasDuplicateChars = (str) => {
+function hasDuplicateChars(str) {
   let regex = /(.)\1{2,}/;
   return !regex.test(str);
-};
+}
+
+function getAge(birthDate) {
+  const today = new Date();
+  // const birthDate = new Date(dateString);
+  const m = today.getMonth() - birthDate.getMonth();
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+
+  return age;
+}
 
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
@@ -103,6 +116,21 @@ const userSchema = new Schema({
   },
   resetPasswordToken: String,
   resetPasswordExpires: Date,
+  birthday: {
+    type: Date,
+    required: true,
+    validate: {
+      type: 'ageGate',
+      validator: function (value) {
+        console.log('value?', value);
+        const age = getAge(value);
+        console.log('age?', age, typeof age, age >= 13);
+        return (age >= 13);
+      },
+      message: 'You must be 13 years old or older to use GiftDibs.',
+      isAsync: false
+    }
+  },
   facebookId: String,
   dateLastLoggedIn: {
     type: Date,
@@ -203,6 +231,7 @@ userSchema.methods.verifyEmailAddress = function (token) {
 
 userSchema.methods.updateSync = function (values) {
   const fields = [
+    'birthday',
     'firstName',
     'lastName',
     'emailAddress',

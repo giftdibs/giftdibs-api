@@ -428,7 +428,7 @@ wishListSchema.statics.markGiftAsReceived = function (
       const gift = wishList.gifts.id(giftId);
 
       if (gift.dateReceived) {
-        throw new Error(
+        throw new GiftValidationError(
           'You already marked this gift as received.'
         );
       }
@@ -441,9 +441,14 @@ wishListSchema.statics.markGiftAsReceived = function (
         // Send notification and email to dibbers
         // of this gift to mark dib as delivered.
         gift.dibs.forEach((dib) => {
+          console.log('dib?', dib);
           const promise = Notification.create({
             type: 'gift_received',
             _user: dib._user,
+            dib: {
+              id: dib._id,
+              dateDelivered: dib.dateDelivered
+            },
             gift: {
               id: gift.id,
               name: gift.name,

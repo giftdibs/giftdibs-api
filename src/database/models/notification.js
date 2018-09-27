@@ -55,6 +55,13 @@ const notificationSchema = new Schema({
   // let's denormalize the foreign references, to avoid
   // complex joins later.
   follower: userSubSchema,
+  dib: {
+    id: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'WishList.gifts.dibs'
+    },
+    dateDelivered: Date
+  },
   gift: {
     id: {
       type: mongoose.SchemaTypes.ObjectId,

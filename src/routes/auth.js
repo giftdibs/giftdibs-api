@@ -83,6 +83,7 @@ const register = [
       emailAddress: req.body.emailAddress,
       firstName: req.body.firstName,
       lastName: req.body.lastName,
+      birthday: req.body.birthday,
       dateLastLoggedIn: new Date()
     });
 

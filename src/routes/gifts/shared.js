@@ -12,11 +12,10 @@ const {
 
 function formatGiftResponse(gift, wishList, userId) {
   const clone = { ...gift };
-
-  // Remove dibs if session user is owner of gift.
   const isGiftOwner = (wishList._user._id.toString() === userId.toString());
 
-  if (isGiftOwner) {
+  // Remove dibs if session user is owner of gift and gift is not received.
+  if (isGiftOwner && !clone.dateReceived) {
     clone.dibs = [];
   }
 
