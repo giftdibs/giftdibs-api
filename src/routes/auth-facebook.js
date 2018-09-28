@@ -51,8 +51,7 @@ function loginWithFacebook(req, res, next) {
 
       // Attempt to find or register a user with
       // the Facebook profile information.
-      return facebook
-        .getProfile(req.body.facebookUserAccessToken)
+      return facebook.getProfile(req.body.facebookUserAccessToken)
         .then((profile) => {
           return findUserByEmailAddress(profile.email)
             .then((user) => {
@@ -75,6 +74,8 @@ function loginWithFacebook(req, res, next) {
       if (err.name === 'ValidationError') {
         err.code = 110;
         err.status = 400;
+        // TODO: This isn't always a registration failure.
+        // To replicate: remove birthday and try to login with facebook.
         err.message = 'Registration validation failed.';
       }
 
