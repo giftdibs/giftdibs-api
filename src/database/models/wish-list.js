@@ -441,7 +441,6 @@ wishListSchema.statics.markGiftAsReceived = function (
         // Send notification and email to dibbers
         // of this gift to mark dib as delivered.
         gift.dibs.forEach((dib) => {
-          console.log('dib?', dib);
           const promise = Notification.create({
             type: 'gift_received',
             _user: dib._user,
@@ -594,7 +593,6 @@ wishListSchema.statics.markDibAsDelivered = function (
     .then((docs) => {
       const wishList = docs[0];
 
-      console.log('mark dib delivered:', dibId, userId);
       return confirmDibUserOwnership(wishList, dibId, userId)
         .then((dib) => {
           if (dib.dateDelivered) {

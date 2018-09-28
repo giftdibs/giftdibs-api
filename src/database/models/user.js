@@ -122,9 +122,8 @@ const userSchema = new Schema({
     validate: {
       type: 'ageGate',
       validator: function (value) {
-        console.log('value?', value);
         const age = getAge(value);
-        console.log('age?', age, typeof age, age >= 13);
+
         return (age >= 13);
       },
       message: 'You must be 13 years old or older to use GiftDibs.',
