@@ -30,18 +30,18 @@ function hasDuplicateChars(str) {
   return !regex.test(str);
 }
 
-function getAge(birthDate) {
-  const today = new Date();
-  // const birthDate = new Date(dateString);
-  const m = today.getMonth() - birthDate.getMonth();
+// function getAge(birthDate) {
+//   const today = new Date();
+//   // const birthDate = new Date(dateString);
+//   const m = today.getMonth() - birthDate.getMonth();
 
-  let age = today.getFullYear() - birthDate.getFullYear();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
+//   let age = today.getFullYear() - birthDate.getFullYear();
+//   if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+//     age--;
+//   }
 
-  return age;
-}
+//   return age;
+// }
 
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
@@ -116,20 +116,20 @@ const userSchema = new Schema({
   },
   resetPasswordToken: String,
   resetPasswordExpires: Date,
-  birthday: {
-    type: Date,
-    required: true,
-    validate: {
-      type: 'ageGate',
-      validator: function (value) {
-        const age = getAge(value);
+  // birthday: {
+  //   type: Date,
+  //   required: true,
+  //   validate: {
+  //     type: 'ageGate',
+  //     validator: function (value) {
+  //       const age = getAge(value);
 
-        return (age >= 13);
-      },
-      message: 'You must be 13 years old or older to use GiftDibs.',
-      isAsync: false
-    }
-  },
+  //       return (age >= 13);
+  //     },
+  //     message: 'You must be 13 years old or older to use GiftDibs.',
+  //     isAsync: false
+  //   }
+  // },
   facebookId: String,
   dateLastLoggedIn: {
     type: Date,
@@ -230,7 +230,7 @@ userSchema.methods.verifyEmailAddress = function (token) {
 
 userSchema.methods.updateSync = function (values) {
   const fields = [
-    'birthday',
+    // 'birthday',
     'firstName',
     'lastName',
     'emailAddress',
@@ -246,10 +246,25 @@ function removeReferencedDocuments(user, next) {
   const { Friendship } = require('./friendship');
   const { Notification } = require('./notification');
   const { WishList } = require('./wish-list');
+  const fileHandler = require('../../shared/file-handler');
 
   const userId = user._id;
 
   Promise.all([
+    // Remove avatar from S3.
+    new Promise((resolve, reject) => {
+      if (!user.avatarUrl) {
+        resolve();
+        return;
+      }
+
+      const fragments = user.avatarUrl.split('/');
+      const fileName = fragments[fragments.length - 1];
+
+      fileHandler.remove(fileName)
+        .then(resolve)
+        .catch(reject);
+    }),
     WishList.remove({ _user: userId }),
     Friendship.remove({
       $or: [

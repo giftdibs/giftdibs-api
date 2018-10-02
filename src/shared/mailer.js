@@ -31,6 +31,8 @@ function sendPasswordResetEmail(
 ) {
   const href = `http://localhost:4200/account/reset-password/${resetPasswordToken}`;
 
+  console.log('RESET EMAIL:', href);
+
   return sendMessage(
     emailAddress,
     'Reset password request',
@@ -46,6 +48,8 @@ function sendAccountVerificationEmail(
   emailAddressVerificationToken
 ) {
   const href = `http://localhost:4200/account/verify/${emailAddressVerificationToken}`;
+
+  console.log('VERIFY ACCOUNT:', href);
 
   return sendMessage(
     emailAddress,

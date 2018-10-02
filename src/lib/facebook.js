@@ -36,7 +36,7 @@ const getProfile = (userAccessToken) => {
     method: 'GET',
     url: 'https://graph.facebook.com/me',
     qs: {
-      fields: 'birthday,email,first_name,last_name',
+      fields: 'email,first_name,last_name',
       access_token: userAccessToken
     },
     json: true

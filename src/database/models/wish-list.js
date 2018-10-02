@@ -820,6 +820,30 @@ wishListSchema.plugin(ConfirmUserOwnershipPlugin, {
   }
 });
 
+wishListSchema.post('remove', (wishList, next) => {
+  const fileHandler = require('../../shared/file-handler');
+
+  if (!wishList.gifts || wishList.gifts.length === 0) {
+    return;
+  }
+
+  // Delete all gift images from S3.
+  const promises = wishList.gifts.map((gift) => {
+    if (!gift.imageUrl) {
+      return Promise.resolve();
+    }
+
+    const fragments = gift.imageUrl.split('/');
+    const fileName = fragments[fragments.length - 1];
+
+    return fileHandler.remove(fileName);
+  });
+
+  Promise.all(promises).then(() => {
+    next();
+  }).catch(next);
+});
+
 const WishList = mongoose.model('WishList', wishListSchema);
 
 module.exports = {

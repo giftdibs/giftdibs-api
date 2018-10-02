@@ -14,7 +14,7 @@ function getSelectFields(req) {
   if (req.user._id.toString() === req.params.userId) {
     selectFields = [
       'avatarUrl',
-      'birthday',
+      // 'birthday',
       'facebookId',
       'firstName',
       'lastName',

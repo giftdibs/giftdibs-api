@@ -27,7 +27,7 @@ function updateOrCreateUserWithFacebookProfile(user, facebookProfile) {
 
   // TODO: Add facebook avatar image automatically.
   const newUser = new User({
-    birthday: new Date(facebookProfile.birthday),
+    // birthday: new Date(facebookProfile.user_birthday),
     emailAddress: facebookProfile.email,
     emailAddressVerified: true,
     firstName: facebookProfile.first_name,
