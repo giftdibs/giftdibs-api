@@ -13,16 +13,13 @@ const {
 } = require('./post');
 
 const router = express.Router();
-router.use(authenticateJwt);
 
 router.route('/avatars')
-  .delete(deleteAvatar)
-  .post(uploadAvatar);
+  .delete([authenticateJwt, deleteAvatar])
+  .post([authenticateJwt, uploadAvatar]);
 
 router.route('/gifts/:giftId/thumbnails')
-  .delete(deleteGiftThumbnail)
-  .post(uploadGiftThumbnail);
+  .delete([authenticateJwt, deleteGiftThumbnail])
+  .post([authenticateJwt, uploadGiftThumbnail]);
 
-module.exports = {
-  router
-};
+module.exports = router;

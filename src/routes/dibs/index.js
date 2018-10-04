@@ -8,21 +8,18 @@ const { deleteDib } = require('./delete');
 const { getDibsRecipients } = require('./recipients/get');
 
 const router = express.Router();
-router.use(authenticateJwt);
 
 router.route('/gifts/:giftId/dibs')
-  .post(createDib);
+  .post([authenticateJwt, createDib]);
 
 router.route('/dibs/:dibId')
-  .patch(updateDib)
-  .delete(deleteDib);
+  .patch([authenticateJwt, updateDib])
+  .delete([authenticateJwt, deleteDib]);
 
 router.route('/dibs/:dibId/delivery')
-  .post(markDibAsDelivered);
+  .post([authenticateJwt, markDibAsDelivered]);
 
 router.route('/dibs/recipients')
-  .get(getDibsRecipients);
+  .get([authenticateJwt, getDibsRecipients]);
 
-module.exports = {
-  router
-};
+module.exports = router;

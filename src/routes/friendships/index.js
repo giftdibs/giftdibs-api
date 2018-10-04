@@ -6,15 +6,12 @@ const { createFriendship } = require('./post');
 const { deleteFriendship } = require('./delete');
 
 const router = express.Router();
-router.use(authenticateJwt);
 
 router.route('/users/:userId/friendships')
-  .get(getFriendships);
+  .get([authenticateJwt, getFriendships]);
 
 router.route('/friendships')
-  .post(createFriendship)
-  .delete(deleteFriendship);
+  .post([authenticateJwt, createFriendship])
+  .delete([authenticateJwt, deleteFriendship]);
 
-module.exports = {
-  router
-};
+module.exports = router;

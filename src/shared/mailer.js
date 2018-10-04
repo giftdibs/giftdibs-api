@@ -60,7 +60,20 @@ Click the link below to verify your account:<br>
   );
 }
 
+function sendFeedbackEmail(reason, body, referrer) {
+  return sendMessage(
+    process.env.ADMIN_EMAIL_ADDRESS,
+    'Feedback submitted',
+    [
+      `Reason: ${reason}<br>`,
+      `Referrer: ${referrer}<br><br>`,
+      `${body}`
+    ].join('')
+  );
+}
+
 module.exports = {
   sendAccountVerificationEmail,
+  sendFeedbackEmail,
   sendPasswordResetEmail
 };

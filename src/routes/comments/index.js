@@ -7,23 +7,18 @@ const { deleteComment } = require('./delete');
 
 const {
   getComment
-  // getComments
 } = require('./get');
 
 const { updateComment } = require('./patch');
 
 const router = express.Router();
-router.use(authenticateJwt);
 
 router.route('/gifts/:giftId/comments')
-  // .get(getComments)
-  .post(createComment);
+  .post([authenticateJwt, createComment]);
 
 router.route('/gifts/comments/:commentId')
-  .get(getComment)
-  .patch(updateComment)
-  .delete(deleteComment);
+  .get([authenticateJwt, getComment])
+  .patch([authenticateJwt, updateComment])
+  .delete([authenticateJwt, deleteComment]);
 
-module.exports = {
-  router
-};
+module.exports = router;

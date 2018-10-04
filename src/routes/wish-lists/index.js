@@ -11,20 +11,17 @@ const { updateWishList } = require('./patch');
 const { deleteWishList } = require('./delete');
 
 const router = express.Router();
-router.use(authenticateJwt);
 
 router.route('/wish-lists')
-  .get(getWishLists)
-  .post(createWishList);
+  .get([authenticateJwt, getWishLists])
+  .post([authenticateJwt, createWishList]);
 
 router.route('/wish-lists/:wishListId')
-  .get(getWishList)
-  .patch(updateWishList)
-  .delete(deleteWishList);
+  .get([authenticateJwt, getWishList])
+  .patch([authenticateJwt, updateWishList])
+  .delete([authenticateJwt, deleteWishList]);
 
 router.route('/users/:userId/wish-lists')
-  .get(getWishLists)
+  .get([authenticateJwt, getWishLists])
 
-module.exports = {
-  router
-};
+module.exports = router;

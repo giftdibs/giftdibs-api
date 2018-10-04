@@ -320,6 +320,7 @@ const verifyEmailAddress = [
 
 const deleteAccount = [
   authenticateJwt,
+
   function deleteAccount(req, res, next) {
     User
       .confirmUserOwnership(req.body.userId, req.user._id)
@@ -336,6 +337,7 @@ const deleteAccount = [
 
 const refreshToken = [
   authenticateJwt,
+
   (req, res, next) => {
     authResponse({
       message: 'Token refreshed successfully.'

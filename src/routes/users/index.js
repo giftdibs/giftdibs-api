@@ -5,15 +5,12 @@ const { getUser, getUsers } = require('./get');
 const { updateUser } = require('./patch');
 
 const router = express.Router();
-router.use(authenticateJwt);
 
 router.route('/users')
-  .get(getUsers);
+  .get([authenticateJwt, getUsers]);
 
 router.route('/users/:userId')
-  .get(getUser)
-  .patch(updateUser);
+  .get([authenticateJwt, getUser])
+  .patch([authenticateJwt, updateUser]);
 
-module.exports = {
-  router
-};
+module.exports = router;

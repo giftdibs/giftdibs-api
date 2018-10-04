@@ -6,15 +6,12 @@ const { updateNotification } = require('./patch');
 const { deleteNotification } = require('./delete');
 
 const router = express.Router();
-router.use(authenticateJwt);
 
 router.route('/notifications')
-  .get(getNotifications);
+  .get([authenticateJwt, getNotifications]);
 
 router.route('/notifications/:notificationId')
-  .patch(updateNotification)
-  .delete(deleteNotification);
+  .patch([authenticateJwt, updateNotification])
+  .delete([authenticateJwt, deleteNotification]);
 
-module.exports = {
-  router
-};
+module.exports = router;

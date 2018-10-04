@@ -136,74 +136,62 @@ const definitions = [
   {
     name: 'DibNotFoundError',
     message: 'Dib not found.',
-    code: 500,
+    code: 600,
     status: 404
   },
   {
     name: 'DibValidationError',
     message: 'Dib validation failed.',
-    code: 501,
+    code: 601,
     status: 400
   },
   {
     name: 'DibPermissionError',
     message: 'Permission denied to access dib.',
-    code: 502,
+    code: 602,
     status: 403
   },
   {
     name: 'FriendshipNotFoundError',
     message: 'Friendship not found.',
-    code: 600,
+    code: 700,
     status: 404
   },
   {
     name: 'FriendshipValidationError',
     message: 'Friendship validation failed.',
-    code: 601,
+    code: 701,
     status: 400
   },
   {
     name: 'FriendshipPermissionError',
     message: 'Permission denied to access friendship.',
-    code: 602,
-    status: 403
-  },
-  {
-    name: 'MessageNotFoundError',
-    message: 'Message not found.',
-    code: 500,
-    status: 404
-  },
-  {
-    name: 'MessageValidationError',
-    message: 'Message validation failed.',
-    code: 501,
-    status: 400
-  },
-  {
-    name: 'MessagePermissionError',
-    message: 'Permission denied to access message.',
-    code: 502,
+    code: 702,
     status: 403
   },
   {
     name: 'NotificationNotFoundError',
     message: 'Notification not found.',
-    code: 500,
+    code: 800,
     status: 404
   },
   {
     name: 'NotificationValidationError',
     message: 'Notification validation failed.',
-    code: 501,
+    code: 801,
     status: 400
   },
   {
     name: 'NotificationPermissionError',
     message: 'Permission denied to access notification.',
-    code: 502,
+    code: 802,
     status: 403
+  },
+  {
+    name: 'FeedbackValidationError',
+    message: 'Feedback validation failed.',
+    code: 901,
+    status: 400
   }
 ];
 

@@ -12,22 +12,18 @@ const { updateGift, markGiftAsReceived } = require('./patch');
 
 const router = express.Router();
 
-router.use(authenticateJwt);
-
 router.route('/gifts')
-  .get(getGifts);
+  .get([authenticateJwt, getGifts]);
 
 router.route('/wish-lists/:wishListId/gifts')
-  .post(createGift);
+  .post([authenticateJwt, createGift]);
 
 router.route('/gifts/:giftId')
-  .get(getGift)
-  .delete(deleteGift)
-  .patch(updateGift);
+  .get([authenticateJwt, getGift])
+  .delete([authenticateJwt, deleteGift])
+  .patch([authenticateJwt, updateGift]);
 
 router.route('/gifts/:giftId/received')
-  .patch(markGiftAsReceived);
+  .patch([authenticateJwt, markGiftAsReceived]);
 
-module.exports = {
-  router
-};
+module.exports = router;
