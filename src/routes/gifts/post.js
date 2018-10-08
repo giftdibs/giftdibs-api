@@ -35,6 +35,15 @@ function createGift(req, res, next) {
         quantity: req.body.quantity
       });
 
+      if (req.body.externalUrls) {
+        req.body.externalUrls.forEach((externalUrl) => {
+          gift.externalUrls.push({
+            price: externalUrl.price,
+            url: externalUrl.url
+          });
+        });
+      }
+
       wishList.gifts.push(gift);
 
       return wishList.save().then(() => gift);

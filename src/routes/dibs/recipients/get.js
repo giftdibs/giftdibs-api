@@ -31,6 +31,7 @@ function getSumBudget(recipient) {
 function getDibsRecipients(req, res, next) {
   const recipients = [];
   const userId = req.user._id;
+  const status = req.query.status;
 
   // Get all wish lists that include the session user's dibs.
   WishList.findAuthorized(userId, {
@@ -43,7 +44,21 @@ function getDibsRecipients(req, res, next) {
         wishList.gifts.forEach((gift) => {
           // Remove any dibs that do not belong to session user.
           const foundDib = gift.dibs.find((dib) => {
-            return (dib._user._id.toString() === userId.toString());
+            const isOwner = (dib._user._id.toString() === userId.toString());
+
+            if (isOwner) {
+              // Only return delivered dibs.
+              if (status === 'delivered' && dib.dateDelivered) {
+                return true;
+              }
+
+              // Only return non-delivered dibs.
+              if (status !== 'delivered' && !dib.dateDelivered) {
+                return true;
+              }
+            }
+
+            return false;
           });
 
           // Remove all gifts except those that were dibbed.

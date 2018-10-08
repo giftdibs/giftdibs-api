@@ -96,7 +96,14 @@ const register = [
         return mailer.sendAccountVerificationEmail(
           doc.emailAddress,
           doc.emailAddressVerificationToken
-        ).then(() => doc);
+        )
+          .then(() => doc)
+          .catch((err) => {
+            // TODO: Log this to some logger service!
+            console.log('Email error:', err);
+            // Ignore email errors.
+            return Promise.resolve(doc);
+          });
       })
       .then((doc) => {
         // TODO: Send welcome email.

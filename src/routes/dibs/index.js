@@ -16,7 +16,7 @@ router.route('/dibs/:dibId')
   .patch([authenticateJwt, updateDib])
   .delete([authenticateJwt, deleteDib]);
 
-router.route('/dibs/:dibId/delivery')
+router.route('/dibs/:dibId/delivered')
   .post([authenticateJwt, markDibAsDelivered]);
 
 router.route('/dibs/recipients')
