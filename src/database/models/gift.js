@@ -75,6 +75,7 @@ const giftSchema = new Schema({
 
 giftSchema.methods.moveToWishList = function (wishListId, userId) {
   const instance = this;
+  const doReturnMongooseObject = true;
   const { WishList } = require('./wish-list');
 
   return WishList.findAuthorized(
@@ -85,7 +86,7 @@ giftSchema.methods.moveToWishList = function (wishListId, userId) {
         { 'gifts._id': instance._id }
       ]
     },
-    true
+    doReturnMongooseObject
   ).then((wishLists) => {
     // The gift already belongs to the wish list.
     // (The query attempts to find the gift's current wish list

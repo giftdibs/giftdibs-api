@@ -35,6 +35,16 @@ function getGift(req, res, next) {
 
 function getGifts(req, res, next) {
   const userId = req.user._id.toString();
+  // const startId = req.query.startId;
+  // const query = {};
+
+  // Paginate results?
+  // https://stackoverflow.com/a/38265198/6178885
+  // if (startId) {
+  // query['gifts._id'] = {
+  //   $gt: startId
+  // };
+  // }
 
   WishList.findAuthorized(userId)
     .then((wishLists) => {

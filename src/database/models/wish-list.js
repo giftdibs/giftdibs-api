@@ -102,10 +102,7 @@ function truncateText(text, length) {
  * @param {string} userId
  * @param {*} wishList
  */
-function isUserAuthorizedToViewWishList(
-  userId,
-  wishList
-) {
+function isUserAuthorizedToViewWishList(userId, wishList) {
   const isOwner = (wishList._user._id.toString() === userId.toString());
   const privacy = wishList.privacy;
   const privacyType = privacy && privacy.type;
@@ -264,7 +261,7 @@ function validateDibQuantity(
 wishListSchema.statics.findAuthorized = function (
   userId,
   query = {},
-  raw = false
+  doReturnMongooseObject = false
 ) {
   const wishListModel = this;
 
@@ -282,17 +279,18 @@ wishListSchema.statics.findAuthorized = function (
     ]
   };
 
-  const promise = wishListModel.find(combined);
+  const promise = wishListModel
+    .find(combined);
 
-  if (!raw) {
-    promise
-      .populate('_user', populateUserFields)
-      .populate('gifts.dibs._user', populateUserFields)
-      .populate('gifts.comments._user', populateUserFields)
-      .lean();
+  if (doReturnMongooseObject) {
+    return promise;
   }
 
-  return promise;
+  return promise
+    .populate('_user', populateUserFields)
+    .populate('gifts.dibs._user', populateUserFields)
+    .populate('gifts.comments._user', populateUserFields)
+    .lean();
 };
 
 wishListSchema.statics.findAuthorizedById = function (
@@ -828,6 +826,7 @@ wishListSchema.post('remove', (wishList, next) => {
   }
 
   // Delete all gift images from S3.
+  // TODO: This isn't working.
   const promises = wishList.gifts.map((gift) => {
     if (!gift.imageUrl) {
       return Promise.resolve();
