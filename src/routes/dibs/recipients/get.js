@@ -99,8 +99,19 @@ function getDibsRecipients(req, res, next) {
       return recipients;
     })
     .then((recipients) => {
+      // Only return recipients that have non-empty gifts arrays.
+      recipients = recipients.filter((recipient) => {
+        const wishLists = recipient.wishLists.filter((wishList) => {
+          return (wishList.gifts && wishList.gifts.length);
+        });
+
+        return (wishLists && wishLists.length);
+      });
+
       authResponse({
-        data: { recipients }
+        data: {
+          recipients
+        }
       })(req, res, next);
     });
 }

@@ -14,5 +14,8 @@ module.exports = {
       .catch((err) => {
         logger.error(`Database connection error: ${err.message}`);
       });
+  },
+  disconnect: () => {
+    mongoose.disconnect();
   }
 };

@@ -52,8 +52,6 @@ friendshipSchema.statics.create = function (friendId, user) {
     );
   }
 
-  // TODO: Prevent non-verified accounts from following people?
-
   return this.find({
     '_user': userId,
     '_friend': friendId

@@ -15,6 +15,7 @@ function formatGiftResponse(gift, wishList, userId) {
   const isGiftOwner = (wishList._user._id.toString() === userId.toString());
 
   // Remove dibs if session user is owner of gift and gift is not received.
+  // TODO: If wish list is a registry, show dibs.
   if (isGiftOwner && !clone.dateReceived) {
     clone.dibs = [];
   }

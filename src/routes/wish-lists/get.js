@@ -36,6 +36,15 @@ function getWishLists(req, res, next) {
       });
     })
     .then((wishLists) => {
+
+      wishLists.sort((a, b) => {
+        const keyA = a.dateUpdated || a.dateCreated;
+        const keyB = b.dateUpdated || b.dateCreated;
+        if (keyA > keyB) return -1;
+        if (keyA < keyB) return 1;
+        return 0;
+      });
+
       authResponse({
         data: { wishLists }
       })(req, res, next);

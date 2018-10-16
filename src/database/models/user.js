@@ -3,8 +3,7 @@ const bcrypt = require('bcrypt');
 const randomstring = require('randomstring');
 
 const {
-  isEmail,
-  isAlpha
+  isEmail
 } = require('validator');
 
 const {
@@ -25,10 +24,10 @@ const {
   ConfirmUserOwnershipPlugin
 } = require('../plugins/confirm-user-ownership');
 
-function hasDuplicateChars(str) {
-  let regex = /(.)\1{2,}/;
-  return !regex.test(str);
-}
+// function hasDuplicateChars(str) {
+//   let regex = /(.)\1{2,}/;
+//   return !regex.test(str);
+// }
 
 // function getAge(birthDate) {
 //   const today = new Date();
@@ -43,6 +42,12 @@ function hasDuplicateChars(str) {
 //   return age;
 // }
 
+function isPersonName(value) {
+  // Only checks for line-breaks.
+  // See: https://stackoverflow.com/questions/33948270/javascript-regex-for-foreign-names
+  return /^.+$/.test(value);
+}
+
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
   avatarUrl: String,
@@ -54,17 +59,9 @@ const userSchema = new Schema({
     minlength: [1, 'Your first name must be at least one (1) character long.'],
     validate: [
       {
-        type: 'hasDuplicateChars',
-        validator: hasDuplicateChars,
-        message: [
-          'Your first name cannot contain characters',
-          'that repeat more than three (3) times.'
-        ].join(' ')
-      },
-      {
-        type: 'isAlpha',
-        validator: isAlpha,
-        message: 'Your first name may only contain letters.',
+        type: 'isPersonName',
+        validator: isPersonName,
+        message: 'Your first name may not contain line breaks.',
         isAsync: false
       }
     ]
@@ -77,17 +74,9 @@ const userSchema = new Schema({
     minlength: [1, 'Your last name must be at least one (1) character long.'],
     validate: [
       {
-        type: 'hasDuplicateChars',
-        validator: hasDuplicateChars,
-        message: [
-          'Your last name cannot contain characters',
-          'that repeat more than three (3) times.'
-        ].join(' ')
-      },
-      {
-        type: 'isAlpha',
-        validator: isAlpha,
-        message: 'Your last name may only contain letters.',
+        type: 'isPersonName',
+        validator: isPersonName,
+        message: 'Your first name may not contain line breaks.',
         isAsync: false
       }
     ]
@@ -110,15 +99,20 @@ const userSchema = new Schema({
     default: false
   },
   emailAddressVerificationToken: String,
-  password: {
+  interests: {
     type: String,
-    required: [true, 'Please provide a valid password.']
+    trim: true,
+    maxlength: [
+      500,
+      'Interests cannot be longer than 500 characters.'
+    ]
   },
+  password: String,
   resetPasswordToken: String,
   resetPasswordExpires: Date,
   // birthday: {
   //   type: Date,
-  //   required: true,
+  //   // required: true,
   //   validate: {
   //     type: 'ageGate',
   //     validator: function (value) {
@@ -131,6 +125,13 @@ const userSchema = new Schema({
   //   }
   // },
   facebookId: String,
+  // gender: {
+  //   type: String,
+  //   enum: [
+  //     'female',
+  //     'male'
+  //   ]
+  // },
   dateLastLoggedIn: {
     type: Date,
     required: true
@@ -234,7 +235,9 @@ userSchema.methods.updateSync = function (values) {
     'firstName',
     'lastName',
     'emailAddress',
-    'facebookId'
+    'facebookId',
+    // 'gender',
+    'interests'
   ];
 
   updateDocument(this, fields, values);
@@ -242,40 +245,53 @@ userSchema.methods.updateSync = function (values) {
   return this;
 };
 
-function removeReferencedDocuments(user, next) {
+async function removeReferencedDocuments(user, next) {
   const { Friendship } = require('./friendship');
   const { Notification } = require('./notification');
   const { WishList } = require('./wish-list');
+
   const fileHandler = require('../../shared/file-handler');
 
   const userId = user._id;
 
-  Promise.all([
-    // Remove avatar from S3.
-    new Promise((resolve, reject) => {
-      if (!user.avatarUrl) {
-        resolve();
-        return;
-      }
-
+  try {
+    if (user.avatarUrl) {
       const fragments = user.avatarUrl.split('/');
       const fileName = fragments[fragments.length - 1];
+      await fileHandler.remove(fileName);
+    }
 
-      fileHandler.remove(fileName)
-        .then(resolve)
-        .catch(reject);
-    }),
-    WishList.remove({ _user: userId }),
-    Friendship.remove({
+    const wishLists = await WishList.find({
+      _user: userId
+    });
+
+    const notifications = await Notification.find({
+      _user: userId
+    });
+
+    const friendships = await Friendship.find({
       $or: [
         { _user: userId },
         { _friend: userId }
       ]
-    }),
-    Notification.remove({ _user: userId })
-  ])
-    .then(() => next())
-    .catch(next);
+    });
+
+    await Promise.all(
+      wishLists.map((wishList) => wishList.remove())
+    );
+
+    await Promise.all(
+      notifications.map((notification) => notification.remove())
+    );
+
+    await Promise.all(
+      friendships.map((friendship) => friendship.remove())
+    );
+
+    next();
+  } catch (err) {
+    next(err);
+  }
 }
 
 userSchema.post('remove', removeReferencedDocuments);

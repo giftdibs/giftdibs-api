@@ -329,8 +329,8 @@ const deleteAccount = [
   authenticateJwt,
 
   function deleteAccount(req, res, next) {
-    User
-      .confirmUserOwnership(req.body.userId, req.user._id)
+    const userId = req.body.userId;
+    User.confirmUserOwnership(userId, req.user._id)
       .then((user) => user.confirmPassword(req.body.password))
       .then((user) => user.remove())
       .then(() => {

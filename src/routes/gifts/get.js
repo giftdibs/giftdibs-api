@@ -35,28 +35,34 @@ function getGift(req, res, next) {
 
 function getGifts(req, res, next) {
   const userId = req.user._id.toString();
-  // const startId = req.query.startId;
-  // const query = {};
+  const start = parseInt(req.query.startIndex) || 0;
+  const max = 20;
 
-  // Paginate results?
-  // https://stackoverflow.com/a/38265198/6178885
-  // if (startId) {
-  // query['gifts._id'] = {
-  //   $gt: startId
-  // };
-  // }
-
-  WishList.findAuthorized(userId)
+  WishList.findAuthorizedByFriendships(userId)
     .then((wishLists) => {
       let gifts = [];
 
       wishLists.forEach((wishList) => {
-        const formatted = wishList.gifts.map((gift) => {
-          return formatGiftResponse(gift, wishList, userId);
-        });
+        wishList.gifts.forEach((gift) => {
+          // if (gift.dateReceived) {
+          //   return;
+          // }
 
-        gifts = gifts.concat(formatted);
+          gifts.push(
+            formatGiftResponse(gift, wishList, userId)
+          );
+        });
       });
+
+      gifts.sort((a, b) => {
+        const keyA = a.dateUpdated || a.dateCreated;
+        const keyB = b.dateUpdated || b.dateCreated;
+        if (keyA > keyB) return -1;
+        if (keyA < keyB) return 1;
+        return 0;
+      });
+
+      gifts = gifts.slice(start, start + max - 1);
 
       authResponse({
         data: { gifts }

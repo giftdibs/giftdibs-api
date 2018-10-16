@@ -46,6 +46,14 @@ const wishListSchema = new Schema({
       'A user ID must be provided.'
     ]
   },
+  description: {
+    type: String,
+    trim: true,
+    maxlength: [
+      2000,
+      'The description cannot be longer than 2000 characters.'
+    ]
+  },
   gifts: [
     giftSchema
   ],
@@ -68,8 +76,15 @@ const wishListSchema = new Schema({
     }],
     type: {
       type: String,
-      enum: ['everyone', 'me', 'friends', 'custom'],
+      enum: ['everyone', 'me', 'custom'],
       default: 'everyone'
+    }
+  },
+  wishListType: {
+    type: {
+      type: String,
+      enum: ['wish-list', 'registry'],
+      default: 'wish-list'
     }
   }
 }, {
@@ -79,8 +94,6 @@ const wishListSchema = new Schema({
     updatedAt: 'dateUpdated'
   }
 });
-
-// TODO: Look for ways to optimize any database populations!
 
 function truncateText(text, length) {
   if (!text) {
@@ -92,6 +105,14 @@ function truncateText(text, length) {
   }
 
   return text.substr(0, length) + '\u2026'
+}
+
+// Do not update the date when modifying dibs.
+function revertGiftDateUpdated(wishList, gift, oldDateUpdated) {
+  return WishList.update(
+    { _id: wishList._id, 'gifts._id': gift._id },
+    { $set: { 'gifts.$.dateUpdated': oldDateUpdated } }
+  ).then(() => wishList);
 }
 
 /**
@@ -133,11 +154,7 @@ function isUserAuthorizedToViewWishList(userId, wishList) {
   return passes;
 }
 
-function findOneAuthorizedByQuery(
-  query,
-  userId,
-  raw = false
-) {
+function findOneAuthorizedByQuery(query, userId, raw = false) {
   const wishListModel = this;
   const promise = wishListModel.find(query)
     .limit(1)
@@ -258,7 +275,23 @@ function validateDibQuantity(
   });
 }
 
-wishListSchema.statics.findAuthorized = function (
+async function findAuthorizedByFriendships(userId) {
+  const { Friendship } = require('./friendship');
+
+  const friendships = await Friendship.getFriendshipsByUserId(userId);
+  const friendIds = friendships.following.map((friendship) => friendship._id);
+
+  // Also show current user's gifts.
+  friendIds.push(userId);
+
+  return this.findAuthorized(userId, {
+    '_user': {
+      $in: friendIds
+    }
+  });
+}
+
+function findAuthorized(
   userId,
   query = {},
   doReturnMongooseObject = false
@@ -279,8 +312,7 @@ wishListSchema.statics.findAuthorized = function (
     ]
   };
 
-  const promise = wishListModel
-    .find(combined);
+  const promise = wishListModel.find(combined);
 
   if (doReturnMongooseObject) {
     return promise;
@@ -291,12 +323,9 @@ wishListSchema.statics.findAuthorized = function (
     .populate('gifts.dibs._user', populateUserFields)
     .populate('gifts.comments._user', populateUserFields)
     .lean();
-};
+}
 
-wishListSchema.statics.findAuthorizedById = function (
-  wishListId,
-  userId
-) {
+function findAuthorizedById(wishListId, userId) {
   return findOneAuthorizedByQuery.call(
     this,
     { _id: wishListId },
@@ -307,48 +336,55 @@ wishListSchema.statics.findAuthorizedById = function (
       wishList.gifts = _sortBy(wishList.gifts, ['dateUpdated'], ['desc']);
       return wishList;
     });
-};
+}
 
-wishListSchema.statics.findAuthorizedByGiftId = function (
-  giftId,
-  userId,
-  raw
-) {
+function findAuthorizedByGiftId(giftId, userId, raw) {
   return findOneAuthorizedByQuery.call(
     this,
     { 'gifts._id': giftId },
     userId,
     raw
-  ).then((wishList) => {
-    if (!wishList) {
-      throw new GiftNotFoundError();
-    }
+  )
+    .then((wishList) => {
+      if (!wishList) {
+        throw new GiftNotFoundError();
+      }
 
-    return wishList;
-  });
-};
+      return wishList;
+    });
+}
 
-wishListSchema.statics.findAuthorizedByCommentId = function (
-  commentId,
-  userId
-) {
+function findAuthorizedByCommentId(commentId, userId) {
   return findOneAuthorizedByQuery.call(
     this,
     { 'gifts.comments._id': commentId },
     userId
-  ).then((wishList) => {
-    if (!wishList) {
-      throw new CommentNotFoundError();
-    }
+  )
+    .then((wishList) => {
+      if (!wishList) {
+        throw new CommentNotFoundError();
+      }
 
-    return wishList;
-  });
-};
+      return wishList;
+    });
+}
 
-wishListSchema.methods.updateSync = function (values) {
+function addGiftSync(gift) {
+  const instance = this;
+
+  instance.gifts.push(gift);
+
+  // Filter out any duplicate gifts.
+  // https://stackoverflow.com/a/15868720/6178885
+  instance.gifts = [...new Set(instance.gifts)];
+}
+
+function updateSync(values) {
   const fields = [
+    'description',
     'name',
-    'privacy'
+    'privacy',
+    'wishListType'
   ];
 
   // TODO: If owner changes privacy of wish list,
@@ -358,22 +394,9 @@ wishListSchema.methods.updateSync = function (values) {
   updateDocument(this, fields, values);
 
   return this;
-};
+}
 
-wishListSchema.methods.addGiftSync = function (gift) {
-  const instance = this;
-
-  instance.gifts.push(gift);
-
-  // Filter out any duplicate gifts.
-  // https://stackoverflow.com/a/15868720/6178885
-  instance.gifts = [...new Set(instance.gifts)];
-};
-
-wishListSchema.statics.confirmUserOwnershipByGiftId = function (
-  giftId,
-  userId
-) {
+function confirmUserOwnershipByGiftId(giftId, userId) {
   return this.find({ 'gifts._id': giftId })
     .limit(1)
     .then((docs) => {
@@ -389,13 +412,9 @@ wishListSchema.statics.confirmUserOwnershipByGiftId = function (
 
       return wishList;
     });
-};
+}
 
-wishListSchema.statics.updateGiftById = function (
-  giftId,
-  userId,
-  attributes
-) {
+function updateGiftById(giftId, userId, attributes) {
   return this.confirmUserOwnershipByGiftId(giftId, userId)
     .then((wishList) => {
       const gift = wishList.gifts.id(giftId);
@@ -415,12 +434,9 @@ wishListSchema.statics.updateGiftById = function (
 
       return wishList.save();
     });
-};
+}
 
-wishListSchema.statics.markGiftAsReceived = function (
-  giftId,
-  user
-) {
+function markGiftAsReceived(giftId, user) {
   return this.confirmUserOwnershipByGiftId(giftId, user._id)
     .then((wishList) => {
       const gift = wishList.gifts.id(giftId);
@@ -464,13 +480,9 @@ wishListSchema.statics.markGiftAsReceived = function (
         return Promise.all(promises);
       });
     });
-};
+}
 
-wishListSchema.statics.createDib = function (
-  giftId,
-  attributes,
-  userId
-) {
+function createDib(giftId, attributes, userId) {
   const raw = true;
 
   return this.findAuthorizedByGiftId(giftId, userId, raw)
@@ -506,10 +518,16 @@ wishListSchema.statics.createDib = function (
 
       gift.dibs.push({
         _user: userId,
+        isAnonymous: attributes.isAnonymous,
         quantity: attributes.quantity
       });
 
-      return wishList.save();
+      const oldDateUpdated = gift.dateUpdated;
+
+      return wishList.save()
+        .then((wishList) => {
+          return revertGiftDateUpdated(wishList, gift, oldDateUpdated);
+        });
     })
     .then((wishList) => {
       const gift = wishList.gifts.id(giftId);
@@ -517,12 +535,9 @@ wishListSchema.statics.createDib = function (
 
       return dibId;
     });
-};
+}
 
-wishListSchema.statics.removeDibById = function (
-  dibId,
-  userId
-) {
+function removeDibById(dibId, userId) {
   return this.find({ 'gifts.dibs._id': dibId })
     .limit(1)
     .then((docs) => {
@@ -536,17 +551,21 @@ wishListSchema.statics.removeDibById = function (
             );
           }
 
+          const gift = wishList.gifts.find((gift) => {
+            return gift.dibs.id(dibId);
+          });
+
+          const oldDateUpdated = gift.dateUpdated;
+
           dib.remove();
-          return wishList.save();
+
+          return wishList.save()
+            .then(() => revertGiftDateUpdated(wishList, gift, oldDateUpdated));
         });
     });
-};
+}
 
-wishListSchema.statics.updateDibById = function (
-  dibId,
-  userId,
-  attributes
-) {
+function updateDibById(dibId, userId, attributes) {
   return this.find({ 'gifts.dibs._id': dibId })
     .limit(1)
     .then((docs) => {
@@ -570,19 +589,22 @@ wishListSchema.statics.updateDibById = function (
             );
           }
 
+          const oldDateUpdated = gift.dateUpdated;
+
           return validateDibQuantity(gift, attributes.quantity, dibId)
             .then(() => {
               dib.updateSync(attributes);
+
               return wishList.save();
-            });
+            })
+            .then((wishList) => {
+              return revertGiftDateUpdated(wishList, gift, oldDateUpdated);
+            })
         });
     });
-};
+}
 
-wishListSchema.statics.markDibAsDelivered = function (
-  dibId,
-  userId
-) {
+function markDibAsDelivered(dibId, userId) {
   return this.find({
     'gifts.dibs._id': dibId
   })
@@ -659,12 +681,9 @@ wishListSchema.statics.markDibAsDelivered = function (
         })
         .then(() => wishList.save());
     });
-};
+}
 
-wishListSchema.statics.removeCommentById = function (
-  commentId,
-  userId
-) {
+function removeCommentById(commentId, userId) {
   return this.find({ 'gifts.comments._id': commentId })
     .limit(1)
     .then((docs) => {
@@ -676,13 +695,9 @@ wishListSchema.statics.removeCommentById = function (
           return wishList.save();
         });
     });
-};
+}
 
-wishListSchema.statics.createComment = function (
-  giftId,
-  attributes,
-  user
-) {
+function createComment(giftId, attributes, user) {
   const {
     Notification
   } = require('./notification');
@@ -778,13 +793,9 @@ wishListSchema.statics.createComment = function (
     .then(() => {
       return _comment._id;
     });
-};
+}
 
-wishListSchema.statics.updateCommentById = function (
-  commentId,
-  userId,
-  attributes
-) {
+function updateCommentById(commentId, userId, attributes) {
   return this.find({ 'gifts.comments._id': commentId })
     .limit(1)
     .then((docs) => {
@@ -796,9 +807,9 @@ wishListSchema.statics.updateCommentById = function (
           return wishList.save();
         });
     });
-};
+}
 
-wishListSchema.statics.getCommentsByGiftId = function (giftId, userId) {
+function getCommentsByGiftId(giftId, userId) {
   const raw = false;
 
   return this.findAuthorizedByGiftId(giftId, userId, raw)
@@ -807,7 +818,89 @@ wishListSchema.statics.getCommentsByGiftId = function (giftId, userId) {
 
       return gift.comments;
     });
-};
+}
+
+async function removeReferencedDocuments(wishList, next) {
+  const fileHandler = require('../../shared/file-handler');
+
+  if (!wishList.gifts || wishList.gifts.length === 0) {
+    return;
+  }
+
+  let imageUrls = [];
+
+  wishList.gifts.forEach((gift) => {
+    if (gift.imageUrl) {
+      imageUrls.push(gift.imageUrl);
+    }
+  });
+
+  // Delete all gift images from S3.
+  const promises = imageUrls.map((imageUrl) => {
+    const fragments = imageUrl.split('/');
+    const fileName = fragments[fragments.length - 1];
+
+    return fileHandler.remove(fileName);
+  });
+
+  Promise.all(promises)
+    .then(() => next())
+    .catch(next);
+}
+
+wishListSchema.statics.findAuthorizedByFriendships =
+  findAuthorizedByFriendships;
+
+wishListSchema.statics.findAuthorized =
+  findAuthorized;
+
+wishListSchema.statics.findAuthorizedById =
+  findAuthorizedById;
+
+wishListSchema.statics.findAuthorizedByGiftId =
+  findAuthorizedByGiftId;
+
+wishListSchema.statics.findAuthorizedByCommentId =
+  findAuthorizedByCommentId;
+
+wishListSchema.statics.confirmUserOwnershipByGiftId =
+  confirmUserOwnershipByGiftId;
+
+wishListSchema.statics.updateGiftById =
+  updateGiftById;
+
+wishListSchema.methods.updateSync =
+  updateSync;
+
+wishListSchema.methods.addGiftSync =
+  addGiftSync;
+
+wishListSchema.statics.markGiftAsReceived =
+  markGiftAsReceived;
+
+wishListSchema.statics.createDib =
+  createDib;
+
+wishListSchema.statics.removeDibById =
+  removeDibById;
+
+wishListSchema.statics.updateDibById =
+  updateDibById;
+
+wishListSchema.statics.markDibAsDelivered =
+  markDibAsDelivered;
+
+wishListSchema.statics.removeCommentById =
+  removeCommentById;
+
+wishListSchema.statics.createComment =
+  createComment;
+
+wishListSchema.statics.updateCommentById =
+  updateCommentById;
+
+wishListSchema.statics.getCommentsByGiftId =
+  getCommentsByGiftId;
 
 wishListSchema.plugin(MongoDbErrorHandlerPlugin);
 wishListSchema.plugin(ConfirmUserOwnershipPlugin, {
@@ -818,30 +911,7 @@ wishListSchema.plugin(ConfirmUserOwnershipPlugin, {
   }
 });
 
-wishListSchema.post('remove', (wishList, next) => {
-  const fileHandler = require('../../shared/file-handler');
-
-  if (!wishList.gifts || wishList.gifts.length === 0) {
-    return;
-  }
-
-  // Delete all gift images from S3.
-  // TODO: This isn't working.
-  const promises = wishList.gifts.map((gift) => {
-    if (!gift.imageUrl) {
-      return Promise.resolve();
-    }
-
-    const fragments = gift.imageUrl.split('/');
-    const fileName = fragments[fragments.length - 1];
-
-    return fileHandler.remove(fileName);
-  });
-
-  Promise.all(promises).then(() => {
-    next();
-  }).catch(next);
-});
+wishListSchema.post('remove', removeReferencedDocuments);
 
 const WishList = mongoose.model('WishList', wishListSchema);
 
