@@ -220,7 +220,7 @@ async function migrateWishLists() {
         dateCreated: giftResult.dateCreated,
         name: giftResult.name.replace(/\\'/g, `'`),
         notes: giftResult.notes,
-        priority: giftResult.priorityId * 2,
+        priority: giftResult.priorityId,
         quantity: giftResult.quantity
       });
 

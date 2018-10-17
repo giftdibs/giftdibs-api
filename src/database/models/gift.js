@@ -62,9 +62,9 @@ const giftSchema = new Schema({
   },
   priority: {
     type: Number,
-    min: [0, 'The gift\'s priority must be greater than zero.'],
-    max: [10, 'The gift\'s priority must be less than 10.'],
-    default: 5
+    min: [1, 'The gift\'s priority must be greater than zero.'],
+    max: [5, 'The gift\'s priority must be less than or equal to 5.'],
+    default: 3
   }
 }, {
   timestamps: {

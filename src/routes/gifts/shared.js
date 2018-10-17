@@ -13,6 +13,10 @@ const {
 function formatGiftResponse(gift, wishList, userId) {
   const clone = { ...gift };
   const isGiftOwner = (wishList._user._id.toString() === userId.toString());
+  const wishListSummary = {
+    id: wishList._id,
+    name: wishList.name
+  };
 
   // Remove dibs if session user is owner of gift and gift is not received.
   // TODO: If wish list is a registry, show dibs.
@@ -30,7 +34,7 @@ function formatGiftResponse(gift, wishList, userId) {
     clone.dibs = clone.dibs.map((dib) => formatDibResponse(dib, userId));
   }
 
-  clone.wishListId = wishList._id;
+  clone.wishList = wishListSummary;
   clone.user = { ...wishList._user };
   clone.user.id = clone.user._id;
   clone.id = clone._id;
