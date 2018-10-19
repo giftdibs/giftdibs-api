@@ -1,4 +1,8 @@
+console.log('PORT SET TO:', process.env.PORT);
+
 require('./shared/environment').applyEnvironment();
+
+console.log('PORT SET TO:', process.env.PORT);
 
 const express = require('express');
 const bodyParser = require('body-parser');
