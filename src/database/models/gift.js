@@ -142,6 +142,10 @@ giftSchema.methods.updateSync = function (values) {
     values.name = values.name.replace(/\r?\n/g, ' ');
   }
 
+  if (values.budget) {
+    values.budget = Math.round(values.budget);
+  }
+
   updateDocument(instance, fields, values);
 
   return instance;

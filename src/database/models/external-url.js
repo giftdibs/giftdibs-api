@@ -34,6 +34,10 @@ externalUrlSchema.methods.updateSync = function (values) {
     'url'
   ];
 
+  if (values.price) {
+    values.price = Math.round(values.price);
+  }
+
   updateDocument(this, fields, values);
 
   return this;

@@ -52,7 +52,22 @@ function getWishList(req, res, next) {
 
 function getWishLists(req, res, next) {
   const userId = req.user._id;
-  const query = {};
+  const getArchived = (req.query.archived === true);
+
+  let query;
+  if (getArchived) {
+    query = {
+      isArchived: true
+    };
+  } else {
+    query = {
+      $or: [{
+        isArchived: { $exists: false }
+      }, {
+        isArchived: false
+      }]
+    };
+  }
 
   if (req.params.userId) {
     query._user = req.params.userId;
@@ -78,7 +93,13 @@ function getWishLists(req, res, next) {
     .catch(next);
 }
 
+function getArchivedWishLists(req, res, next) {
+  req.query.archived = true;
+  getWishLists(req, res, next);
+}
+
 module.exports = {
+  getArchivedWishLists,
   getWishList,
   getWishLists
 };

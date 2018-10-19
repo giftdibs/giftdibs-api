@@ -57,6 +57,10 @@ const wishListSchema = new Schema({
   gifts: [
     giftSchema
   ],
+  isArchived: {
+    type: Boolean,
+    default: false
+  },
   name: {
     type: String,
     required: [
@@ -239,11 +243,7 @@ function confirmCommentUserOwnership(wishList, commentId, userId) {
   return Promise.resolve(comment);
 }
 
-function validateDibQuantity(
-  gift,
-  quantity = 1,
-  dibId
-) {
+function validateDibQuantity(gift, quantity = 1, dibId) {
   let totalDibs = quantity;
 
   return new Promise((resolve, reject) => {
@@ -284,11 +284,18 @@ async function findAuthorizedByFriendships(userId) {
   // Also show current user's gifts.
   friendIds.push(userId);
 
-  return this.findAuthorized(userId, {
+  const query = {
+    $or: [{
+      isArchived: { $exists: false }
+    }, {
+      isArchived: false
+    }],
     '_user': {
       $in: friendIds
     }
-  });
+  };
+
+  return this.findAuthorized(userId, query);
 }
 
 function findAuthorized(
@@ -382,6 +389,7 @@ function addGiftSync(gift) {
 function updateSync(values) {
   const fields = [
     'description',
+    'isArchived',
     'name',
     'privacy',
     'wishListType'

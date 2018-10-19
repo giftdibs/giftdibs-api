@@ -7,6 +7,7 @@ module.exports = [
   require('./friendships'),
   require('./gifts'),
   require('./notifications'),
+  require('./products'),
   require('./users'),
   require('./wish-lists'),
   require('./assets')

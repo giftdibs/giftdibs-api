@@ -2,6 +2,7 @@ const express = require('express');
 const authenticateJwt = require('../../middleware/authenticate-jwt');
 
 const {
+  getArchivedWishLists,
   getWishList,
   getWishLists
 } = require('./get');
@@ -22,6 +23,9 @@ router.route('/wish-lists/:wishListId')
   .delete([authenticateJwt, deleteWishList]);
 
 router.route('/users/:userId/wish-lists')
-  .get([authenticateJwt, getWishLists])
+  .get([authenticateJwt, getWishLists]);
+
+router.route('/users/:userId/wish-lists/archived')
+  .get([authenticateJwt, getArchivedWishLists]);
 
 module.exports = router;
