@@ -20,7 +20,7 @@ function searchUsers(req, res, next) {
         { 'lastName': regex }
       ]
     })
-    .limit(15)
+    .limit(10)
     .select('firstName lastName avatarUrl')
     .lean()
     .then((docs) => {

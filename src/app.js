@@ -14,10 +14,18 @@ app.use(bodyParser.json({
   limit: '2mb'
 }));
 
+const whitelist = process.env.ALLOW_ORIGINS.split(',');
+
 app.use(cors({
   methods: 'GET,POST,PATCH,DELETE,OPTIONS',
   optionsSuccessStatus: 200,
-  origin: process.env.ALLOW_ORIGIN
+  origin: (origin, callback) => {
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
 }));
 app.options('*', cors());
 
