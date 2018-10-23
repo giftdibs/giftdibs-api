@@ -24,14 +24,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/stevebrush/giftdibs-api.git"
+    "url": "git+https://github.com/giftdibs/giftdibs-api.git"
   },
-  "author": "stevebrush",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/stevebrush/giftdibs-api/issues"
+    "url": "https://github.com/giftdibs/giftdibs-api/issues"
   },
-  "homepage": "https://github.com/stevebrush/giftdibs-api#readme",
+  "homepage": "https://github.com/giftdibs/giftdibs-api#readme",
   "engines": {
     "node": ">=8.11.1"
   },

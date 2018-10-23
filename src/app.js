@@ -20,10 +20,14 @@ app.use(cors({
   methods: 'GET,POST,PATCH,DELETE,OPTIONS',
   optionsSuccessStatus: 200,
   origin: (origin, callback) => {
-    if (whitelist.indexOf(origin) !== -1) {
+    // No origin means "same origin":
+    // See: https://github.com/expressjs/cors/issues/118
+    if (origin === undefined || whitelist.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(
+        new Error(`The domain ${origin} is not allowed access.`)
+      );
     }
   }
 }));

@@ -20,6 +20,7 @@ function formatWishListResponse(wishList, userId) {
     type: 'everyone',
     _allow: []
   }, privacy);
+  clone.privacy.allowedUserIds = clone.privacy._allow;
 
   clone.user = { ...clone._user };
   clone.user.id = clone.user._id;
@@ -28,6 +29,7 @@ function formatWishListResponse(wishList, userId) {
   delete clone._user;
   delete clone.user._id;
   delete clone._id;
+  delete clone.privacy._allow;
 
   return clone;
 }
