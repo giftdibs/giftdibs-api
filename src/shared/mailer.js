@@ -9,7 +9,7 @@ const mailgun = require('mailgun-js')({
 
 function sendMessage(to, subject, html) {
   const data = {
-    from: 'GiftDibs <noreply@mg.giftdibs.com>',
+    from: `GiftDibs <${env.get('NO_REPLY_EMAIL')}>`,
     to,
     subject,
     html
@@ -31,7 +31,7 @@ function sendPasswordResetEmail(
   emailAddress,
   resetPasswordToken
 ) {
-  const href = `http://localhost:4200/account/reset-password/${resetPasswordToken}`;
+  const href = `${env.get('RESET_PASSWORD_URL')}/${resetPasswordToken}`;
 
   console.log('RESET EMAIL:', href);
 
@@ -39,7 +39,7 @@ function sendPasswordResetEmail(
     emailAddress,
     'Reset password request',
     [
-      'Click the link below to reset your password:<br>',
+      'Please click the link below to reset your password.<br>',
       `<a href="${href}">${href}</a>`
     ].join('')
   );
@@ -49,7 +49,7 @@ function sendAccountVerificationEmail(
   emailAddress,
   emailAddressVerificationToken
 ) {
-  const href = `http://localhost:4200/account/verify/${emailAddressVerificationToken}`;
+  const href = `${env.get('VERIFY_ACCOUNT_URL')}/${emailAddressVerificationToken}`;
 
   console.log('VERIFY ACCOUNT:', href);
 
@@ -57,7 +57,7 @@ function sendAccountVerificationEmail(
     emailAddress,
     'Verify account',
     `
-Click the link below to verify your account:<br>
+Please click the link below to verify your GiftDibs account.<br>
 <a href="${href}">${href}</a>`
   );
 }

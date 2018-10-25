@@ -29,6 +29,12 @@ function remove(key) {
 }
 
 function upload(file, fileName) {
+  if (!file) {
+    return Promise.reject(new Error(
+      'Please provide a valid image type.'
+    ));
+  }
+
   const fileType = file.mimetype.toLowerCase();
 
   // Verify file type.

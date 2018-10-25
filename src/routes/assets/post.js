@@ -1,10 +1,8 @@
-const multer = require('multer');
+const fileParser = require('express-multipart-file-parser');
 const randomstring = require('randomstring');
 
 const authResponse = require('../../middleware/auth-response');
 const fileHandler = require('../../shared/file-handler');
-
-const upload = multer();
 
 function uploadAvatar(req, res, next) {
   const file = req.files[0];
@@ -87,11 +85,11 @@ function uploadGiftThumbnail(req, res, next) {
 
 module.exports = {
   uploadAvatar: [
-    upload.any(),
+    fileParser,
     uploadAvatar
   ],
   uploadGiftThumbnail: [
-    upload.any(),
+    fileParser,
     uploadGiftThumbnail
   ]
 };

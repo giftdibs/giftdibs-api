@@ -181,8 +181,11 @@ async function runQuery(type, query, credentials) {
           }
 
           const results = parsed[`${type}Response`];
-          const items = results.Items[0].Item
-            .map((item) => {
+          const itemResults = results.Items[0].Item;
+
+          let items;
+          if (itemResults) {
+            items = itemResults.map((item) => {
               return {
                 name: item.ItemAttributes[0].Title[0],
                 imageUrl: getImage(item),
@@ -190,7 +193,8 @@ async function runQuery(type, query, credentials) {
                 url: item.DetailPageURL[0]
               };
             })
-            .filter((item) => item.price && item.imageUrl);
+              .filter((item) => item.price && item.imageUrl);
+          }
 
           resolve(items || []);
         });
