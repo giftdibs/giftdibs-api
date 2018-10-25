@@ -1,13 +1,14 @@
 const aws = require('aws-sdk');
 const sharp = require('sharp');
+const env = require('./environment');
 
 const S3 = new aws.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_S3_REGION
+  accessKeyId: env.get('AWS_ACCESS_KEY_ID'),
+  secretAccessKey: env.get('AWS_SECRET_ACCESS_KEY'),
+  region: env.get('AWS_S3_REGION')
 });
 
-const BUCKET = process.env.AWS_S3_BUCKET;
+const BUCKET = env.get('AWS_S3_BUCKET');
 
 function remove(key) {
   const params = {

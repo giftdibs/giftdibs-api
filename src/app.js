@@ -1,20 +1,28 @@
-require('./shared/environment').applyEnvironment();
+const env = require('./shared/environment');
+env.applyEnvironment();
 
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const logger = require('./shared/logger');
 
 const db = require('./database');
 db.connect();
 
 const app = express();
-app.set('port', process.env.PORT);
+app.set('port', env.get('PORT'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({
   limit: '2mb'
 }));
 
-const whitelist = process.env.ALLOW_ORIGINS.split(',');
+const allowedOrigins = env.get('ALLOW_ORIGINS');
+if (!allowedOrigins) {
+  logger.error('Please provide allowed origins.');
+  process.exit(1);
+}
+
+const whitelist = allowedOrigins.split(',');
 
 app.use(cors({
   methods: 'GET,POST,PATCH,DELETE,OPTIONS',

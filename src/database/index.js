@@ -1,8 +1,11 @@
-const logger = require('../shared/logger');
 const mongoose = require('mongoose');
+
+const env = require('../shared/environment');
+const logger = require('../shared/logger');
+
 mongoose.Promise = Promise;
 
-const databaseUri = process.env.DATABASE_URI;
+const databaseUri = env.get('DATABASE_URI');
 
 module.exports = {
   connect: () => {

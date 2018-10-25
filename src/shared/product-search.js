@@ -4,6 +4,8 @@ const crypto = require('crypto');
 const request = require('request-promise');
 const parseXML = require('xml2js').parseString;
 
+const env = require('./environment');
+
 function generateSignature(stringToSign, awsSecret) {
   const hmac = crypto.createHmac('sha256', awsSecret);
   const signature = hmac.update(stringToSign).digest('base64');
@@ -204,9 +206,9 @@ function productSearch(keywords) {
     includeReviewsSummary: false,
     responseGroup: 'ItemAttributes,Images,Offers'
   }, {
-    awsId: process.env.AWS_ADVERTISING_API_ACCESS_KEY,
-    awsSecret: process.env.AWS_ADVERTISING_API_SECRET,
-    awsTag: process.env.AWS_ADVERTISING_API_ASSOCIATE_TAG
+    awsId: env.get('AWS_ADVERTISING_API_ACCESS_KEY'),
+    awsSecret: env.get('AWS_ADVERTISING_API_SECRET'),
+    awsTag: env.get('AWS_ADVERTISING_API_ASSOCIATE_TAG')
   });
 }
 

@@ -1,7 +1,9 @@
 const mysql = require('mysql');
-// const request = require('request-promise');
+const request = require('request-promise');
+const randomstring = require('randomstring');
 
-require('../src/shared/environment').applyEnvironment();
+const env = require('../src/shared/environment');
+env.applyEnvironment();
 
 const db = require('../src/database');
 
@@ -9,11 +11,13 @@ const { Friendship } = require('../src/database/models/friendship');
 const { User } = require('../src/database/models/user');
 const { WishList } = require('../src/database/models/wish-list');
 
+const fileHandler = require('../src/shared/file-handler');
+
 const connection = mysql.createConnection({
-  host: process.env.MYSQL_HOST,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE
+  host: env.get('MYSQL_HOST'),
+  user: env.get('MYSQL_USER'),
+  password: env.get('MYSQL_PASSWORD'),
+  database: env.get('MYSQL_DATABASE')
 });
 
 // Matches legacy MySQL IDs to new MongoDB IDs.
@@ -45,7 +49,7 @@ function getFriendships() {
 
 function getPrivacyUsersByWishListId(wishListId) {
   return mysqlQuery([
-    'SELECT * from WishList_User',
+    'SELECT * FROM WishList_User',
     `WHERE wishListId = ${wishListId}`
   ].join(' '));
 }
@@ -58,8 +62,10 @@ function getWishLists() {
 
 function getGiftsByWishListId(wishListId) {
   return mysqlQuery([
-    'SELECT * from Gift',
-    `WHERE wishListId = ${wishListId}`
+    'SELECT g.giftId, g.userId, g.wishListId, g.priorityId, g.name, g.notes, g.url, g.price, g.quantity, g.isReceived, g.dateCreated, g.dateReceived, g.timestamp, i.name AS imageName',
+    'FROM Gift g',
+    'LEFT JOIN Image i ON g.imageId = i.imageId',
+    `WHERE g.wishListId = ${wishListId}`
   ].join(' '));
 }
 
@@ -102,12 +108,37 @@ function settle(promise) {
   });
 }
 
-// TODO: Figure out a way to eliminate the SPAM users.
+async function getRemoteImage(url) {
+  let imageBuffer;
+  try {
+    imageBuffer = await request({
+      method: 'GET',
+      uri: url,
+      headers: {
+        'Connection': 'keep-alive'
+      },
+
+      // Setting encoding to null will cause request to
+      // output a buffer instead of a string.
+      // See: https://stackoverflow.com/a/18265122/6178885
+      encoding: null
+    });
+  } catch (err) {
+    console.log('IMAGE FETCH ERROR!', url, err.message);
+  }
+
+  const file = {
+    buffer: imageBuffer,
+    mimetype: 'image/jpeg'
+  };
+
+  return file;
+}
 
 async function migrateUsers() {
   const userResults = await getUsers();
 
-  const userPromises = userResults.map((result) => {
+  const userPromises = userResults.map(async (result) => {
     const user = new User({
       dateLastLoggedIn: result.dateLastLoggedIn,
       emailAddress: result.emailAddress,
@@ -120,23 +151,14 @@ async function migrateUsers() {
 
     DB_MAP.users[result.userId] = user._id;
 
-    // if (result.imageName) {
-    //   const imageUrl = `http://www.giftdibs.com/uploads/user/${result.imageName}-original.jpg`;
-    //   console.log('Image url:', imageUrl);
-    //   const requestOptions = {
-    //     method: 'GET',
-    //     uri: imageUrl,
-    //     encoding: 'binary'
-    //   };
+    if (result.imageName) {
+      const oldImageUrl = `http://www.giftdibs.com/uploads/user/${result.imageName}-original.jpg`;
+      const file = await getRemoteImage(oldImageUrl);
+      const fileName = user._id + '-' + randomstring.generate();
+      const imageUrl = await fileHandler.upload(file, fileName);
 
-    //   request(requestOptions)
-    //     .then((imageResult) => {
-    //       console.log('REQUEST RESULT:', imageResult);
-    //     })
-    //     .catch((err) => {
-    //       console.log('REQUEST ERROR:', err);
-    //     });
-    // }
+      user.avatarUrl = imageUrl;
+    }
 
     return settle(user.save()).then((r) => {
       if (r.status === 'rejected') {
@@ -214,7 +236,8 @@ async function migrateWishLists() {
 
     // Gifts.
     const giftResults = await getGiftsByWishListId(wishListResult.wishListId);
-    giftResults.forEach((giftResult) => {
+
+    const giftPromises = await giftResults.map(async (giftResult) => {
       const gift = wishList.gifts.create({
         budget: `${giftResult.price}`.slice(0, -2) * 1,
         dateCreated: giftResult.dateCreated,
@@ -237,12 +260,28 @@ async function migrateWishLists() {
         gift.set('dateReceived', giftResult.dateReceived);
       }
 
+      if (giftResult.imageName) {
+        const oldImageUrl = `http://www.giftdibs.com/uploads/gift/${giftResult.imageName}-original.jpg`;
+        const file = await getRemoteImage(oldImageUrl);
+
+        if (file.buffer) {
+          const fileName = wishList._user + '-' + randomstring.generate();
+          const imageUrl = await fileHandler.upload(file, fileName);
+
+          gift.imageUrl = imageUrl;
+        }
+      }
+
       DB_MAP.gifts[giftResult.giftId] = gift._id;
 
       wishList.gifts.push(gift);
+
+      return Promise.resolve();
     });
 
-    return wishList;
+    return Promise.all(giftPromises).then(() => {
+      return wishList;
+    });
   });
 
   const wishLists = await Promise.all(wishListPromises);
@@ -333,11 +372,6 @@ async function migrate() {
     await migrateFriendships();
     await migrateWishLists();
 
-    // TODO: User avatars and gift images.
-
-    // const wishLists = await migrateWishLists();
-    // const wishList = wishLists[40].result;
-    // console.log(wishList);
     console.log('Done.');
     exit();
   } catch (err) {

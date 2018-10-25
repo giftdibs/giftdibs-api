@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const env = require('../shared/environment');
 
 module.exports = (data) => {
   const response = data || {};
@@ -13,7 +14,7 @@ module.exports = (data) => {
 
     const token = jwt.sign(
       payload,
-      process.env.JWT_SECRET,
+      env.get('JWT_SECRET'),
       {
         expiresIn: '15m'
       }

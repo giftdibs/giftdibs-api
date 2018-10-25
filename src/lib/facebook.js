@@ -1,4 +1,5 @@
 const request = require('request-promise');
+const env = require('../shared/environment');
 
 const verifyUserAccessToken = (userAccessToken) => {
   // First, get an app access token.
@@ -7,8 +8,8 @@ const verifyUserAccessToken = (userAccessToken) => {
     method: 'GET',
     uri: 'https://graph.facebook.com/oauth/access_token',
     qs: {
-      client_id: process.env.FACEBOOK_CLIENT_ID,
-      client_secret: process.env.FACEBOOK_CLIENT_SECRET,
+      client_id: env.get('FACEBOOK_CLIENT_ID'),
+      client_secret: env.get('FACEBOOK_CLIENT_SECRET'),
       grant_type: 'client_credentials'
     },
     json: true

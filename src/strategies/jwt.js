@@ -2,10 +2,11 @@ const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 
 const { User } = require('../database/models/user');
+const env = require('../shared/environment');
 
 const strategyConfig = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderWithScheme('JWT'),
-  secretOrKey: process.env.JWT_SECRET,
+  secretOrKey: env.get('JWT_SECRET'),
   passReqToCallback: true,
   jsonWebTokenOptions: {
     maxAge: '15m'

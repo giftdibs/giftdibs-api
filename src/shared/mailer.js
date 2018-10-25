@@ -1,5 +1,7 @@
-const apiKey = process.env.MAILGUN_API_KEY;
-const domain = process.env.MAILGUN_DOMAIN;
+const env = require('../shared/environment');
+
+const apiKey = env.get('MAILGUN_API_KEY');
+const domain = env.get('MAILGUN_DOMAIN');
 const mailgun = require('mailgun-js')({
   apiKey,
   domain
@@ -62,7 +64,7 @@ Click the link below to verify your account:<br>
 
 function sendFeedbackEmail(reason, body, referrer) {
   return sendMessage(
-    process.env.ADMIN_EMAIL_ADDRESS,
+    env.get('ADMIN_EMAIL_ADDRESS'),
     'Feedback submitted',
     [
       `Reason: ${reason}<br>`,

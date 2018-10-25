@@ -38,3 +38,7 @@ jspm_packages
 
 # Config
 *.env
+
+# Firebase
+.firebase
+.runtimeconfig.json
