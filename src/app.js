@@ -28,9 +28,18 @@ app.use(cors({
   methods: 'GET,POST,PATCH,DELETE,OPTIONS',
   optionsSuccessStatus: 200,
   origin: (origin, callback) => {
-    // No origin means "same origin":
-    // See: https://github.com/expressjs/cors/issues/118
-    if (origin === undefined || whitelist.indexOf(origin) !== -1) {
+    const isAllowed = (
+      // No origin means "same origin":
+      // See: https://github.com/expressjs/cors/issues/118
+      origin === undefined ||
+
+      whitelist.indexOf(origin) !== -1 ||
+
+      // Check if the request is coming from a Chrome extension.
+      (origin && origin.indexOf('chrome-extension://') === 0)
+    );
+
+    if (isAllowed) {
       callback(null, true);
     } else {
       callback(
