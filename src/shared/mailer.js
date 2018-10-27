@@ -9,7 +9,7 @@ const mailgun = require('mailgun-js')({
 
 function sendMessage(to, subject, html) {
   const data = {
-    from: `GiftDibs <${env.get('NO_REPLY_EMAIL')}>`,
+    from: `GiftDibs <${env.get('NO_REPLY_EMAIL_ADDRESS')}>`,
     to,
     subject,
     html

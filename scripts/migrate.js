@@ -2,6 +2,8 @@ const mysql = require('mysql');
 const request = require('request-promise');
 const randomstring = require('randomstring');
 
+let failedRequests = 0;
+
 const env = require('../src/shared/environment');
 env.applyEnvironment();
 
@@ -12,13 +14,15 @@ const { User } = require('../src/database/models/user');
 const { WishList } = require('../src/database/models/wish-list');
 
 const fileHandler = require('../src/shared/file-handler');
-
-const connection = mysql.createConnection({
+const credentials = {
   host: env.get('MYSQL_HOST'),
+  port: env.get('MYSQL_PORT'),
   user: env.get('MYSQL_USER'),
   password: env.get('MYSQL_PASSWORD'),
   database: env.get('MYSQL_DATABASE')
-});
+};
+
+const connection = mysql.createConnection(credentials);
 
 // Matches legacy MySQL IDs to new MongoDB IDs.
 const DB_MAP = {
@@ -31,6 +35,7 @@ connection.connect();
 
 const interval = setInterval(() => {
   connection.query('SELECT 1');
+  console.log('.');
 }, 5000);
 
 function getUsers() {
@@ -108,15 +113,16 @@ function settle(promise) {
   });
 }
 
-async function getRemoteImage(url) {
+async function getRemoteImage(url, tries = 0) {
   let imageBuffer;
   try {
     imageBuffer = await request({
       method: 'GET',
       uri: url,
-      headers: {
-        'Connection': 'keep-alive'
-      },
+      timeout: 600000, // 10 min.
+      // headers: {
+      //   'Connection': 'keep-alive'
+      // },
 
       // Setting encoding to null will cause request to
       // output a buffer instead of a string.
@@ -124,7 +130,18 @@ async function getRemoteImage(url) {
       encoding: null
     });
   } catch (err) {
-    console.log('IMAGE FETCH ERROR!', url, err.message);
+    if (tries > 3) {
+      console.log('NUMBER OF RETRIES MET :(', url);
+      return {};
+    }
+
+    if (err.message.indexOf('ECONNRESET') > -1 || err.message.indexOf('ETIMEDOUT') > -1) {
+      console.log('RETRY');
+      return getRemoteImage(url, tries++);
+    } else {
+      failedRequests++;
+      console.log('IMAGE NOT FOUND:', url);
+    }
   }
 
   const file = {
@@ -152,12 +169,13 @@ async function migrateUsers() {
     DB_MAP.users[result.userId] = user._id;
 
     if (result.imageName) {
-      const oldImageUrl = `http://www.giftdibs.com/uploads/user/${result.imageName}-original.jpg`;
+      const oldImageUrl = `http://localhost:8888/public_html/uploads/user/${result.imageName}-original.jpg`;
       const file = await getRemoteImage(oldImageUrl);
-      const fileName = user._id + '-' + randomstring.generate();
-      const imageUrl = await fileHandler.upload(file, fileName);
-
-      user.avatarUrl = imageUrl;
+      if (file.buffer) {
+        const fileName = user._id + '-' + randomstring.generate();
+        const imageUrl = await fileHandler.upload(file, fileName);
+        user.avatarUrl = imageUrl;
+      }
     }
 
     return settle(user.save()).then((r) => {
@@ -261,7 +279,7 @@ async function migrateWishLists() {
       }
 
       if (giftResult.imageName) {
-        const oldImageUrl = `http://www.giftdibs.com/uploads/gift/${giftResult.imageName}-original.jpg`;
+        const oldImageUrl = `http://localhost:8888/public_html/uploads/gift/${giftResult.imageName}-original.jpg`;
         const file = await getRemoteImage(oldImageUrl);
 
         if (file.buffer) {
@@ -358,6 +376,7 @@ function exit() {
   clearInterval(interval);
   connection.end();
   db.disconnect();
+  process.exit();
 }
 
 async function migrate() {
@@ -373,6 +392,7 @@ async function migrate() {
     await migrateWishLists();
 
     console.log('Done.');
+    console.log('Total failed requests:', failedRequests);
     exit();
   } catch (err) {
     console.log('ERROR!', err);
