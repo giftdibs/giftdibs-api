@@ -6,19 +6,23 @@ const strategyConfig = {
 };
 
 const verify = (emailAddress, password, done) => {
-  const message = [
-    'The email address and password you entered',
-    'did not match an account in our records.'
-  ].join(' ');
-
-  User
-    .find({ emailAddress })
+  User.find({ emailAddress })
     .limit(1)
     .then((results) => {
       const user = results[0];
 
       if (!user) {
-        done(null, false, { message });
+        done(null, false, {
+          message: 'user_not_found'
+        });
+        return;
+      }
+
+      // User has registered, but does not have a password.
+      if (!user.password) {
+        done(null, false, {
+          message: 'empty_password'
+        });
         return;
       }
 
@@ -29,7 +33,9 @@ const verify = (emailAddress, password, done) => {
             .then(() => done(null, user));
         })
         .catch(() => {
-          done(null, false, { message });
+          done(null, false, {
+            message: 'invalid_password'
+          });
         });
     })
     .catch((err) => done(err));

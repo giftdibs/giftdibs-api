@@ -107,14 +107,15 @@ const register = [
       })
       .then((doc) => {
         // TODO: Send welcome email.
-        // TODO: Consider automatically logging in the user after reg?
 
-        res.json({
+        // Login new user.
+        req.user = doc;
+        authResponse({
           data: {
             userId: doc._id
           },
-          message: 'Registration successful! Please log in below.'
-        });
+          message: 'Registration successful!'
+        })(req, res, next);
       })
       .catch((err) => {
         if (err.name === 'ValidationError') {
@@ -150,7 +151,35 @@ const login = [
       }
 
       if (!user) {
-        const error = new LoginNotFoundError(info.message);
+        const error = new LoginNotFoundError();
+        let code;
+        let message;
+        switch (info.message) {
+          case 'invalid_password':
+            code = 101;
+            message = 'The password you\'ve entered is incorrect.';
+            break;
+          case 'empty_password':
+            code = 112;
+            message = [
+              'The account associated with the email address you\'ve',
+              'entered does not have a password on record. This can',
+              'occur when you\'ve registered using your Facebook',
+              'account, or if you have not logged into GiftDibs in',
+              'several months.'
+            ].join(' ');
+            break;
+          case 'user_not_found':
+            code = 113;
+            message = [
+              'That email address you\'ve entered does',
+              'not match an account.'
+            ].join(' ');
+            break;
+        }
+
+        error.message = message;
+        error.code = code;
         next(error);
         return;
       }
@@ -258,11 +287,23 @@ const resetPassword = [
   function resetPassword(req, res, next) {
     if (req.body.resetPasswordToken) {
       getUserByResetPasswordToken(req.body.resetPasswordToken)
+        .then((user) => {
+          // Since the user used their email address to request a
+          // reset password token, mark their email as verified.
+          user.emailAddressVerified = true;
+          return user;
+        })
         .then((user) => updatePasswordForUser(user)(req, res, next))
         .catch((err) => handleResetPasswordError(err, next));
     } else {
       req.user.confirmPassword(req.body.currentPassword)
-        .then((user) => updatePasswordForUser(req.user)(req, res, next))
+        .then((user) => {
+          // Since the user used their email address to request a
+          // reset password token, mark their email as verified.
+          user.emailAddressVerified = true;
+          return user;
+        })
+        .then((user) => updatePasswordForUser(user)(req, res, next))
         .catch((err) => handleResetPasswordError(err, next));
     }
   }
@@ -309,8 +350,7 @@ const verifyEmailAddress = [
     );
 
     if (isVerified) {
-      req.user
-        .save()
+      req.user.save()
         .then(() => {
           authResponse({
             message: 'Email address verified!'

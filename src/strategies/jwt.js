@@ -9,7 +9,7 @@ const strategyConfig = {
   secretOrKey: env.get('JWT_SECRET'),
   passReqToCallback: true,
   jsonWebTokenOptions: {
-    maxAge: '15m'
+    maxAge: '24h'
   }
 }
 
