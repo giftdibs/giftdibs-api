@@ -223,7 +223,7 @@ function getCommentById(commentId, wishList) {
   let comment;
   wishList.gifts.find((gift) => {
     comment = gift.comments.id(commentId);
-    return (comment !== undefined);
+    return (comment);
   });
 
   return comment;
