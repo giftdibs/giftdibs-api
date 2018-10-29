@@ -24,6 +24,8 @@ const {
   ConfirmUserOwnershipPlugin
 } = require('../plugins/confirm-user-ownership');
 
+const TOKEN_DURATION = 1.728e+8; // 2 days in milliseconds
+
 // function hasDuplicateChars(str) {
 //   let regex = /(.)\1{2,}/;
 //   return !regex.test(str);
@@ -206,7 +208,7 @@ userSchema.methods.setPassword = function (password) {
 
 userSchema.methods.setResetPasswordToken = function () {
   this.resetPasswordToken = randomstring.generate();
-  this.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+  this.resetPasswordExpires = Date.now() + TOKEN_DURATION;
 };
 
 userSchema.methods.unsetResetPasswordToken = function () {
