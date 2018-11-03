@@ -44,9 +44,9 @@ function getGifts(req, res, next) {
 
       wishLists.forEach((wishList) => {
         wishList.gifts.forEach((gift) => {
-          // if (gift.dateReceived) {
-          //   return;
-          // }
+          if (gift.dateReceived) {
+            return;
+          }
 
           gifts.push(
             formatGiftResponse(gift, wishList, userId)
