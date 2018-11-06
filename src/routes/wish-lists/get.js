@@ -16,24 +16,6 @@ function sortByDateUpdated(a, b) {
   return 0;
 }
 
-function sortByDateReceived(a, b) {
-  const keyA = a.dateReceived;
-  const keyB = b.dateReceived;
-
-  if (!keyA) {
-    return -1;
-  }
-
-  if (!keyB) {
-    return 1;
-  }
-
-  if (keyA > keyB) return 1;
-  if (keyA < keyB) return -1;
-
-  return 0;
-}
-
 function getWishList(req, res, next) {
   const userId = req.user._id;
 
@@ -41,7 +23,6 @@ function getWishList(req, res, next) {
     .then((wishList) => formatWishListResponse(wishList, userId))
     .then((wishList) => {
       wishList.gifts.sort(sortByDateUpdated);
-      wishList.gifts.sort(sortByDateReceived);
 
       authResponse({
         data: { wishList }

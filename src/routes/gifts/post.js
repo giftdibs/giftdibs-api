@@ -37,8 +37,11 @@ function createGift(req, res, next) {
 
       if (req.body.externalUrls) {
         req.body.externalUrls.forEach((externalUrl) => {
+          if (!externalUrl.url || !externalUrl.url.trim()) {
+            return;
+          }
+
           gift.externalUrls.push({
-            price: externalUrl.price,
             url: externalUrl.url
           });
         });

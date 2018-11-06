@@ -11,15 +11,8 @@ const externalUrlSchema = new Schema({
   url: {
     type: String,
     trim: true,
-    required: [true, 'Please provide a URL.'],
-    maxlength: [500, 'The external URL cannot be longer than 500 characters.']
-  },
-  price: {
-    type: Number,
-    maxlength: [
-      13,
-      'The external URL\'s product price must be less than 1,000,000,000,000.'
-    ]
+    required: [true, 'Please provide a valid external link.'],
+    maxlength: [500, 'The external link cannot be longer than 500 characters.']
   }
 }, {
   timestamps: {
@@ -30,12 +23,12 @@ const externalUrlSchema = new Schema({
 
 externalUrlSchema.methods.updateSync = function (values) {
   const fields = [
-    'price',
     'url'
   ];
 
-  if (values.price) {
-    values.price = Math.round(values.price);
+  // Don't do anything if the URL is empty.
+  if (!values.url || !values.url.trim()) {
+    return this;
   }
 
   updateDocument(this, fields, values);
