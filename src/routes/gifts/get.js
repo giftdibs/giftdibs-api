@@ -36,7 +36,7 @@ function getGift(req, res, next) {
 function getGifts(req, res, next) {
   const userId = req.user._id.toString();
   const start = parseInt(req.query.startIndex) || 0;
-  const max = 20;
+  const max = 12;
 
   WishList.findAuthorizedByFriendships(userId)
     .then((wishLists) => {
@@ -62,7 +62,7 @@ function getGifts(req, res, next) {
         return 0;
       });
 
-      gifts = gifts.slice(start, start + max - 1);
+      gifts = gifts.slice(start, start + max);
 
       authResponse({
         data: { gifts }
