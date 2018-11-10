@@ -216,6 +216,18 @@ function productSearch(keywords) {
   });
 }
 
+function findSimilar(asin) {
+  return runQuery('SimilarityLookup', {
+    itemId: asin,
+    responseGroup: 'ItemAttributes,Images,Offers'
+  }, {
+    awsId: env.get('AWS_ADVERTISING_API_ACCESS_KEY'),
+    awsSecret: env.get('AWS_ADVERTISING_API_SECRET'),
+    awsTag: env.get('AWS_ADVERTISING_API_ASSOCIATE_TAG')
+  });
+}
+
 module.exports = {
+  findSimilar,
   productSearch
 };
