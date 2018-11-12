@@ -12,7 +12,8 @@ function createWishList(req, res, next) {
   const wishList = new WishList({
     _user: req.user._id,
     name: req.body.name,
-    privacy: req.body.privacy
+    privacy: req.body.privacy,
+    type: req.body.type
   });
 
   wishList

@@ -84,12 +84,10 @@ const wishListSchema = new Schema({
       default: 'everyone'
     }
   },
-  wishListType: {
-    type: {
-      type: String,
-      enum: ['wish-list', 'registry'],
-      default: 'wish-list'
-    }
+  type: {
+    type: String,
+    enum: ['wish-list', 'registry'],
+    default: 'wish-list'
   }
 }, {
   collection: 'wishlist',
@@ -392,7 +390,7 @@ function updateSync(values) {
     'isArchived',
     'name',
     'privacy',
-    'wishListType'
+    'type'
   ];
 
   // TODO: If owner changes privacy of wish list,

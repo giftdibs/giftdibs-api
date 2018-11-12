@@ -20,7 +20,7 @@ function formatGiftResponse(gift, wishList, userId) {
 
   // Remove dibs if session user is owner of gift and gift is not received.
   // TODO: If wish list is a registry, show dibs.
-  if (isGiftOwner && !clone.dateReceived) {
+  if (wishList.type !== 'registry' && isGiftOwner && !clone.dateReceived) {
     clone.dibs = [];
   }
 

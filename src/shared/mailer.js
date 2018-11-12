@@ -27,10 +27,7 @@ function sendMessage(to, subject, html) {
   });
 }
 
-function sendPasswordResetEmail(
-  emailAddress,
-  resetPasswordToken
-) {
+function sendPasswordResetEmail(emailAddress, resetPasswordToken) {
   const href = `${env.get('RESET_PASSWORD_URL')}/${resetPasswordToken}`;
 
   console.log('RESET EMAIL:', href);
@@ -74,7 +71,48 @@ function sendFeedbackEmail(reason, body, referrer) {
   );
 }
 
+function addUserToMailingList(user) {
+  if (env.get('NODE_ENV') === 'development') {
+    Promise.resolve();
+    return;
+  }
+
+  const list = mailgun.lists(env.get('MAILGUN_MAILING_LIST_UPDATES'));
+
+  const member = {
+    subscribed: true,
+    address: user.emailAddress,
+    name: user.firstName + ' ' + user.lastName
+  };
+
+  return new Promise((resolve, reject) => {
+    mailgun.validate(member.address, true, (validateErr, body) => {
+      let isValid = false;
+      if (validateErr) {
+        console.log('Mailgun validation error:', validateErr);
+        // Go ahead and add the email to the mailing list,
+        // even if validation rate limits have been reached.
+        isValid = true;
+      }
+
+      if (isValid || (body && body.is_valid)) {
+        list.members().create(member, (createErr, data) => {
+          if (createErr) {
+            reject(createErr);
+            return;
+          }
+
+          resolve();
+        });
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
 module.exports = {
+  addUserToMailingList,
   sendAccountVerificationEmail,
   sendFeedbackEmail,
   sendPasswordResetEmail

@@ -106,6 +106,9 @@ const register = [
           });
       })
       .then((doc) => {
+        return mailer.addUserToMailingList(doc).then(() => doc);
+      })
+      .then((doc) => {
         // TODO: Send welcome email.
 
         // Login new user.

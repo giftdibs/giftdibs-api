@@ -90,6 +90,7 @@ function getDibsRecipients(req, res, next) {
           id: wishList.user.id,
           firstName: wishList.user.firstName,
           lastName: wishList.user.lastName,
+          avatarUrl: wishList.user.avatarUrl,
           wishLists: [wishList]
         });
       });
