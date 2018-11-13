@@ -7,7 +7,7 @@ const mailgun = require('mailgun-js')({
   domain
 });
 
-function sendMessage(to, subject, html) {
+function sendEmail(to, subject, html) {
   const data = {
     from: `GiftDibs <${env.get('NO_REPLY_EMAIL_ADDRESS')}>`,
     to,
@@ -32,7 +32,7 @@ function sendPasswordResetEmail(emailAddress, resetPasswordToken) {
 
   console.log('RESET EMAIL:', href);
 
-  return sendMessage(
+  return sendEmail(
     emailAddress,
     'Reset password request',
     [
@@ -50,7 +50,7 @@ function sendAccountVerificationEmail(
 
   console.log('VERIFY ACCOUNT:', href);
 
-  return sendMessage(
+  return sendEmail(
     emailAddress,
     'Verify account',
     `
@@ -60,7 +60,7 @@ Please click the link below to verify your GiftDibs account.<br>
 }
 
 function sendFeedbackEmail(reason, body, referrer) {
-  return sendMessage(
+  return sendEmail(
     env.get('ADMIN_EMAIL_ADDRESS'),
     'Feedback submitted',
     [
@@ -71,49 +71,61 @@ function sendFeedbackEmail(reason, body, referrer) {
   );
 }
 
-function addUserToMailingList(user) {
-  if (env.get('NODE_ENV') === 'development') {
-    Promise.resolve();
-    return;
-  }
-
+async function addUserToMailingList(user) {
+  const isDevelopment = (env.get('NODE_ENV') === 'development');
   const list = mailgun.lists(env.get('MAILGUN_MAILING_LIST_UPDATES'));
 
   const member = {
     subscribed: true,
     address: user.emailAddress,
-    name: user.firstName + ' ' + user.lastName
+    name: user.firstName + ' ' + user.lastName,
+    vars: {
+      userId: user.id
+    }
   };
 
+  let isValid = false;
+  let validateResult;
+
+  if (!isDevelopment) {
+    try {
+      validateResult = await mailgun.validate(member.address, true);
+    } catch (err) {
+      console.log('Mailgun validation error:', err);
+      // Go ahead and add the email to the mailing list,
+      // even if validation rate limits have been reached.
+      isValid = true;
+    }
+  } else {
+    isValid = true;
+  }
+
   return new Promise((resolve, reject) => {
-    mailgun.validate(member.address, true, (validateErr, body) => {
-      let isValid = false;
-      if (validateErr) {
-        console.log('Mailgun validation error:', validateErr);
-        // Go ahead and add the email to the mailing list,
-        // even if validation rate limits have been reached.
-        isValid = true;
-      }
+    if (isValid || (validateResult && validateResult.is_valid)) {
+      list.members().create(member, (err) => {
+        if (err) {
+          reject(err);
+          return;
+        }
 
-      if (isValid || (body && body.is_valid)) {
-        list.members().create(member, (createErr, data) => {
-          if (createErr) {
-            reject(createErr);
-            return;
-          }
-
-          resolve();
-        });
-      } else {
         resolve();
-      }
-    });
+      });
+    } else {
+      resolve();
+    }
   });
+}
+
+function sendUpdateEmail(subject, html) {
+  const to = env.get('MAILGUN_MAILING_LIST_UPDATES');
+
+  return sendEmail(to, subject, html);
 }
 
 module.exports = {
   addUserToMailingList,
   sendAccountVerificationEmail,
   sendFeedbackEmail,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  sendUpdateEmail
 };
