@@ -109,6 +109,38 @@ const userSchema = new Schema({
       'Interests cannot be longer than 500 characters.'
     ]
   },
+  notificationSettings: {
+    'gift_comment': {
+      allowEmail: {
+        type: Boolean,
+        default: true
+      }
+    },
+    'gift_comment_also': {
+      allowEmail: {
+        type: Boolean,
+        default: true
+      }
+    },
+    'gift_delivered': {
+      allowEmail: {
+        type: Boolean,
+        default: true
+      }
+    },
+    'gift_received': {
+      allowEmail: {
+        type: Boolean,
+        default: true
+      }
+    },
+    'friendship_new': {
+      allowEmail: {
+        type: Boolean,
+        default: true
+      }
+    }
+  },
   password: String,
   resetPasswordToken: String,
   resetPasswordExpires: Date,
@@ -241,6 +273,16 @@ userSchema.methods.updateSync = function (values) {
     // 'gender',
     'interests'
   ];
+
+  // Translate the requested email settings to the database schema.
+  // All notification types in the array are treated as an opt-in request.
+  // e.g., ['friendship_new','gift_comment']
+  if (values.emailNotify) {
+    Object.keys(this.notificationSettings).forEach((key) => {
+      const notification = this.notificationSettings[key];
+      notification.allowEmail = (values.emailNotify.indexOf(key) > -1);
+    });
+  }
 
   updateDocument(this, fields, values);
 

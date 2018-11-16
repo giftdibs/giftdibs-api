@@ -97,18 +97,6 @@ const wishListSchema = new Schema({
   }
 });
 
-function truncateText(text, length) {
-  if (!text) {
-    return text;
-  }
-
-  if (text.length <= length) {
-    return text;
-  }
-
-  return text.substr(0, length) + '\u2026'
-}
-
 // Do not update the date when modifying dibs.
 function revertGiftDateUpdated(wishList, gift, oldDateUpdated) {
   return WishList.update(
@@ -461,27 +449,15 @@ function markGiftAsReceived(giftId, user) {
         // Send notification and email to dibbers
         // of this gift to mark dib as delivered.
         gift.dibs.forEach((dib) => {
-          const promise = Notification.create({
-            type: 'gift_received',
-            _user: dib._user,
-            dib: {
-              id: dib._id,
-              dateDelivered: dib.dateDelivered
-            },
-            gift: {
-              id: gift.id,
-              name: gift.name,
-              user: {
-                id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName
-              }
-            }
-          });
-          promises.push(promise);
+          promises.push(
+            Notification.notifyGiftReceived(
+              dib._user,
+              user,
+              gift,
+              dib
+            )
+          );
         });
-
-        // TODO: Need to also send an email, here.
 
         return Promise.all(promises);
       });
@@ -610,7 +586,9 @@ function updateDibById(dibId, userId, attributes) {
     });
 }
 
-function markDibAsDelivered(dibId, userId) {
+function markDibAsDelivered(dibId, user) {
+  const userId = user._id;
+
   return this.find({
     'gifts.dibs._id': dibId
   })
@@ -670,17 +648,12 @@ function markDibAsDelivered(dibId, userId) {
               return result;
             });
 
-            // TODO: Need to also send an email, here.
-
-            return Notification.create({
-              type: 'gift_delivered',
-              _user: wishList._user,
-              gift: {
-                id: gift.id,
-                name: gift.name,
-                dibs
-              }
-            });
+            return Notification.notifyGiftDelivered(
+              wishList._user,
+              user,
+              gift,
+              dibs
+            );
           }
 
           return Promise.resolve();
@@ -748,23 +721,12 @@ function createComment(giftId, attributes, user) {
 
       // Send a notification to each user.
       const promises = userIds.map((uId) => {
-        return Notification.create({
-          _user: uId,
-          gift: {
-            id: _gift._id,
-            name: _gift.name,
-            comment: {
-              id: _comment._id,
-              user: {
-                id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName
-              },
-              summary: truncateText(_comment.body, 50)
-            }
-          },
-          type: 'gift_comment_also'
-        });
+        return Notification.notifyGiftCommentAlso(
+          uId,
+          user,
+          _gift,
+          _comment
+        );
       });
 
       return Promise.all(promises).then(() => wishList);
@@ -778,23 +740,12 @@ function createComment(giftId, attributes, user) {
 
       // Owner of gift always receives a standard notification
       // when someone comments on their gift.
-      return Notification.create({
-        _user: wishList._user._id,
-        gift: {
-          id: _gift._id,
-          name: _gift.name,
-          comment: {
-            id: _comment._id,
-            user: {
-              id: user._id,
-              firstName: user.firstName,
-              lastName: user.lastName
-            },
-            summary: truncateText(_comment.body, 50)
-          }
-        },
-        type: 'gift_comment'
-      });
+      return Notification.notifyGiftComment(
+        wishList._user._id,
+        user,
+        _gift,
+        _comment
+      );
     })
     .then(() => {
       return _comment._id;

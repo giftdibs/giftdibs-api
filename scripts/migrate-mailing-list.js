@@ -1,38 +1,37 @@
-const env = require('../src/shared/environment');
-env.applyEnvironment();
+// const env = require('../src/shared/environment');
+// env.applyEnvironment();
 
-const db = require('../src/database');
+// const db = require('../src/database');
 
-const mailer = require('../src/shared/mailer');
+// const mailer = require('../src/shared/mailer');
 
-async function migrate() {
-  await db.connect();
+// async function migrate() {
+//   await db.connect();
 
-  const { User } = require('../src/database/models/user');
+//   const { User } = require('../src/database/models/user');
 
-  const users = await User.find({})
-    .limit(10)
-    .select('emailAddress firstName lastName')
-    .lean();
+//   const users = await User.find({})
+//     .select('emailAddress firstName lastName')
+//     .lean();
 
-  const promises = users.map(async (user) => {
-    await mailer.addUserToMailingList({
-      id: user._id.toString(),
-      emailAddress: user.emailAddress,
-      firstName: user.firstName,
-      lastName: user.lastName
-    });
-  });
+//   const promises = users.map(async (user) => {
+//     await mailer.addUserToMailingList({
+//       id: user._id.toString(),
+//       emailAddress: user.emailAddress,
+//       firstName: user.firstName,
+//       lastName: user.lastName
+//     });
+//   });
 
-  return Promise.all(promises);
-}
+//   return Promise.all(promises);
+// }
 
-migrate()
-  .then(() => {
-    console.log('DONE');
-    process.exit(0);
-  })
-  .catch((err) => {
-    console.log('ERROR:', err);
-    process.exit(1);
-  });
+// migrate()
+//   .then(() => {
+//     console.log('DONE');
+//     process.exit(0);
+//   })
+//   .catch((err) => {
+//     console.log('ERROR:', err);
+//     process.exit(1);
+//   });

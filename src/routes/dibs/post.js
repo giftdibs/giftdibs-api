@@ -25,9 +25,8 @@ function createDib(req, res, next) {
 
 function markDibAsDelivered(req, res, next) {
   const dibId = req.params.dibId;
-  const userId = req.user._id;
 
-  WishList.markDibAsDelivered(dibId, userId)
+  WishList.markDibAsDelivered(dibId, req.user)
     .then(() => {
       authResponse({
         data: { },

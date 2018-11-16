@@ -7,18 +7,58 @@ const mailgun = require('mailgun-js')({
   domain
 });
 
-function sendEmail(to, subject, html) {
+function getHtmlTemplate(contents, showUnsubscribe = false) {
+  const unsubscribe = (showUnsubscribe) ? `<a style="color:#888;" href="%mailing_list_unsubscribe_url%">Unsubscribe</a><br>` : '';
+
+  return `
+<table style="width:100%;height:100%;background-color:#fafafa;border-collapse:collapse;">
+<tr>
+<td style="padding:12px;">
+  <table style="width:100%;border:1px solid #ebebeb;background-color:#fff;">
+  <tr>
+  <td style="padding:12px;border-bottom:1px solid #ebebeb">
+    <table style="width:100%;border:0;">
+    <tr>
+    <td style="height: 40px;">
+    <a style="width:40px;height:40px;display:block;overflow:hidden;" href="https://giftdibs.com">
+      <img style="display: block; width: 100%; height: auto; border: 0;" src="https://giftdibs.com/assets/gd-logo.png" />
+    </a>
+    </td>
+    </tr>
+    </table>
+  </td>
+  </tr>
+  <tr>
+  <td style="padding:12px;">
+    ${contents}
+  </td>
+  </tr>
+  </table>
+  <p style="font-size:11px;color:#888;line-height:1;text-align:center;">
+    &copy; GiftDibs, LLC<br>
+    You are receiving this email because your current notification settings indicate that you wish to be notified in this way.<br>You can change your notification settings at <a style="color:#888;" href="https://giftdibs.com/account/settings">giftdibs.com</a>.<br>
+    ${unsubscribe}
+    <a style="color:#888;" href="https://giftdibs.com/support/privacy">Privacy</a>
+  </p>
+</td>
+</tr>
+</table>`;
+}
+
+function sendEmail(to, subject, html, showUnsubscribe) {
   const data = {
     from: `GiftDibs <${env.get('NO_REPLY_EMAIL_ADDRESS')}>`,
     to,
     subject,
-    html
+    html: getHtmlTemplate(html, showUnsubscribe)
   };
 
   return new Promise((resolve, reject) => {
     mailgun.messages().send(data, (error, body) => {
       if (error) {
-        reject(error);
+        console.log('[MAILGUN ERROR]', error);
+        // Swallow mailgun errors.
+        resolve();
         return;
       }
 
@@ -119,12 +159,13 @@ async function addUserToMailingList(user) {
 function sendUpdateEmail(subject, html) {
   const to = env.get('MAILGUN_MAILING_LIST_UPDATES');
 
-  return sendEmail(to, subject, html);
+  return sendEmail(to, subject, html, true);
 }
 
 module.exports = {
   addUserToMailingList,
   sendAccountVerificationEmail,
+  sendEmail,
   sendFeedbackEmail,
   sendPasswordResetEmail,
   sendUpdateEmail

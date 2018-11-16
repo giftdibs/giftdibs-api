@@ -19,7 +19,8 @@ function getSelectFields(req) {
       'firstName',
       'lastName',
       'emailAddress',
-      'emailAddressVerified'
+      'emailAddressVerified',
+      'notificationSettings'
     ].join(' ');
   } else {
     selectFields = [

@@ -33,8 +33,8 @@ const friendshipSchema = new Schema({
   }
 });
 
-friendshipSchema.statics.create = function (friendId, user) {
-  const userId = user._id;
+friendshipSchema.statics.create = function (friendId, sessionUser) {
+  const userId = sessionUser._id;
 
   if (userId.toString() === friendId) {
     return Promise.reject(
@@ -51,6 +51,8 @@ friendshipSchema.statics.create = function (friendId, user) {
       )
     );
   }
+
+  let _friendship;
 
   return this.find({
     '_user': userId,
@@ -77,16 +79,10 @@ friendshipSchema.statics.create = function (friendId, user) {
       return friendship.save();
     })
     .then((doc) => {
-      return Notification.create({
-        type: 'friendship_new',
-        _user: doc._friend,
-        follower: {
-          id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName
-        }
-      }).then(() => doc);
-    });
+      _friendship = doc;
+      return Notification.notifyNewFriendship(doc._friend, sessionUser);
+    })
+    .then(() => _friendship);
 };
 
 friendshipSchema.statics.getFriendshipsByUserId = function (userId) {
