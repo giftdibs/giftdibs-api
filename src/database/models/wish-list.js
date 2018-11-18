@@ -105,6 +105,24 @@ function revertGiftDateUpdated(wishList, gift, oldDateUpdated) {
   ).then(() => wishList);
 }
 
+function getAuthorizedQuery(userId, query = {}) {
+  const combined = {
+    $and: [
+      query,
+      {
+        // Only return results the current user can view.
+        $or: [
+          { _user: userId },
+          { 'privacy.type': 'everyone' },
+          { 'privacy._allow': userId }
+        ]
+      }
+    ]
+  };
+
+  return combined;
+}
+
 /**
  * Manual function to check if user can view wish list.
  * This is used, instead of a query, in order to alert
@@ -264,7 +282,7 @@ function validateDibQuantity(gift, quantity = 1, dibId) {
 async function findAuthorizedByFriendships(userId) {
   const { Friendship } = require('./friendship');
 
-  const friendships = await Friendship.getFriendshipsByUserId(userId);
+  const friendships = await Friendship.getAllByUserId(userId);
   const friendIds = friendships.following.map((friendship) => friendship._id);
 
   // Also show current user's gifts.
@@ -290,22 +308,8 @@ function findAuthorized(
   doReturnMongooseObject = false
 ) {
   const wishListModel = this;
-
-  const combined = {
-    $and: [
-      query,
-      {
-        // Only return results the current user can view.
-        $or: [
-          { _user: userId },
-          { 'privacy.type': 'everyone' },
-          { 'privacy._allow': userId }
-        ]
-      }
-    ]
-  };
-
-  const promise = wishListModel.find(combined);
+  const authorizedQuery = getAuthorizedQuery(userId, query);
+  const promise = wishListModel.find(authorizedQuery);
 
   if (doReturnMongooseObject) {
     return promise;

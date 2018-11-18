@@ -5,10 +5,10 @@ const {
 } = require('../../database/models/friendship');
 
 function deleteFriendship(req, res, next) {
-  const friendId = req.query.friendId;
+  const friendshipId = req.params.friendshipId;
   const userId = req.user._id;
 
-  Friendship.confirmUserOwnership(friendId, userId)
+  Friendship.confirmUserOwnership(friendshipId, userId)
     .then((friendship) => friendship.remove())
     .then(() => {
       authResponse({

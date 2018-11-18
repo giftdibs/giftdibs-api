@@ -119,7 +119,7 @@ giftSchema.methods.moveToWishList = function (wishListId, userId) {
       };
     });
   });
-}
+};
 
 giftSchema.methods.updateSync = function (values) {
   const instance = this;

@@ -6,7 +6,12 @@ function formatFriendshipResponse(friendship) {
   const clone = { ...friendship };
 
   clone.id = clone._id;
+  clone.friendId = clone._friend;
+  clone.userId = clone._user;
+
   delete clone._id;
+  delete clone._friend;
+  delete clone._user;
 
   return clone;
 }

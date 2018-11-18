@@ -16,13 +16,30 @@ function sortByDateUpdated(a, b) {
   return 0;
 }
 
+function sortByPriority(a, b) {
+  const keyA = a.priority;
+  const keyB = b.priority;
+  if (keyA > keyB) return -1;
+  if (keyA < keyB) return 1;
+  return 0;
+}
+
 function getWishList(req, res, next) {
   const userId = req.user._id;
+  const wishListId = req.params.wishListId;
+  const sortBy = req.query.sortBy;
 
-  WishList.findAuthorizedById(req.params.wishListId, userId)
+  WishList.findAuthorizedById(wishListId, userId)
     .then((wishList) => formatWishListResponse(wishList, userId))
     .then((wishList) => {
-      wishList.gifts.sort(sortByDateUpdated);
+      switch (sortBy) {
+        case 'priority':
+          wishList.gifts.sort(sortByPriority);
+          break;
+        default:
+          wishList.gifts.sort(sortByDateUpdated);
+          break;
+      }
 
       authResponse({
         data: { wishList }

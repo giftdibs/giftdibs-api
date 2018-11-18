@@ -6,8 +6,13 @@ const {
 
 const {
   FriendshipNotFoundError,
+  FriendshipPermissionError,
   FriendshipValidationError
 } = require('../../shared/errors');
+
+const {
+  ConfirmUserOwnershipPlugin
+} = require('../plugins/confirm-user-ownership');
 
 const {
   Notification
@@ -85,7 +90,21 @@ friendshipSchema.statics.create = function (friendId, sessionUser) {
     .then(() => _friendship);
 };
 
-friendshipSchema.statics.getFriendshipsByUserId = function (userId) {
+friendshipSchema.statics.getFollowingByUserId = function (userId) {
+  if (!userId) {
+    return Promise.reject(
+      new FriendshipValidationError(
+        'Please provide a user ID.'
+      )
+    );
+  }
+
+  return this.find({
+    '_user': userId
+  }).lean();
+}
+
+friendshipSchema.statics.getAllByUserId = function (userId) {
   if (!userId) {
     return Promise.reject(
       new FriendshipValidationError(
@@ -105,34 +124,34 @@ friendshipSchema.statics.getFriendshipsByUserId = function (userId) {
   });
 };
 
-friendshipSchema.statics.confirmUserOwnership = function (friendId, userId) {
-  if (!friendId) {
+friendshipSchema.statics.getSummaryByUserId = function (userId) {
+  if (!userId) {
     return Promise.reject(
-      new FriendshipValidationError('Please provide a user ID.')
+      new FriendshipValidationError(
+        'Please provide a user ID.'
+      )
     );
   }
 
-  const model = this;
-
-  return model.find({
-    '_friend': friendId,
-    '_user': userId
-  })
-    .limit(1)
-    .then((docs) => {
-      const doc = docs[0];
-
-      if (!doc) {
-        return Promise.reject(
-          new FriendshipNotFoundError()
-        );
-      }
-
-      return doc;
-    });
+  return Promise.all([
+    this.find({ '_user': userId }).populate('_friend', 'firstName lastName avatarUrl').lean(), // following
+    this.find({ '_friend': userId }).populate('_user', 'firstName lastName avatarUrl').lean() // followers
+  ]).then((result) => {
+    return {
+      following: result[0].map((friendship) => friendship._friend),
+      followers: result[1].map((friendship) => friendship._user)
+    };
+  });
 };
 
 friendshipSchema.plugin(MongoDbErrorHandlerPlugin);
+friendshipSchema.plugin(ConfirmUserOwnershipPlugin, {
+  errors: {
+    validation: new FriendshipValidationError('Please provide a friendship ID.'),
+    notFound: new FriendshipNotFoundError(),
+    permission: new FriendshipPermissionError()
+  }
+});
 
 const Friendship = mongoose.model('Friendship', friendshipSchema);
 
