@@ -39,6 +39,7 @@ async function createGift(req, res, next) {
       _user: userId,
       _wishList: wishListId,
       name: req.body.name,
+      notes: req.body.notes,
       priority: req.body.priority,
       budget: req.body.budget,
       quantity: req.body.quantity
