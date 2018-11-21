@@ -17,6 +17,7 @@
 //   const wishLists = await WishList.find({})
 //     .select(
 //       [
+//         '_user',
 //         'gifts.budget',
 //         'gifts.comments._user',
 //         'gifts.comments.body',
@@ -49,7 +50,15 @@
 //         const newGift = new Gift(gift);
 //         newGift.set('_user', wishList._user);
 //         newGift.set('_wishList', wishList._id);
-//         promises.push(newGift.save());
+//         promises.push(newGift.save().then((doc) => {
+//           // Revert the timestamps.
+//           return Gift.update({
+//             _id: doc._id
+//           }, {
+//             dateCreated: gift.dateCreated,
+//             dateUpdated: gift.dateUpdated
+//           });
+//         }));
 //       });
 //     }
 //   });
@@ -59,8 +68,8 @@
 //   return Promise.all(promises)
 //     .then(() => {
 //       return Promise.all(wishListDocs.map((wishList) => {
-//         // wishList.gifts = undefined;
-//         // return wishList.save();
+//         wishList.gifts = undefined;
+//         return wishList.save();
 //       }));
 //     });
 // }

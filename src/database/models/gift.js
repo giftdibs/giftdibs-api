@@ -237,6 +237,7 @@ async function markDibAsDelivered(dibId, user) {
     .select([
       '_user',
       'dibs',
+      'name',
       'quantity'
     ].join(' '))
     .populate('dibs._user', 'firstName lastName');
