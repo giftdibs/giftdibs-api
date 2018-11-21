@@ -244,7 +244,9 @@ async function markDibAsDelivered(dibId, user) {
 
   const gift = gifts[0];
   if (!gift) {
-    throw new DibNotFoundError();
+    throw new GiftNotFoundError(
+      'The gift you dibbed was not found, or has been deleted.'
+    );
   }
 
   const dib = confirmDibUserOwnershipSync(gift, dibId, userId);
@@ -309,11 +311,16 @@ async function markDibAsDelivered(dibId, user) {
 }
 
 async function updateDibById(dibId, userId, attributes) {
-  console.log('updateDibByID:', dibId, userId, attributes);
   const gifts = await this.find({ 'dibs._id': dibId })
     .limit(1);
 
   const gift = gifts[0];
+
+  if (!gift) {
+    throw new GiftNotFoundError(
+      'The gift you dibbed was not found, or has been deleted.'
+    );
+  }
 
   if (gift.dateReceived) {
     throw new DibValidationError(

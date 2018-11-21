@@ -70,15 +70,15 @@ async function markGiftAsReceived(req, res, next) {
       userId
     );
 
-    const wishLists = await WishList.find({
-      '_id': gift._wishList
-    })
-      .limit(1)
-      .select('_id');
-
-    const wishList = wishLists[0];
-
     if (!gift.dateReceived) {
+      const wishLists = await WishList.find({
+        '_id': gift._wishList
+      })
+        .limit(1)
+        .select('_id');
+
+      const wishList = wishLists[0];
+
       gift.set('dateReceived', new Date());
 
       await gift.save();
