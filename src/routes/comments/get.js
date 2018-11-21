@@ -1,42 +1,29 @@
 const authResponse = require('../../middleware/auth-response');
 
 const {
-  WishList
-} = require('../../database/models/wish-list');
+  Gift
+} = require('../../database/models/gift');
 
 const {
   formatCommentResponse,
   handleError
 } = require('./shared');
 
-function getComment(req, res, next) {
+async function getComment(req, res, next) {
   const commentId = req.params.commentId;
   const userId = req.user._id;
 
-  WishList.findAuthorizedByCommentId(commentId, userId)
-    .then((wishList) => {
-      let foundComment;
+  try {
+    const comment = await Gift.getCommentById(commentId, userId);
 
-      wishList.gifts.find((gift) => {
-        if (!gift.comments || !gift.comments.length) {
-          return;
-        }
+    const formatted = formatCommentResponse(comment);
 
-        foundComment = gift.comments.find((comment) => {
-          return (comment._id.toString() === commentId.toString());
-        });
-
-        return foundComment;
-      });
-
-      return formatCommentResponse(foundComment);
-    })
-    .then((comment) => {
-      authResponse({
-        data: { comment }
-      })(req, res, next);
-    })
-    .catch((err) => handleError(err, next));
+    authResponse({
+      data: { comment: formatted }
+    })(req, res, next);
+  } catch (err) {
+    handleError(err, next);
+  }
 }
 
 module.exports = {

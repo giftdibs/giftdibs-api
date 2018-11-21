@@ -33,9 +33,7 @@ function uploadAvatar(req, res, next) {
     .catch(next);
 }
 
-function uploadGiftThumbnail(req, res, next) {
-  const file = req.files[0];
-  const fileName = req.user._id + '-' + randomstring.generate();
+async function uploadGiftThumbnail(req, res, next) {
   const giftId = req.params.giftId;
   const userId = req.user._id;
 
@@ -47,40 +45,32 @@ function uploadGiftThumbnail(req, res, next) {
   }
 
   const {
-    WishList
-  } = require('../../database/models/wish-list');
+    Gift
+  } = require('../../database/models/gift');
 
-  let _wishList;
+  try {
+    const gift = await Gift.confirmUserOwnership(giftId, userId);
 
-  WishList.confirmUserOwnershipByGiftId(giftId, userId)
-    .then((wishList) => {
-      _wishList = wishList;
+    const file = req.files[0];
+    const fileName = `${req.user._id}-${randomstring.generate()}`;
+    const url = await fileHandler.upload(file, fileName);
 
-      return fileHandler.upload(file, fileName)
-    })
-    .then((url) => {
-      const gift = _wishList.gifts.id(giftId);
-      const oldImageUrl = gift.imageUrl;
+    const oldImageUrl = gift.imageUrl;
+    if (oldImageUrl) {
+      const fragments = oldImageUrl.split('/');
+      const oldFileName = fragments[fragments.length - 1];
+      await fileHandler.remove(oldFileName);
+    }
 
-      gift.imageUrl = url;
+    gift.set('imageUrl', url);
+    await gift.save();
 
-      return _wishList.save().then(() => {
-        if (oldImageUrl) {
-          const fragments = oldImageUrl.split('/');
-          const fileName = fragments[fragments.length - 1];
-
-          return fileHandler.remove(fileName).then(() => url);
-        }
-
-        return url;
-      });
-    })
-    .then((url) => {
-      authResponse({
-        data: { url }
-      })(req, res, next);
-    })
-    .catch(next);
+    authResponse({
+      data: { url }
+    })(req, res, next);
+  } catch (err) {
+    next(err);
+  }
 }
 
 module.exports = {

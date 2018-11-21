@@ -28,7 +28,7 @@ function deleteAvatar(req, res, next) {
     .catch(next);
 }
 
-function deleteGiftThumbnail(req, res, next) {
+async function deleteGiftThumbnail(req, res, next) {
   const giftId = req.params.giftId;
   const userId = req.user._id;
 
@@ -40,33 +40,28 @@ function deleteGiftThumbnail(req, res, next) {
   }
 
   const {
-    WishList
-  } = require('../../database/models/wish-list');
+    Gift
+  } = require('../../database/models/gift');
 
-  WishList.confirmUserOwnershipByGiftId(giftId, userId)
-    .then((wishList) => {
-      const gift = wishList.gifts.id(giftId);
-      const imageUrl = gift.imageUrl;
+  try {
+    const gift = await Gift.confirmUserOwnership(giftId, userId);
 
-      if (!imageUrl) {
-        return;
-      }
-
+    const imageUrl = gift.imageUrl;
+    if (imageUrl) {
       const fragments = imageUrl.split('/');
       const fileName = fragments[fragments.length - 1];
+      await fileHandler.remove(fileName);
 
-      return fileHandler.remove(fileName)
-        .then(() => {
-          gift.imageUrl = undefined;
-          return wishList.save();
-        });
-    })
-    .then(() => {
-      authResponse({
-        message: 'Thumbnail successfully removed.'
-      })(req, res, next);
-    })
-    .catch(next);
+      gift.imageUrl = undefined;
+      await gift.save();
+    }
+
+    authResponse({
+      message: 'Thumbnail successfully removed.'
+    })(req, res, next);
+  } catch (err) {
+    next(err);
+  }
 }
 
 module.exports = {

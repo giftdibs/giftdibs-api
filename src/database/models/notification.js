@@ -133,7 +133,10 @@ function notifyNewFriendship(recipientId, sessionUser) {
         }
       })
         .then((doc) => {
-          if (recipient.notificationSettings[type].allowEmail === true) {
+          if (
+            recipient.notificationSettings &&
+            recipient.notificationSettings[type].allowEmail === true
+          ) {
             const html = `
 <p>
 Hi, ${recipient.firstName}!
@@ -179,7 +182,10 @@ function notifyGiftComment(recipientId, sessionUser, gift, comment) {
         type
       })
         .then((doc) => {
-          if (recipient.notificationSettings[type].allowEmail === true) {
+          if (
+            recipient.notificationSettings &&
+            recipient.notificationSettings[type].allowEmail === true
+          ) {
             const html = `
 <p>
 Hi, ${recipient.firstName}!
@@ -228,7 +234,10 @@ function notifyGiftCommentAlso(recipientId, sessionUser, gift, comment) {
         type
       })
         .then((doc) => {
-          if (recipient.notificationSettings[type].allowEmail === true) {
+          if (
+            recipient.notificationSettings &&
+            recipient.notificationSettings[type].allowEmail === true
+          ) {
             const html = `
 <p>
 Hi, ${recipient.firstName}!
@@ -277,7 +286,10 @@ function notifyGiftReceived(recipientId, sessionUser, gift, dib) {
         }
       })
         .then((doc) => {
-          if (recipient.notificationSettings[type].allowEmail === true) {
+          if (
+            recipient.notificationSettings &&
+            recipient.notificationSettings[type].allowEmail === true
+          ) {
             const html = `
 <p>
 Hi, ${recipient.firstName}!
@@ -315,7 +327,10 @@ function notifyGiftDelivered(recipientId, sessionUser, gift, dibs) {
         }
       })
         .then((doc) => {
-          if (recipient.notificationSettings[type].allowEmail === true) {
+          if (
+            recipient.notificationSettings &&
+            recipient.notificationSettings[type].allowEmail === true
+          ) {
             const html = `
 <p>
 Hi, ${recipient.firstName}!

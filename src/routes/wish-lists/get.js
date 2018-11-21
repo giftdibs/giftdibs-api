@@ -1,54 +1,90 @@
 const authResponse = require('../../middleware/auth-response');
 
 const {
+  Gift
+} = require('../../database/models/gift');
+
+const {
   WishList
 } = require('../../database/models/wish-list');
+
+const {
+  WishListNotFoundError
+} = require('../../shared/errors');
 
 const {
   formatWishListResponse
 } = require('./shared');
 
-function sortByDateUpdated(a, b) {
-  const keyA = a.dateUpdated || a.dateCreated;
-  const keyB = b.dateUpdated || b.dateCreated;
-  if (keyA > keyB) return -1;
-  if (keyA < keyB) return 1;
-  return 0;
-}
-
-function sortByPriority(a, b) {
-  const keyA = a.priority;
-  const keyB = b.priority;
-  if (keyA > keyB) return -1;
-  if (keyA < keyB) return 1;
-  return 0;
-}
-
-function getWishList(req, res, next) {
+async function getWishList(req, res, next) {
   const userId = req.user._id;
   const wishListId = req.params.wishListId;
   const sortBy = req.query.sortBy;
 
-  WishList.findAuthorizedById(wishListId, userId)
-    .then((wishList) => formatWishListResponse(wishList, userId))
-    .then((wishList) => {
-      switch (sortBy) {
-        case 'priority':
-          wishList.gifts.sort(sortByPriority);
-          break;
-        default:
-          wishList.gifts.sort(sortByDateUpdated);
-          break;
-      }
+  let sortKey;
+  switch (sortBy) {
+    case 'recent':
+    default:
+      sortKey = '-dateUpdated';
+      break;
+    case 'priority':
+      sortKey = '-priority';
+      break;
+  }
 
-      authResponse({
-        data: { wishList }
-      })(req, res, next);
+  try {
+    const wishLists = await WishList.findAuthorized(userId, {
+      '_id': wishListId
     })
-    .catch(next);
+      .limit(1)
+      .select('_user dateCreated dateUpdated name privacy type')
+      .populate('_user', 'avatarUrl firstName lastName')
+      .lean();
+
+    const wishList = wishLists[0];
+
+    if (!wishList) {
+      next(new WishListNotFoundError());
+      return;
+    }
+
+    const gifts = await Gift.find({
+      '_wishList': wishListId
+    })
+      .select([
+        'budget',
+        'dateCreated',
+        'dateReceived',
+        'dateUpdated',
+        'dibs._id',
+        'dibs._user',
+        'dibs.dateDelivered',
+        'dibs.dateUpdated',
+        'dibs.isAnonymous',
+        'dibs.quantity',
+        'imageUrl',
+        'name',
+        'priority',
+        'quantity'
+      ].join(' '))
+      .populate('_user', 'avatarUrl firstName lastName')
+      .populate('dibs._user', 'avatarUrl firstName lastName')
+      .sort(sortKey)
+      .lean();
+
+    wishList.gifts = gifts;
+
+    const formatted = formatWishListResponse(wishList, userId);
+
+    authResponse({
+      data: { wishList: formatted }
+    })(req, res, next);
+  } catch (err) {
+    next(err);
+  }
 }
 
-function getWishLists(req, res, next) {
+async function getWishLists(req, res, next) {
   const userId = req.user._id;
   const getArchived = (req.query.archived === true);
 
@@ -71,24 +107,41 @@ function getWishLists(req, res, next) {
     query._user = req.params.userId;
   }
 
-  WishList.findAuthorized(userId, query)
-    .then((wishLists) => {
-      return wishLists.map((wishList) => {
-        return formatWishListResponse(wishList, userId);
-      });
-    })
-    .then((wishLists) => {
-      wishLists.sort(sortByDateUpdated);
+  try {
+    const wishLists = await WishList.findAuthorized(userId, query)
+      .select('_user name')
+      .populate('_user', 'avatarUrl firstName lastName')
+      .lean();
 
-      wishLists.forEach((wishList) => {
-        wishList.gifts.sort(sortByDateUpdated);
-      });
+    const wishListIds = wishLists.map((wl) => wl._id);
 
-      authResponse({
-        data: { wishLists }
-      })(req, res, next);
+    const gifts = await Gift.find({
+      '_wishList': {
+        $in: wishListIds
+      }
     })
-    .catch(next);
+      .select('_wishList dateCreated dateUpdated imageUrl name')
+      .lean();
+
+    wishLists.forEach((wishList) => {
+      wishList.gifts = [];
+      gifts.forEach((gift) => {
+        if (gift._wishList.toString() === wishList._id.toString()) {
+          wishList.gifts.push(gift);
+        }
+      });
+    });
+
+    const formatted = wishLists.map((wishList) => {
+      return formatWishListResponse(wishList, userId);
+    });
+
+    authResponse({
+      data: { wishLists: formatted }
+    })(req, res, next);
+  } catch (err) {
+    next(err);
+  }
 }
 
 function getArchivedWishLists(req, res, next) {

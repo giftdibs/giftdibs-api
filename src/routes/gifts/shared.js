@@ -12,14 +12,13 @@ const {
 
 function formatGiftResponse(gift, wishList, userId) {
   const clone = { ...gift };
-  const isGiftOwner = (wishList._user._id.toString() === userId.toString());
-  const wishListSummary = {
-    id: wishList._id,
-    name: wishList.name
-  };
+
+  const isGiftOwner = (
+    clone._user &&
+    clone._user._id.toString() === userId.toString()
+  );
 
   // Remove dibs if session user is owner of gift and gift is not received.
-  // TODO: If wish list is a registry, show dibs.
   if (wishList.type !== 'registry' && isGiftOwner && !clone.dateReceived) {
     clone.dibs = [];
   }
@@ -34,13 +33,24 @@ function formatGiftResponse(gift, wishList, userId) {
     clone.dibs = clone.dibs.map((dib) => formatDibResponse(dib, userId));
   }
 
-  clone.wishList = wishListSummary;
-  clone.user = { ...wishList._user };
-  clone.user.id = clone.user._id;
-  clone.id = clone._id;
+  // Only format the wish list if it has been populated.
+  if (clone._wishList && clone._wishList.name) {
+    clone.wishList = { ...clone._wishList };
+    clone.wishList.id = clone._wishList._id;
+    delete clone.wishList._id;
+  }
 
-  delete clone.user._id;
+  // Only format the wish list if it has been populated.
+  if (clone._user && clone._user.firstName) {
+    clone.user = { ...clone._user };
+    clone.user.id = clone.user._id;
+    delete clone.user._id;
+  }
+
+  clone.id = clone._id;
   delete clone._id;
+  delete clone._user;
+  delete clone._wishList;
 
   return clone;
 }

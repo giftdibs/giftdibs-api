@@ -5,35 +5,40 @@ const {
 } = require('./shared');
 
 const {
-  WishList
-} = require('../../database/models/wish-list');
+  Gift
+} = require('../../database/models/gift');
 
-function createDib(req, res, next) {
+async function createDib(req, res, next) {
   const userId = req.user._id;
   const giftId = req.params.giftId;
   const attributes = req.body;
 
-  WishList.createDib(giftId, attributes, userId)
-    .then((dibId) => {
-      authResponse({
-        data: { dibId },
-        message: 'Gift successfully dibbed!'
-      })(req, res, next);
-    })
-    .catch((err) => handleError(err, next));
+  try {
+    const dibId = await Gift.createDib(giftId, attributes, userId);
+
+    authResponse({
+      data: { dibId },
+      message: 'Gift successfully dibbed!'
+    })(req, res, next);
+  } catch (err) {
+    handleError(err, next);
+  }
 }
 
-function markDibAsDelivered(req, res, next) {
+async function markDibAsDelivered(req, res, next) {
   const dibId = req.params.dibId;
+  const user = req.user;
 
-  WishList.markDibAsDelivered(dibId, req.user)
-    .then(() => {
-      authResponse({
-        data: { },
-        message: 'Dib successfully marked as delivered.'
-      })(req, res, next);
-    })
-    .catch((err) => handleError(err, next));
+  try {
+    await Gift.markDibAsDelivered(dibId, user);
+
+    authResponse({
+      data: { },
+      message: 'Dib successfully marked as delivered.'
+    })(req, res, next);
+  } catch (err) {
+    handleError(err, next);
+  }
 }
 
 module.exports = {

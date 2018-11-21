@@ -5,70 +5,132 @@ const {
 } = require('./shared');
 
 const {
+  Gift
+} = require('../../database/models/gift');
+
+const {
   WishList
 } = require('../../database/models/wish-list');
 
 const {
-  handleError
-} = require('./shared');
+  GiftNotFoundError,
+  WishListNotFoundError
+} = require('../../shared/errors');
 
-function getGift(req, res, next) {
+async function getGift(req, res, next) {
   const giftId = req.params.giftId.toString();
   const userId = req.user._id.toString();
 
-  // TODO: Move this to a first-class method in the wish list schema.
-  WishList.findAuthorizedByGiftId(giftId, userId)
-    .then((wishList) => {
-      const gift = wishList.gifts.find((gift) => {
-        return (gift._id.toString() === giftId);
-      });
+  try {
+    const gifts = await Gift.find({
+      _id: giftId
+    })
+      .limit(1)
+      .select([
+        '_user',
+        '_wishList',
+        'budget',
+        'comments',
+        'dateCreated',
+        'dateReceived',
+        'dateUpdated',
+        'dibs',
+        'externalUrls',
+        'imageUrl',
+        'name',
+        'notes',
+        'priority',
+        'quantity'
+      ].join(' '))
+      .populate('_user', 'avatarUrl firstName lastName')
+      .populate('_wishList', 'name')
+      .populate('comments._user', 'avatarUrl firstName lastName')
+      .populate('dibs._user', 'avatarUrl firstName lastName')
+      .lean();
 
-      return formatGiftResponse(gift, wishList, userId);
+    const gift = gifts[0];
+
+    if (!gift) {
+      next(new GiftNotFoundError())
+      return;
+    }
+
+    const wishListId = gift._wishList;
+
+    const wishLists = await WishList.findAuthorized(userId, {
+      _id: wishListId
     })
-    .then((gift) => {
-      authResponse({
-        data: { gift }
-      })(req, res, next);
-    })
-    .catch((err) => handleError(err, next));
+      .limit(1)
+      .select('name type')
+      .lean();
+
+    const wishList = wishLists[0];
+    if (!wishList) {
+      next(new WishListNotFoundError());
+      return;
+    }
+
+    const formatted = formatGiftResponse(gift, wishList, userId);
+
+    authResponse({
+      data: { gift: formatted }
+    })(req, res, next);
+  } catch (err) {
+    next(err);
+  }
 }
 
-function getGifts(req, res, next) {
+async function getGifts(req, res, next) {
   const userId = req.user._id.toString();
   const start = parseInt(req.query.startIndex) || 0;
   const max = 12;
 
-  WishList.findAuthorizedByFriendships(userId)
-    .then((wishLists) => {
-      let gifts = [];
+  try {
+    const query = await WishList.getAuthorizedFriendsQuery(userId);
+    const wishLists = await WishList.find(query)
+      .select('_id')
+      .lean();
 
-      wishLists.forEach((wishList) => {
-        wishList.gifts.forEach((gift) => {
-          if (gift.dateReceived) {
-            return;
-          }
+    const wishListIds = wishLists.map((wl) => wl._id);
 
-          gifts.push(
-            formatGiftResponse(gift, wishList, userId)
-          );
-        });
-      });
-
-      gifts.sort((a, b) => {
-        const keyA = a.dateUpdated || a.dateCreated;
-        const keyB = b.dateUpdated || b.dateCreated;
-        if (keyA > keyB) return -1;
-        if (keyA < keyB) return 1;
-        return 0;
-      });
-
-      gifts = gifts.slice(start, start + max);
-
-      authResponse({
-        data: { gifts }
-      })(req, res, next);
+    // TODO: Figure out a better way to do pagination (skip does not scale):
+    // https://stackoverflow.com/questions/5539955/how-to-paginate-with-mongoose-in-node-js
+    const gifts = await Gift.find({
+      '_wishList': {
+        $in: wishListIds
+      },
+      dateReceived: { $exists: false }
     })
-    .catch(next);
+      .skip(start)
+      .limit(max)
+      .select([
+        '_user',
+        '_wishList',
+        'dateUpdated',
+        'dibs._id',
+        'dibs._user',
+        'dibs.dateDelivered',
+        'budget',
+        'imageUrl',
+        'name',
+        'priority'
+      ].join(' '))
+      .populate('_user', 'avatarUrl firstName lastName')
+      .populate('_wishList', 'name')
+      .populate('dibs._user', 'firstName lastName')
+      .sort('-dateUpdated')
+      .lean();
+
+    const formatted = gifts.map((g) => {
+      return formatGiftResponse(g, g._wishList, userId);
+    });
+
+    authResponse({
+      data: { gifts: formatted }
+    })(req, res, next);
+  } catch (err) {
+    next(err);
+  }
 }
 
 module.exports = {

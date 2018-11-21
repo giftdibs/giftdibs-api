@@ -1,6 +1,10 @@
 const authResponse = require('../../middleware/auth-response');
 
 const {
+  Gift
+} = require('../../database/models/gift');
+
+const {
   WishList
 } = require('../../database/models/wish-list');
 
@@ -12,10 +16,9 @@ const {
   handleError
 } = require('./shared');
 
-function createGift(req, res, next) {
+async function createGift(req, res, next) {
+  const userId = req.user._id;
   const wishListId = req.params.wishListId;
-
-  // TODO: Move this to a first-class method in the wish list schema.
 
   if (!wishListId) {
     next(
@@ -26,38 +29,44 @@ function createGift(req, res, next) {
     return;
   }
 
-  WishList.confirmUserOwnership(wishListId, req.user._id)
-    .then((wishList) => {
-      const gift = wishList.gifts.create({
-        name: req.body.name,
-        priority: req.body.priority,
-        budget: req.body.budget,
-        quantity: req.body.quantity
-      });
+  try {
+    const wishList = await WishList.confirmUserOwnership(
+      wishListId,
+      userId
+    );
 
-      if (req.body.externalUrls) {
-        req.body.externalUrls.forEach((externalUrl) => {
-          if (!externalUrl.url || !externalUrl.url.trim()) {
-            return;
-          }
+    const gift = new Gift({
+      _user: userId,
+      _wishList: wishListId,
+      name: req.body.name,
+      priority: req.body.priority,
+      budget: req.body.budget,
+      quantity: req.body.quantity
+    });
 
-          gift.externalUrls.push({
-            url: externalUrl.url
-          });
+    if (req.body.externalUrls) {
+      req.body.externalUrls.forEach((externalUrl) => {
+        if (!externalUrl.url || !externalUrl.url.trim()) {
+          return;
+        }
+
+        gift.externalUrls.push({
+          url: externalUrl.url
         });
-      }
+      });
+    }
 
-      wishList.gifts.push(gift);
+    const doc = await gift.save();
 
-      return wishList.save().then(() => gift);
-    })
-    .then((gift) => {
-      authResponse({
-        data: { giftId: gift._id },
-        message: 'Gift successfully created.'
-      })(req, res, next);
-    })
-    .catch((err) => handleError(err, next));
+    await wishList.save();
+
+    authResponse({
+      data: { giftId: doc._id },
+      message: 'Gift successfully created.'
+    })(req, res, next);
+  } catch (err) {
+    handleError(err, next);
+  }
 }
 
 module.exports = {

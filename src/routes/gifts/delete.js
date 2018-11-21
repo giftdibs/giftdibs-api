@@ -1,44 +1,45 @@
 const authResponse = require('../../middleware/auth-response');
 
 const {
+  Gift
+} = require('../../database/models/gift');
+
+const {
   WishList
 } = require('../../database/models/wish-list');
-
-const fileHandler = require('../../shared/file-handler');
 
 const {
   handleError
 } = require('./shared');
 
-function deleteGift(req, res, next) {
+async function deleteGift(req, res, next) {
   const giftId = req.params.giftId;
   const userId = req.user._id;
 
-  // TODO: Move this to a first-class method in the wish list schema.
-  WishList.confirmUserOwnershipByGiftId(giftId, userId)
-    .then((wishList) => {
-      const gift = wishList.gifts.id(giftId);
+  try {
+    const gift = await Gift.confirmUserOwnership(
+      giftId,
+      userId
+    );
 
-      gift.remove();
-
-      // Delete gift image from S3.
-      if (gift.imageUrl) {
-        const fragments = gift.imageUrl.split('/');
-        const fileName = fragments[fragments.length - 1];
-
-        return fileHandler.remove(fileName)
-          .then(() => wishList.save());
-      }
-
-      return wishList.save();
+    const wishLists = await WishList.find({
+      '_id': gift._wishList
     })
-    .then(() => {
-      authResponse({
-        data: { },
-        message: 'Gift successfully deleted.'
-      })(req, res, next);
-    })
-    .catch((err) => handleError(err, next));
+      .limit(1)
+      .select('_id');
+
+    const wishList = wishLists[0];
+
+    await gift.remove();
+    await wishList.save();
+
+    authResponse({
+      data: { },
+      message: 'Gift successfully deleted.'
+    })(req, res, next);
+  } catch (err) {
+    handleError(err, next);
+  }
 }
 
 module.exports = {

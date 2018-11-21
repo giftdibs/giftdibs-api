@@ -5,21 +5,23 @@ const {
 } = require('./shared');
 
 const {
-  WishList
-} = require('../../database/models/wish-list');
+  Gift
+} = require('../../database/models/gift');
 
-function createComment(req, res, next) {
+async function createComment(req, res, next) {
   const giftId = req.params.giftId;
   const attributes = req.body;
 
-  WishList.createComment(giftId, attributes, req.user)
-    .then((commentId) => {
-      authResponse({
-        data: { commentId },
-        message: 'Comment successfully created.'
-      })(req, res, next);
-    })
-    .catch((err) => handleError(err, next));
+  try {
+    const commentId = await Gift.createComment(giftId, attributes, req.user);
+
+    authResponse({
+      data: { commentId },
+      message: 'Comment successfully created.'
+    })(req, res, next);
+  } catch (err) {
+    handleError(err, next);
+  }
 }
 
 module.exports = {

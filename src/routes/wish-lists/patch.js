@@ -9,23 +9,28 @@ const {
   sanitizeRequestBody
 } = require('./shared');
 
-function updateWishList(req, res, next) {
+async function updateWishList(req, res, next) {
   const wishListId = req.params.wishListId;
   const userId = req.user._id;
   const attributes = sanitizeRequestBody(req.body);
 
-  WishList.confirmUserOwnership(wishListId, userId)
-    .then((wishList) => {
-      wishList.updateSync(attributes);
-      return wishList.save();
-    })
-    .then(() => {
-      authResponse({
-        data: { },
-        message: 'Wish list updated.'
-      })(req, res, next);
-    })
-    .catch((err) => handleError(err, next));
+  try {
+    const wishList = await WishList.confirmUserOwnership(
+      wishListId,
+      userId
+    );
+
+    wishList.updateSync(attributes);
+
+    await wishList.save();
+
+    authResponse({
+      data: { },
+      message: 'Wish list updated.'
+    })(req, res, next);
+  } catch (err) {
+    handleError(err, next);
+  }
 }
 
 module.exports = {

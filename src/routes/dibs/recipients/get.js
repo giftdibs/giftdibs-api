@@ -1,6 +1,10 @@
 const authResponse = require('../../../middleware/auth-response');
 
 const {
+  Gift
+} = require('../../../database/models/gift');
+
+const {
   WishList
 } = require('../../../database/models/wish-list');
 
@@ -28,93 +32,116 @@ function getSumBudget(recipient) {
   recipient.totalPricePaid = pricePaid;
 }
 
-function getDibsRecipients(req, res, next) {
+async function getDibsRecipients(req, res, next) {
   const recipients = [];
   const userId = req.user._id;
   const status = req.query.status;
 
-  // Get all wish lists that include the session user's dibs.
-  WishList.findAuthorized(userId, {
-    'gifts.dibs._user': userId
-  })
-    .then((wishLists) => {
-      wishLists = wishLists.map((wishList) => {
-        const gifts = [];
+  let giftsQuery = {};
 
-        wishList.gifts.forEach((gift) => {
-          // Remove any dibs that do not belong to session user.
-          const foundDib = gift.dibs.find((dib) => {
-            const isOwner = (dib._user._id.toString() === userId.toString());
+  if (status === 'delivered') {
+    giftsQuery = {
+      $and: [
+        { 'dibs._user': userId },
+        { 'dibs.dateDelivered': { $exists: true } }
+      ]
+    };
+  } else {
+    giftsQuery = {
+      $and: [
+        { 'dibs._user': userId },
+        { 'dibs.dateDelivered': { $exists: false } }
+      ]
+    };
+  }
 
-            if (isOwner) {
-              // Only return delivered dibs.
-              if (status === 'delivered' && dib.dateDelivered) {
-                return true;
-              }
+  try {
+    const gifts = await Gift.find(giftsQuery)
+      .select([
+        '_user',
+        '_wishList',
+        'budget',
+        'dateReceived',
+        'dateUpdated',
+        'dibs',
+        'imageUrl',
+        'name'
+      ].join(' '))
+      .populate('_user', 'avatarUrl firstName lastName')
+      .populate('dibs._user', 'avatarUrl firstName lastName')
+      .lean();
 
-              // Only return non-delivered dibs.
-              if (status !== 'delivered' && !dib.dateDelivered) {
-                return true;
-              }
-            }
+    const wishListIds = gifts.map((g) => g._wishList);
 
-            return false;
-          });
-
-          // Remove all gifts except those that were dibbed.
-          if (foundDib) {
-            gift.dibs = [foundDib];
-            gifts.push(gift);
-          }
-        });
-
-        wishList.gifts = gifts;
-
-        return formatWishListResponse(wishList, userId);
-      });
-
-      // Create the recipients array.
-      wishLists.forEach((wishList) => {
-        const foundRecipient = recipients.find((recipient) => {
-          return (recipient.id.toString() === wishList.user.id.toString());
-        });
-
-        // Add to existing recipient?
-        if (foundRecipient) {
-          foundRecipient.wishLists.push(wishList);
-          return;
-        }
-
-        // Add a new recipient.
-        recipients.push({
-          id: wishList.user.id,
-          firstName: wishList.user.firstName,
-          lastName: wishList.user.lastName,
-          avatarUrl: wishList.user.avatarUrl,
-          wishLists: [wishList]
-        });
-      });
-
-      recipients.forEach(getSumBudget);
-
-      return recipients;
+    const wishLists = await WishList.find({
+      '_id': wishListIds
     })
-    .then((recipients) => {
-      // Only return recipients that have non-empty gifts arrays.
-      recipients = recipients.filter((recipient) => {
-        const wishLists = recipient.wishLists.filter((wishList) => {
-          return (wishList.gifts && wishList.gifts.length);
-        });
+      .select([
+        '_user',
+        'name'
+      ].join(' '))
+      .populate('_user', 'avatarUrl firstName lastName')
+      .lean();
 
-        return (wishLists && wishLists.length);
+    // Prepare dibs.
+    gifts.forEach((gift) => {
+      // Remove any dibs that do not belong to session user.
+      const foundDib = gift.dibs.find((dib) => {
+        const isOwner = (dib._user.toString() === userId.toString());
+
+        return isOwner;
       });
 
-      authResponse({
-        data: {
-          recipients
-        }
-      })(req, res, next);
+      if (foundDib) {
+        gift.dibs = [foundDib];
+      }
     });
+
+    // Create the recipients array.
+    wishLists.forEach((wishList) => {
+      // Add gifts to wish list.
+      wishList.gifts = gifts.filter((gift) => {
+        return (gift._wishList.toString() === wishList._id.toString());
+      });
+
+      if (!wishList.gifts) {
+        return;
+      }
+
+      const foundRecipient = recipients.find((recipient) => {
+        return (recipient.id.toString() === wishList._user._id.toString());
+      });
+
+      // Add to existing recipient?
+      if (foundRecipient) {
+        foundRecipient.wishLists.push(
+          formatWishListResponse(wishList, userId)
+        );
+        return;
+      }
+
+      // Add a new recipient.
+      recipients.push({
+        id: wishList._user._id,
+        firstName: wishList._user.firstName,
+        lastName: wishList._user.lastName,
+        avatarUrl: wishList._user.avatarUrl,
+        wishLists: [
+          formatWishListResponse(wishList, userId)
+        ]
+      });
+    });
+
+    recipients.forEach(getSumBudget);
+
+    authResponse({
+      data: {
+        recipients
+      }
+    })(req, res, next);
+  } catch (err) {
+    next(err);
+  }
 }
 
 module.exports = {

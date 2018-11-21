@@ -5,22 +5,24 @@ const {
 } = require('./shared');
 
 const {
-  WishList
-} = require('../../database/models/wish-list');
+  Gift
+} = require('../../database/models/gift');
 
-function updateDib(req, res, next) {
+async function updateDib(req, res, next) {
   const dibId = req.params.dibId;
   const userId = req.user._id;
   const attributes = req.body;
 
-  WishList.updateDibById(dibId, userId, attributes)
-    .then(() => {
-      authResponse({
-        data: { },
-        message: 'Dib successfully updated.'
-      })(req, res, next);
-    })
-    .catch((err) => handleError(err, next));
+  try {
+    await Gift.updateDibById(dibId, userId, attributes);
+
+    authResponse({
+      data: { },
+      message: 'Dib successfully updated.'
+    })(req, res, next);
+  } catch (err) {
+    handleError(err, next);
+  }
 }
 
 module.exports = {
