@@ -83,7 +83,7 @@ async function getGift(req, res, next) {
 async function getGifts(req, res, next) {
   const userId = req.user._id.toString();
   const start = parseInt(req.query.startIndex) || 0;
-  const max = 12;
+  const max = 24;
 
   try {
     const query = await WishList.getAuthorizedFriendsQuery(userId);
@@ -106,14 +106,17 @@ async function getGifts(req, res, next) {
       .select([
         '_user',
         '_wishList',
+        'dateReceived',
         'dateUpdated',
         'dibs._id',
         'dibs._user',
         'dibs.dateDelivered',
+        'dibs.quantity',
         'budget',
         'imageUrl',
         'name',
-        'priority'
+        'priority',
+        'quantity'
       ].join(' '))
       .populate('_user', 'avatarUrl firstName lastName')
       .populate('_wishList', 'name')
