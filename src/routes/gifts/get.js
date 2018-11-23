@@ -83,7 +83,7 @@ async function getGift(req, res, next) {
 async function getGifts(req, res, next) {
   const userId = req.user._id.toString();
   const start = parseInt(req.query.startIndex) || 0;
-  const max = 24;
+  const max = 36;
 
   try {
     const query = await WishList.getAuthorizedFriendsQuery(userId);
@@ -99,7 +99,18 @@ async function getGifts(req, res, next) {
       '_wishList': {
         $in: wishListIds
       },
-      dateReceived: { $exists: false }
+      dateReceived: { $exists: false },
+      $or: [
+        {
+          quantity: 1,
+          'dibs.dateDelivered': { $exists: false }
+        },
+        {
+          // Always show multiple dibbed gifts.
+          // TODO: Figure out how to filter out multi-dib delivered gifts.
+          quantity: { $gt: 1 }
+        }
+      ]
     })
       .skip(start)
       .limit(max)
