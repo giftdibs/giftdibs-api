@@ -130,7 +130,7 @@ async function getGifts(req, res, next) {
         'quantity'
       ].join(' '))
       .populate('_user', 'avatarUrl firstName lastName')
-      .populate('_wishList', 'name')
+      .populate('_wishList', 'name type')
       .populate('dibs._user', 'firstName lastName')
       .sort('-dateUpdated')
       .lean();
