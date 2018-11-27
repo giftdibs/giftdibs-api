@@ -156,14 +156,46 @@ async function addUserToMailingList(user) {
   });
 }
 
+function removeEmailAddressFromMailingList(emailAddress) {
+  const list = mailgun.lists(env.get('MAILGUN_MAILING_LIST_UPDATES'));
+
+  return new Promise((resolve, reject) => {
+    list.members(emailAddress).delete((err) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
 function sendUpdateEmail(subject, html) {
   const to = env.get('MAILGUN_MAILING_LIST_UPDATES');
 
   return sendEmail(to, subject, html, true);
 }
 
+function getMailingListMembers() {
+  const list = mailgun.lists(env.get('MAILGUN_MAILING_LIST_UPDATES'));
+
+  return new Promise((resolve, reject) => {
+    list.members().list((err, result) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      resolve(result.items);
+    });
+  });
+}
+
 module.exports = {
   addUserToMailingList,
+  getMailingListMembers,
+  removeEmailAddressFromMailingList,
   sendAccountVerificationEmail,
   sendEmail,
   sendFeedbackEmail,

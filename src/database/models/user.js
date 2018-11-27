@@ -144,6 +144,11 @@ const userSchema = new Schema({
   password: String,
   resetPasswordToken: String,
   resetPasswordExpires: Date,
+  role: {
+    type: String,
+    enum: ['admin', 'member'],
+    default: 'member'
+  },
   // birthday: {
   //   type: Date,
   //   // required: true,
@@ -331,6 +336,9 @@ async function removeReferencedDocuments(user, next) {
     await Promise.all(
       friendships.map((friendship) => friendship.remove())
     );
+
+    const mailer = require('../../shared/mailer');
+    await mailer.removeEmailAddressFromMailingList(user.emailAddress);
 
     next();
   } catch (err) {

@@ -1,4 +1,6 @@
-module.exports = [
+const env = require('../shared/environment');
+
+const routers = [
   require('./auth').router,
   require('./auth-facebook').router,
   require('./comments'),
@@ -12,3 +14,11 @@ module.exports = [
   require('./wish-lists'),
   require('./assets')
 ];
+
+if (env.get('NODE_ENV') === 'development') {
+  routers.push(
+    require('./admin')
+  );
+}
+
+module.exports = routers;
