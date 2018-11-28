@@ -10,6 +10,7 @@ const mailgun = require('mailgun-js')({
 function getHtmlTemplate(contents, showUnsubscribe = false) {
   const unsubscribe = (showUnsubscribe) ? `<a style="color:#888;" href="%mailing_list_unsubscribe_url%">Unsubscribe</a><br>` : '';
 
+  /* eslint-disable max-len */
   return `
 <table style="width:100%;height:100%;background-color:#fafafa;border-collapse:collapse;">
 <tr>
@@ -43,6 +44,7 @@ function getHtmlTemplate(contents, showUnsubscribe = false) {
 </td>
 </tr>
 </table>`;
+  /* eslint-enable */
 }
 
 function sendEmail(to, subject, html, showUnsubscribe) {
