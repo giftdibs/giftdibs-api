@@ -18,9 +18,34 @@ function authenticateRole(req, res, next) {
 }
 
 const {
+  createMailingListSubscription,
+  removeMailingListSubscription,
+  updateMailingListSubscription
+} = require('./mailing-list-subscription');
+
+const {
   getUsers,
   deleteUser
 } = require('./users');
+
+router.route('/admin/mailing-list-subscription')
+  .post([
+    authenticateJwt,
+    authenticateRole,
+    createMailingListSubscription
+  ]);
+
+router.route('/admin/mailing-list-subscription/:emailAddress')
+  .delete([
+    authenticateJwt,
+    authenticateRole,
+    removeMailingListSubscription
+  ])
+  .patch([
+    authenticateJwt,
+    authenticateRole,
+    updateMailingListSubscription
+  ])
 
 router.route('/admin/users')
   .get([

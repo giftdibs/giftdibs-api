@@ -173,6 +173,27 @@ function removeEmailAddressFromMailingList(emailAddress) {
   });
 }
 
+function updateMailingListMember(emailAddress, data) {
+  const list = mailgun.lists(env.get('MAILGUN_MAILING_LIST_UPDATES'));
+
+  const attributes = {};
+
+  if (data.subscribed !== undefined) {
+    attributes.subscribed = data.subscribed;
+  }
+
+  return new Promise((resolve, reject) => {
+    list.members(emailAddress).update(attributes, (err) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
 function sendUpdateEmail(subject, html) {
   const to = env.get('MAILGUN_MAILING_LIST_UPDATES');
 
@@ -202,5 +223,6 @@ module.exports = {
   sendEmail,
   sendFeedbackEmail,
   sendPasswordResetEmail,
-  sendUpdateEmail
+  sendUpdateEmail,
+  updateMailingListMember
 };
