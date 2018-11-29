@@ -18,6 +18,11 @@ function authenticateRole(req, res, next) {
 }
 
 const {
+  getGifts,
+  deleteGift
+} = require('./gifts');
+
+const {
   createMailingListSubscription,
   removeMailingListSubscription,
   updateMailingListSubscription
@@ -27,6 +32,20 @@ const {
   getUsers,
   deleteUser
 } = require('./users');
+
+router.route('/admin/gifts')
+  .get([
+    authenticateJwt,
+    authenticateRole,
+    getGifts
+  ]);
+
+router.route('/admin/gifts/:giftId')
+  .delete([
+    authenticateJwt,
+    authenticateRole,
+    deleteGift
+  ]);
 
 router.route('/admin/mailing-list-subscription')
   .post([

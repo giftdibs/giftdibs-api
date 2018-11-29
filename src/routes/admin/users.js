@@ -41,7 +41,7 @@ async function deleteUser(req, res, next) {
 async function getUsers(req, res, next) {
   try {
     const users = await User.find({})
-      .select('firstName lastName dateLastLoggedIn emailAddress emailAddressVerified')
+      .select('firstName lastName dateCreated dateLastLoggedIn emailAddress emailAddressVerified')
       .sort('-dateLastLoggedIn')
       .lean();
 
@@ -54,9 +54,11 @@ async function getUsers(req, res, next) {
     const formatted = users.map((user) => {
       let isEmailSubscribedToMailingList = false;
       let emailExistsOnMailingList = false;
+
       const mailingListMember = mailingListMembers.find((member) => {
-        return (member.address === user.emailAddress)
+        return (member.address === user.emailAddress);
       });
+
       if (mailingListMember) {
         isEmailSubscribedToMailingList = mailingListMember.subscribed;
         emailExistsOnMailingList = true;
@@ -69,6 +71,7 @@ async function getUsers(req, res, next) {
         emailAddress: user.emailAddress,
         emailAddressVerified: user.emailAddressVerified,
         emailExistsOnMailingList,
+        dateCreated: user.dateCreated,
         dateLastLoggedIn: user.dateLastLoggedIn,
         isEmailSubscribedToMailingList,
         wishLists: wishLists.filter((wishList) => {

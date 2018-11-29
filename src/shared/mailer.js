@@ -1,5 +1,7 @@
 const env = require('../shared/environment');
 
+// const request = require('request-promise');
+
 const apiKey = env.get('MAILGUN_API_KEY');
 const domain = env.get('MAILGUN_DOMAIN');
 const mailgun = require('mailgun-js')({
@@ -201,18 +203,13 @@ function sendUpdateEmail(subject, html) {
 }
 
 function getMailingListMembers() {
-  const list = mailgun.lists(env.get('MAILGUN_MAILING_LIST_UPDATES'));
-
-  return new Promise((resolve, reject) => {
-    list.members().list((err, result) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-
-      resolve(result.items);
+  // Need to use a raw request because the mailgun library only
+  // returns 100 results.
+  // See: https://github.com/bojand/mailgun-js/issues/207
+  return mailgun.get(`/lists/${env.get('MAILGUN_MAILING_LIST_UPDATES')}/members/pages?limit=1000`)
+    .then((results) => {
+      return results.items;
     });
-  });
 }
 
 module.exports = {
