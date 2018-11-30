@@ -1,7 +1,5 @@
 const env = require('../shared/environment');
 
-// const request = require('request-promise');
-
 const apiKey = env.get('MAILGUN_API_KEY');
 const domain = env.get('MAILGUN_DOMAIN');
 const mailgun = require('mailgun-js')({

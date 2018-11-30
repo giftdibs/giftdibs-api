@@ -110,12 +110,20 @@ function fetchRecipient(recipientId) {
   const { User } = require('./user');
 
   return User.find({ _id: recipientId })
-    .select('emailAddress firstName notificationSettings')
+    .select('emailAddress emailAddressVerified firstName notificationSettings')
     .limit(1)
     .lean()
     .then((recipients) => {
       return recipients[0];
     });
+}
+
+function requestsEmail(recipient, type) {
+  return (
+    recipient.emailAddressVerified === true &&
+    recipient.notificationSettings &&
+    recipient.notificationSettings[type].allowEmail === true
+  );
 }
 
 function notifyNewFriendship(recipientId, sessionUser) {
@@ -133,11 +141,11 @@ function notifyNewFriendship(recipientId, sessionUser) {
         }
       })
         .then((doc) => {
-          if (
-            recipient.notificationSettings &&
-            recipient.notificationSettings[type].allowEmail === true
-          ) {
-            const html = `
+          if (!requestsEmail(recipient, type)) {
+            return doc;
+          }
+
+          const html = `
 <p>
 Hi, ${recipient.firstName}!
 </p>
@@ -146,15 +154,14 @@ Hi, ${recipient.firstName}!
 </p>
 `;
 
-            return mailer.sendEmail(
-              recipient.emailAddress,
-              [
-                `${sessionUser.firstName} ${sessionUser.lastName}`,
-                'has started following you'
-              ].join(' '),
-              html
-            ).then(() => doc);
-          }
+          return mailer.sendEmail(
+            recipient.emailAddress,
+            [
+              `${sessionUser.firstName} ${sessionUser.lastName}`,
+              'has started following you'
+            ].join(' '),
+            html
+          ).then(() => doc);
         });
     });
 }
@@ -182,11 +189,11 @@ function notifyGiftComment(recipientId, sessionUser, gift, comment) {
         type
       })
         .then((doc) => {
-          if (
-            recipient.notificationSettings &&
-            recipient.notificationSettings[type].allowEmail === true
-          ) {
-            const html = `
+          if (!requestsEmail(recipient, type)) {
+            return doc;
+          }
+
+          const html = `
 <p>
 Hi, ${recipient.firstName}!
 </p>
@@ -198,15 +205,14 @@ Hi, ${recipient.firstName}!
 </p>
 `;
 
-            return mailer.sendEmail(
-              recipient.emailAddress,
-              [
-                `${sessionUser.firstName} ${sessionUser.lastName}`,
-                `commented on ${gift.name}`
-              ].join(' '),
-              html
-            ).then(() => doc);
-          }
+          return mailer.sendEmail(
+            recipient.emailAddress,
+            [
+              `${sessionUser.firstName} ${sessionUser.lastName}`,
+              `commented on ${gift.name}`
+            ].join(' '),
+            html
+          ).then(() => doc);
         });
     });
 }
@@ -234,11 +240,11 @@ function notifyGiftCommentAlso(recipientId, sessionUser, gift, comment) {
         type
       })
         .then((doc) => {
-          if (
-            recipient.notificationSettings &&
-            recipient.notificationSettings[type].allowEmail === true
-          ) {
-            const html = `
+          if (!requestsEmail(recipient, type)) {
+            return doc;
+          }
+
+          const html = `
 <p>
 Hi, ${recipient.firstName}!
 </p>
@@ -250,15 +256,14 @@ Hi, ${recipient.firstName}!
 </p>
 `;
 
-            return mailer.sendEmail(
-              recipient.emailAddress,
-              [
-                `${sessionUser.firstName} ${sessionUser.lastName}`,
-                `also commented on ${gift.name}`
-              ].join(' '),
-              html
-            ).then(() => doc);
-          }
+          return mailer.sendEmail(
+            recipient.emailAddress,
+            [
+              `${sessionUser.firstName} ${sessionUser.lastName}`,
+              `also commented on ${gift.name}`
+            ].join(' '),
+            html
+          ).then(() => doc);
         });
     });
 }
@@ -286,11 +291,11 @@ function notifyGiftReceived(recipientId, sessionUser, gift, dib) {
         }
       })
         .then((doc) => {
-          if (
-            recipient.notificationSettings &&
-            recipient.notificationSettings[type].allowEmail === true
-          ) {
-            const html = `
+          if (!requestsEmail(recipient, type)) {
+            return doc;
+          }
+
+          const html = `
 <p>
 Hi, ${recipient.firstName}!
 </p>
@@ -299,15 +304,14 @@ Hi, ${recipient.firstName}!
 </p>
 `;
 
-            return mailer.sendEmail(
-              recipient.emailAddress,
-              [
-                `${sessionUser.firstName} ${sessionUser.lastName}`,
-                `marked their gift ${gift.name} as received`
-              ].join(' '),
-              html
-            ).then(() => doc);
-          }
+          return mailer.sendEmail(
+            recipient.emailAddress,
+            [
+              `${sessionUser.firstName} ${sessionUser.lastName}`,
+              `marked their gift ${gift.name} as received`
+            ].join(' '),
+            html
+          ).then(() => doc);
         });
     });
 }
@@ -327,11 +331,11 @@ function notifyGiftDelivered(recipientId, sessionUser, gift, dibs) {
         }
       })
         .then((doc) => {
-          if (
-            recipient.notificationSettings &&
-            recipient.notificationSettings[type].allowEmail === true
-          ) {
-            const html = `
+          if (!requestsEmail(recipient, type)) {
+            return doc;
+          }
+
+          const html = `
 <p>
 Hi, ${recipient.firstName}!
 </p>
@@ -340,15 +344,14 @@ Hi, ${recipient.firstName}!
 </p>
 `;
 
-            return mailer.sendEmail(
-              recipient.emailAddress,
-              [
-                `${sessionUser.firstName} ${sessionUser.lastName}`,
-                `marked your gift ${gift.name} as delivered`
-              ].join(' '),
-              html
-            ).then(() => doc);
-          }
+          return mailer.sendEmail(
+            recipient.emailAddress,
+            [
+              `${sessionUser.firstName} ${sessionUser.lastName}`,
+              `marked your gift ${gift.name} as delivered`
+            ].join(' '),
+            html
+          ).then(() => doc);
         });
     });
 }
