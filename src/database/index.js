@@ -5,11 +5,17 @@ const logger = require('../shared/logger');
 
 mongoose.Promise = Promise;
 
+// Suppresses console warning.
+// See: https://github.com/Automattic/mongoose/issues/6890
+mongoose.set('useCreateIndex', true);
+
 const databaseUri = env.get('DATABASE_URI');
 
 module.exports = {
   connect: () => {
-    return mongoose.connect(databaseUri)
+    return mongoose.connect(databaseUri, {
+      useNewUrlParser: true
+    })
       .then(() => {
         logger.info(`Database connected at ${databaseUri}`);
       })
