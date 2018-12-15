@@ -13,16 +13,24 @@ function searchUsers(req, res, next) {
   const escapedSearchText = escapeStringRegexp(searchText);
   const regex = new RegExp(escapedSearchText, 'i');
 
+  // See: https://stackoverflow.com/a/37527020/6178885
   User
-    .find({
-      '$or': [
-        { 'firstName': regex },
-        { 'lastName': regex }
-      ]
-    })
-    .limit(10)
-    .select('firstName lastName avatarUrl')
-    .lean()
+    .aggregate([
+      {
+        $project: {
+          name: {
+            $concat: [ '$firstName', ' ', '$lastName' ]
+          },
+          avatarUrl: '$avatarUrl'
+        }
+      },
+      {
+        $match: { name: { $regex: regex } }
+      },
+      {
+        $limit: 10
+      }
+    ])
     .then((docs) => {
       const results = docs.map((user) => {
         user.id = user._id;
