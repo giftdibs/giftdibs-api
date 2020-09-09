@@ -14,7 +14,8 @@ const databaseUri = env.get('DATABASE_URI');
 module.exports = {
   connect: () => {
     return mongoose.connect(databaseUri, {
-      useNewUrlParser: true
+      useNewUrlParser: true,
+      useUnifiedTopology: true
     })
       .then(() => {
         logger.info(`Database connected at ${databaseUri}`);

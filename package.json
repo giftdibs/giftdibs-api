@@ -11,8 +11,8 @@
     "test": "npm run lint && npm run coverage",
     "firebase:config": "firebase functions:config:get > .runtimeconfig.json",
     "firebase:config:win": "firebase functions:config:get | ac .runtimeconfig.json",
-    "firebase:deploy": "firebase deploy",
-    "firebase:serve": "npm run firebase:config && export NODE_ENV=development && firebase serve"
+    "firebase:deploy": "firebase deploy --only functions",
+    "firebase:serve": "npm run firebase:config && export NODE_ENV=development && firebase serve --port 8080"
   },
   "nyc": {
     "include": [
@@ -36,7 +36,7 @@
   },
   "homepage": "https://github.com/giftdibs/giftdibs-api#readme",
   "engines": {
-    "node": "8"
+    "node": "10"
   },
   "dependencies": {
     "aws-sdk": "2.532.0",
@@ -47,8 +47,8 @@
     "dotenv": "6.2.0",
     "express": "4.17.1",
     "express-multipart-file-parser": "0.1.2",
-    "firebase-admin": "8.6.0",
-    "firebase-functions": "3.2.0",
+    "firebase-admin": "9.1.1",
+    "firebase-functions": "3.11.0",
     "jsonwebtoken": "8.5.1",
     "lodash.orderby": "4.6.0",
     "mailgun-js": "0.22.0",
