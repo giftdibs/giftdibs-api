@@ -11,7 +11,7 @@
     "test": "npm run lint && npm run coverage",
     "firebase:config": "firebase functions:config:get > .runtimeconfig.json",
     "firebase:config:win": "firebase functions:config:get | ac .runtimeconfig.json",
-    "firebase:deploy": "firebase deploy --only functions",
+    "firebase:deploy": "firebase deploy",
     "firebase:serve": "npm run firebase:config && export NODE_ENV=development && firebase serve --port 8080"
   },
   "nyc": {

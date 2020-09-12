@@ -4,9 +4,11 @@ const path = require('path');
 const applyEnvironment = () => {
   // Production environments should set their own values.
   if (process.env.NODE_ENV !== 'development') {
-    console.log('Environment configuration is not parsed in production mode.');
+    firebaseFunctions.logger.log('Environment configuration is not parsed in production mode.');
     return;
   }
+
+  firebaseFunctions.logger.log('Environment is in development mode.');
 
   const dotenv = require('dotenv');
   const cwd = process.cwd();
@@ -17,11 +19,11 @@ const applyEnvironment = () => {
   });
 
   if (result.error) {
-    console.warn(
+    firebaseFunctions.logger.warn(
       `Environment configuration could not be parsed from ${filePath}.`
     );
   } else {
-    console.log(
+    firebaseFunctions.logger.log(
       `Environment configuration parsed from ${filePath}.`
     );
   }
