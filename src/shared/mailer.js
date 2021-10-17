@@ -1,10 +1,18 @@
+const formData = require('form-data');
+const Mailgun = require('mailgun.js');
+
 const env = require('../shared/environment');
 
-const apiKey = env.get('MAILGUN_API_KEY');
-const domain = env.get('MAILGUN_DOMAIN');
-const mailgun = require('mailgun-js')({
-  apiKey,
-  domain
+const MAILGUN_API_KEY = env.get('MAILGUN_API_KEY');
+const MAILGUN_API_PUBLIC_KEY = env.get('MAILGUN_API_PUBLIC_KEY');
+const MAILGUN_DOMAIN = env.get('MAILGUN_DOMAIN');
+const MAILGUN_MAILING_LIST_UPDATES = env.get('MAILGUN_MAILING_LIST_UPDATES');
+
+const mgInstance = new Mailgun(formData);
+const mgClient = mgInstance.client({
+  username: 'api',
+  key: MAILGUN_API_KEY,
+  public_key: MAILGUN_API_PUBLIC_KEY
 });
 
 function getHtmlTemplate(contents, showUnsubscribe = false) {
@@ -55,17 +63,9 @@ function sendEmail(to, subject, html, showUnsubscribe) {
     html: getHtmlTemplate(html, showUnsubscribe)
   };
 
-  return new Promise((resolve, reject) => {
-    mailgun.messages().send(data, (error, body) => {
-      if (error) {
-        console.log('[MAILGUN ERROR]', error);
-        // Swallow mailgun errors.
-        resolve();
-        return;
-      }
-
-      resolve(body);
-    });
+  return mgClient.messages.create(MAILGUN_DOMAIN, data).catch((error) => {
+    // Swallow mailgun errors.
+    console.log('[MAILGUN ERROR]', error);
   });
 }
 
@@ -115,7 +115,6 @@ function sendFeedbackEmail(reason, body, referrer) {
 
 async function addUserToMailingList(user) {
   const isDevelopment = (env.get('NODE_ENV') === 'development');
-  const list = mailgun.lists(env.get('MAILGUN_MAILING_LIST_UPDATES'));
 
   const member = {
     subscribed: true,
@@ -131,7 +130,7 @@ async function addUserToMailingList(user) {
 
   if (!isDevelopment) {
     try {
-      validateResult = await mailgun.validate(member.address, true);
+      validateResult = await mgClient.validate.get(member.address);
     } catch (err) {
       console.log('Mailgun validation error:', err);
       // Go ahead and add the email to the mailing list,
@@ -142,72 +141,45 @@ async function addUserToMailingList(user) {
     isValid = true;
   }
 
-  return new Promise((resolve, reject) => {
-    if (isValid || (validateResult && validateResult.is_valid)) {
-      list.members().create(member, (err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-
-        resolve();
-      });
-    } else {
-      resolve();
-    }
-  });
+  if (isValid || (validateResult && validateResult.is_valid)) {
+    await mgClient.lists.members.createMember(
+      MAILGUN_MAILING_LIST_UPDATES,
+      member
+    );
+  }
 }
 
-function removeEmailAddressFromMailingList(emailAddress) {
-  const list = mailgun.lists(env.get('MAILGUN_MAILING_LIST_UPDATES'));
-
-  return new Promise((resolve, reject) => {
-    list.members(emailAddress).delete((err) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-
-      resolve();
-    });
-  });
+async function removeEmailAddressFromMailingList(emailAddress) {
+  await mgClient.lists.members.updateMember(
+    MAILGUN_MAILING_LIST_UPDATES,
+    emailAddress
+  );
 }
 
-function updateMailingListMember(emailAddress, data) {
-  const list = mailgun.lists(env.get('MAILGUN_MAILING_LIST_UPDATES'));
-
+async function updateMailingListMember(emailAddress, data) {
   const attributes = {};
 
   if (data.subscribed !== undefined) {
     attributes.subscribed = data.subscribed;
   }
 
-  return new Promise((resolve, reject) => {
-    list.members(emailAddress).update(attributes, (err) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-
-      resolve();
-    });
-  });
+  await mgClient.lists.members.destroyMember(
+    MAILGUN_MAILING_LIST_UPDATES,
+    emailAddress,
+    attributes
+  );
 }
 
 function sendUpdateEmail(subject, html) {
-  const to = env.get('MAILGUN_MAILING_LIST_UPDATES');
+  const to = MAILGUN_MAILING_LIST_UPDATES;
 
   return sendEmail(to, subject, html, true);
 }
 
 function getMailingListMembers() {
-  // Need to use a raw request because the mailgun library only
-  // returns 100 results.
-  // See: https://github.com/bojand/mailgun-js/issues/207
-  return mailgun.get(`/lists/${env.get('MAILGUN_MAILING_LIST_UPDATES')}/members/pages?limit=1000`)
-    .then((results) => {
-      return results.items;
-    });
+  return mgClient.lists.members.listMembers(
+    MAILGUN_MAILING_LIST_UPDATES
+  );
 }
 
 module.exports = {
