@@ -19,6 +19,6 @@ jobs:
       - name: Install and run tests
         run: |
           npm ci
-          npx -p @angular/cli@12 ng lint
-          npx -p @angular/cli@12 ng test
+          npm run lint
+          npm test
           bash <(curl -s https://codecov.io/bash)
