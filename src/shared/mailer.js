@@ -66,6 +66,7 @@ function sendEmail(to, subject, html, showUnsubscribe) {
   return mgClient.messages.create(MAILGUN_DOMAIN, data).catch((error) => {
     // Swallow mailgun errors.
     console.log('[MAILGUN ERROR]', error);
+    console.log('MESSAGE:', data);
   });
 }
 
@@ -150,10 +151,14 @@ async function addUserToMailingList(user) {
 }
 
 async function removeEmailAddressFromMailingList(emailAddress) {
-  await mgClient.lists.members.updateMember(
-    MAILGUN_MAILING_LIST_UPDATES,
-    emailAddress
-  );
+  try {
+    await mgClient.lists.members.destroyMember(
+      MAILGUN_MAILING_LIST_UPDATES,
+      emailAddress
+    );
+  } catch (err) {
+    console.error('[MAILGUN ERROR]:', err);
+  }
 }
 
 async function updateMailingListMember(emailAddress, data) {
