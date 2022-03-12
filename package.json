@@ -47,7 +47,7 @@
     "dotenv": "6.2.0",
     "express": "4.17.1",
     "express-multipart-file-parser": "0.1.2",
-    "firebase-admin": "10.0.0",
+    "firebase-admin": "10.0.2",
     "firebase-functions": "3.16.0",
     "form-data": "4.0.0",
     "jsonwebtoken": "8.5.1",
