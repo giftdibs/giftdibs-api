@@ -5,7 +5,7 @@ const env = require('./environment');
 const S3 = new aws.S3({
   accessKeyId: env.get('AWS_ACCESS_KEY_ID'),
   secretAccessKey: env.get('AWS_SECRET_ACCESS_KEY'),
-  region: env.get('AWS_S3_REGION')
+  region: env.get('AWS_S3_REGION'),
 });
 
 const BUCKET = env.get('AWS_S3_BUCKET');
@@ -13,7 +13,7 @@ const BUCKET = env.get('AWS_S3_BUCKET');
 function remove(key) {
   const params = {
     Bucket: BUCKET,
-    Key: key
+    Key: key,
   };
 
   return new Promise((resolve, reject) => {
@@ -30,12 +30,10 @@ function remove(key) {
 
 function upload(file, fileName) {
   if (!file) {
-    return Promise.reject(new Error(
-      'Please provide a valid image type.'
-    ));
+    return Promise.reject(new Error('Please provide a valid image type.'));
   }
 
-  const fileType = file.mimetype.toLowerCase();
+  const fileType = file.originalname.mimeType.toLowerCase();
 
   // Verify file type.
   if (
@@ -54,7 +52,7 @@ function upload(file, fileName) {
   return sharp(file.buffer)
     .resize(600, undefined) // resize width only
     .jpeg({
-      quality: 75
+      quality: 75,
     })
     .toBuffer()
     .then((buffer) => {
@@ -63,7 +61,7 @@ function upload(file, fileName) {
         Key: fileName,
         Body: buffer,
         ContentType: 'image/jpg',
-        ACL: 'public-read'
+        ACL: 'public-read',
       };
 
       return new Promise((resolve, reject) => {
@@ -81,5 +79,5 @@ function upload(file, fileName) {
 
 module.exports = {
   remove,
-  upload
+  upload,
 };

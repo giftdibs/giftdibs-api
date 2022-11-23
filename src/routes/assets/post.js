@@ -1,14 +1,16 @@
-const fileParser = require('express-multipart-file-parser');
 const randomstring = require('randomstring');
 
 const authResponse = require('../../middleware/auth-response');
 const fileHandler = require('../../shared/file-handler');
 
+const fileParser = require('./file-parser');
+
 function uploadAvatar(req, res, next) {
   const file = req.files[0];
   const fileName = req.user._id + '-' + randomstring.generate();
 
-  fileHandler.upload(file, fileName)
+  fileHandler
+    .upload(file, fileName)
     .then((url) => {
       const oldAvatarUrl = req.user.avatarUrl;
 
@@ -27,7 +29,7 @@ function uploadAvatar(req, res, next) {
     })
     .then((url) => {
       authResponse({
-        data: { url }
+        data: { url },
       })(req, res, next);
     })
     .catch(next);
@@ -38,15 +40,11 @@ async function uploadGiftThumbnail(req, res, next) {
   const userId = req.user._id;
 
   if (!giftId) {
-    next(new Error(
-      'Please provide a gift ID.'
-    ));
+    next(new Error('Please provide a gift ID.'));
     return;
   }
 
-  const {
-    Gift
-  } = require('../../database/models/gift');
+  const { Gift } = require('../../database/models/gift');
 
   try {
     const gift = await Gift.confirmUserOwnership(giftId, userId);
@@ -66,7 +64,7 @@ async function uploadGiftThumbnail(req, res, next) {
     await gift.save();
 
     authResponse({
-      data: { url }
+      data: { url },
     })(req, res, next);
   } catch (err) {
     next(err);
@@ -74,12 +72,6 @@ async function uploadGiftThumbnail(req, res, next) {
 }
 
 module.exports = {
-  uploadAvatar: [
-    fileParser,
-    uploadAvatar
-  ],
-  uploadGiftThumbnail: [
-    fileParser,
-    uploadGiftThumbnail
-  ]
+  uploadAvatar: [fileParser, uploadAvatar],
+  uploadGiftThumbnail: [fileParser, uploadGiftThumbnail],
 };

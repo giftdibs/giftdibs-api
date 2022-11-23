@@ -6,7 +6,7 @@
   "env": {
     "jasmine": true
   },
-  "extends": ["standard", "plugin:jasmine/recommended"],
+  "extends": ["standard", "plugin:jasmine/recommended", "prettier"],
   "rules": {
     "arrow-parens": ["error"],
     "semi": 0,
