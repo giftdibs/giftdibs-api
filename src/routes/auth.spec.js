@@ -4,7 +4,7 @@ const {
   tick,
   MockUser,
   MockRequest,
-  MockResponse
+  MockResponse,
 } = require('../shared/testing');
 
 describe('Auth router', () => {
@@ -17,7 +17,7 @@ describe('Auth router', () => {
       return (req, res, next) => {
         data.authResponse = {};
         res.json(data);
-      }
+      };
     });
 
     passport = mock.reRequire('passport');
@@ -46,11 +46,13 @@ describe('Auth router', () => {
 
       const res = {
         json: (data) => {
-          expect(passport.authenticate)
-            .toHaveBeenCalledWith('local', jasmine.any(Function));
+          expect(passport.authenticate).toHaveBeenCalledWith(
+            'local',
+            jasmine.any(Function)
+          );
           expect(data.authResponse).toBeDefined();
           done();
-        }
+        },
       };
 
       auth.middleware.login[1]({}, res, () => {});
@@ -65,7 +67,7 @@ describe('Auth router', () => {
 
         const body = {
           emailAddress: 'a',
-          password: 'b'
+          password: 'b',
         };
 
         auth.middleware.login[0]({ body }, {}, (err) => {
@@ -88,12 +90,16 @@ describe('Auth router', () => {
       const req = { body: {} };
       const authenticate = auth.middleware.login[1];
 
-      authenticate(req, {
-        json: (data) => {
-          expect(req.user).toBeDefined();
-          done();
-        }
-      }, () => {});
+      authenticate(
+        req,
+        {
+          json: (data) => {
+            expect(req.user).toBeDefined();
+            done();
+          },
+        },
+        () => {}
+      );
     });
 
     it('should handle passport failures', (done) => {
@@ -143,7 +149,7 @@ describe('Auth router', () => {
         return {
           setPassword: () => Promise.resolve(),
           resetEmailAddressVerification: () => {},
-          save: () => Promise.resolve({ _id: 0 })
+          save: () => Promise.resolve({ _id: 0 }),
         };
       }
 
@@ -158,14 +164,14 @@ describe('Auth router', () => {
           firstName: '',
           lastName: '',
           emailAddress: '',
-          password: ''
-        }
+          password: '',
+        },
       };
       const res = {
         json: (result) => {
           expect(result.data.userId).toEqual(0);
           done();
-        }
+        },
       };
       register[1](req, res, () => {});
     });
@@ -177,7 +183,7 @@ describe('Auth router', () => {
             const error = new Error();
             error.name = 'ValidationError';
             return Promise.reject(error);
-          }
+          },
         };
       }
 
@@ -190,8 +196,8 @@ describe('Auth router', () => {
           firstName: '',
           lastName: '',
           emailAddress: '',
-          password: ''
-        }
+          password: '',
+        },
       };
       const res = {};
       register[1](req, res, (err) => {
@@ -204,7 +210,7 @@ describe('Auth router', () => {
     it('should fail registration if mongoose fails', (done) => {
       function User() {
         return {
-          setPassword: () => Promise.reject(new Error())
+          setPassword: () => Promise.reject(new Error()),
         };
       }
 
@@ -217,8 +223,8 @@ describe('Auth router', () => {
           firstName: '',
           lastName: '',
           emailAddress: '',
-          password: ''
-        }
+          password: '',
+        },
       };
       const res = {};
       register[1](req, res, (err) => {
@@ -233,8 +239,8 @@ describe('Auth router', () => {
       const register = auth.middleware.register;
       const req = {
         body: {
-          gdNickname: 'bot'
-        }
+          gdNickname: 'bot',
+        },
       };
       register[0](req, {}, (err) => {
         expect(err).toBeDefined();
@@ -249,7 +255,7 @@ describe('Auth router', () => {
       const auth = mock.reRequire('./auth');
       const register = auth.middleware.register;
       const req = {
-        body: {}
+        body: {},
       };
       register[0](req, {}, (err) => {
         expect(err).toBeUndefined();
@@ -262,30 +268,30 @@ describe('Auth router', () => {
     it('should create a reset password token', (done) => {
       const _user = {
         save: () => Promise.resolve(),
-        setResetPasswordToken: () => {}
+        setResetPasswordToken: () => {},
       };
       spyOn(_user, 'setResetPasswordToken').and.callThrough();
       mock('../database/models/user', {
         User: {
           find: () => {
             return {
-              limit: () => Promise.resolve([_user])
+              limit: () => Promise.resolve([_user]),
             };
-          }
-        }
+          },
+        },
       });
       const auth = mock.reRequire('./auth');
       const forgotten = auth.middleware.forgotten;
       const req = {
         body: {
-          emailAddress: ''
-        }
+          emailAddress: '',
+        },
       };
       const res = {
         json: () => {
           expect(_user.setResetPasswordToken).toHaveBeenCalledWith();
           done();
-        }
+        },
       };
       forgotten[1](req, res, () => {});
     });
@@ -294,7 +300,7 @@ describe('Auth router', () => {
       const auth = mock.reRequire('./auth');
       const forgotten = auth.middleware.forgotten;
       const req = {
-        body: {}
+        body: {},
       };
       forgotten[0](req, {}, (err) => {
         expect(err.message).toBeDefined();
@@ -308,8 +314,8 @@ describe('Auth router', () => {
       const forgotten = auth.middleware.forgotten;
       const req = {
         body: {
-          emailAddress: 'foo@bar.com'
-        }
+          emailAddress: 'foo@bar.com',
+        },
       };
       forgotten[0](req, {}, (err) => {
         expect(err).not.toBeDefined();
@@ -321,17 +327,17 @@ describe('Auth router', () => {
         User: {
           find: () => {
             return {
-              limit: () => Promise.resolve([])
+              limit: () => Promise.resolve([]),
             };
-          }
-        }
+          },
+        },
       });
       const auth = mock.reRequire('./auth');
       const forgotten = auth.middleware.forgotten;
       const req = {
         body: {
-          emailAddress: ''
-        }
+          emailAddress: '',
+        },
       };
       forgotten[1](req, {}, (err) => {
         expect(err.code).toEqual(104);
@@ -344,8 +350,9 @@ describe('Auth router', () => {
   describe('resend-email-address-verification', () => {
     it('should require jwt when getting reset email verification token', () => {
       const auth = mock.reRequire('./auth');
-      expect(auth.middleware.resendEmailAddressVerification[0].name)
-        .toEqual('authenticateJwt');
+      expect(auth.middleware.resendEmailAddressVerification[0].name).toEqual(
+        'authenticateJwt'
+      );
     });
 
     it('should reset email verification token', (done) => {
@@ -353,14 +360,14 @@ describe('Auth router', () => {
       const req = {
         user: {
           resetEmailAddressVerification: () => {},
-          save: () => Promise.resolve()
-        }
+          save: () => Promise.resolve(),
+        },
       };
       const res = {
         json: () => {
           expect(req.user.resetEmailAddressVerification).toHaveBeenCalledWith();
           done();
-        }
+        },
       };
       spyOn(req.user, 'resetEmailAddressVerification').and.callThrough();
       auth.middleware.resendEmailAddressVerification[1](req, res, () => {});
@@ -380,17 +387,17 @@ describe('Auth router', () => {
       const req = {
         user: {
           verifyEmailAddress: () => true,
-          save: () => Promise.resolve()
+          save: () => Promise.resolve(),
         },
         body: {
-          emailAddressVerificationToken: 'abc123'
-        }
+          emailAddressVerificationToken: 'abc123',
+        },
       };
       const res = {
         json: () => {
           expect(req.user.verifyEmailAddress).toHaveBeenCalledWith('abc123');
           done();
-        }
+        },
       };
       spyOn(req.user, 'verifyEmailAddress').and.callThrough();
       verifyEmailAddress[1](req, res, () => {});
@@ -403,15 +410,17 @@ describe('Auth router', () => {
       const req = {
         user: {},
         body: {
-          emailAddressVerificationToken: undefined
-        }
+          emailAddressVerificationToken: undefined,
+        },
       };
 
       const res = {};
 
       verifyEmailAddress[1](req, res, (err) => {
         expect(err.name).toEqual('EmailVerificationTokenValidationError');
-        expect(err.message).toEqual('Please provide an email address verification token.');
+        expect(err.message).toEqual(
+          'Please provide an email address verification token.'
+        );
         done();
       });
     });
@@ -422,11 +431,11 @@ describe('Auth router', () => {
       const req = {
         user: {
           verifyEmailAddress: () => false,
-          save: () => Promise.resolve()
+          save: () => Promise.resolve(),
         },
         body: {
-          emailAddressVerificationToken: 'abc123'
-        }
+          emailAddressVerificationToken: 'abc123',
+        },
       };
       const res = {};
       spyOn(req.user, 'verifyEmailAddress').and.callThrough();
@@ -450,11 +459,11 @@ describe('Auth router', () => {
         setPassword: () => Promise.resolve(_req.user),
         save: () => Promise.resolve(),
         unsetResetPasswordToken: () => {},
-        confirmPassword: () => Promise.resolve()
+        confirmPassword: () => Promise.resolve(),
       };
       _req = {
         body: {},
-        user: _user
+        user: _user,
       };
     });
 
@@ -467,20 +476,23 @@ describe('Auth router', () => {
         User: {
           find: () => {
             return {
-              limit: () => Promise.resolve([_user])
+              limit: () => Promise.resolve([_user]),
             };
-          }
-        }
+          },
+        },
       });
 
       const auth = mock.reRequire('./auth');
       const resetPassword = auth.middleware.resetPassword;
-      const unsetTokenSpy = spyOn(_req.user, 'unsetResetPasswordToken')
-        .and.callThrough();
-      const confirmPasswordSpy = spyOn(_req.user, 'confirmPassword')
-        .and.callThrough();
-      const setPasswordSpy = spyOn(_req.user, 'setPassword')
-        .and.callThrough();
+      const unsetTokenSpy = spyOn(
+        _req.user,
+        'unsetResetPasswordToken'
+      ).and.callThrough();
+      const confirmPasswordSpy = spyOn(
+        _req.user,
+        'confirmPassword'
+      ).and.callThrough();
+      const setPasswordSpy = spyOn(_req.user, 'setPassword').and.callThrough();
 
       _req.body.currentPassword = 'oldpassword';
       _req.body.password = 'newpassword';
@@ -488,14 +500,15 @@ describe('Auth router', () => {
       const res = {
         json: () => {
           expect(unsetTokenSpy).toHaveBeenCalledWith();
-          expect(confirmPasswordSpy)
-            .toHaveBeenCalledWith(_req.body.currentPassword);
+          expect(confirmPasswordSpy).toHaveBeenCalledWith(
+            _req.body.currentPassword
+          );
           expect(setPasswordSpy).toHaveBeenCalledWith(_req.body.password);
           done();
-        }
+        },
       };
 
-      resetPassword[2](_req, res, () => { });
+      resetPassword[2](_req, res, () => {});
     });
 
     it('should validate a token before resetting the password', (done) => {
@@ -506,10 +519,10 @@ describe('Auth router', () => {
           find: (query) => {
             _query = query;
             return {
-              limit: () => Promise.resolve([_user])
+              limit: () => Promise.resolve([_user]),
             };
-          }
-        }
+          },
+        },
       };
 
       mock('../database/models/user', MockUser);
@@ -519,19 +532,20 @@ describe('Auth router', () => {
 
       _req.body = {
         resetPasswordToken: 'abc123',
-        resetPasswordExpires: 0
+        resetPasswordExpires: 0,
       };
 
       const res = {
         json: () => {
-          expect(_query.resetPasswordToken)
-            .toEqual(_req.body.resetPasswordToken);
+          expect(_query.resetPasswordToken).toEqual(
+            _req.body.resetPasswordToken
+          );
           expect(_query.resetPasswordExpires).toBeDefined();
           done();
-        }
+        },
       };
 
-      resetPassword[2](_req, res, () => { });
+      resetPassword[2](_req, res, () => {});
     });
 
     it('should validate jwt before resetting the password (if token not set)', (done) => {
@@ -579,7 +593,7 @@ describe('Auth router', () => {
       _req.body = {
         resetPasswordToken: 'abc123',
         password: 'foo',
-        passwordAgain: 'foo'
+        passwordAgain: 'foo',
       };
 
       resetPassword[0](_req, {}, (err) => {
@@ -604,7 +618,7 @@ describe('Auth router', () => {
       _req.body = {
         resetPasswordToken: 'abc123',
         password: 'foo',
-        passwordAgain: 'bar'
+        passwordAgain: 'bar',
       };
 
       resetPassword[0](_req, {}, (err) => {
@@ -619,7 +633,7 @@ describe('Auth router', () => {
       _req.body = {
         resetPasswordToken: 'abc123',
         password: '',
-        passwordAgain: ''
+        passwordAgain: '',
       };
       resetPassword[0](_req, {}, (err) => {
         expect(err.name).toEqual('ResetPasswordValidationError');
@@ -638,7 +652,7 @@ describe('Auth router', () => {
       const resetPassword = auth.middleware.resetPassword;
 
       _req.headers = {
-        authorization: 'JWT abc123'
+        authorization: 'JWT abc123',
       };
 
       resetPassword[1](_req, {}, (err) => {
@@ -652,10 +666,10 @@ describe('Auth router', () => {
         User: {
           find: () => {
             return {
-              limit: () => Promise.resolve([])
+              limit: () => Promise.resolve([]),
             };
-          }
-        }
+          },
+        },
       });
 
       const auth = mock.reRequire('./auth');
@@ -663,7 +677,7 @@ describe('Auth router', () => {
 
       _req.body = {
         resetPasswordToken: 'abc123',
-        resetPasswordExpires: 0
+        resetPasswordExpires: 0,
       };
 
       resetPassword[2](_req, {}, (err) => {
@@ -677,7 +691,7 @@ describe('Auth router', () => {
       const resetPassword = auth.middleware.resetPassword;
 
       _req.body = {
-        password: ''
+        password: '',
       };
 
       _req.user.setPassword = () => {
@@ -702,8 +716,8 @@ describe('Auth router', () => {
 
       _req = new MockRequest({
         user: {
-          _id: 'userid'
-        }
+          _id: 'userid',
+        },
       });
 
       _res = new MockResponse();
@@ -732,9 +746,10 @@ describe('Auth router', () => {
         Promise.resolve(user)
       );
 
-      const ownershipSpy = spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
-        Promise.resolve(user)
-      );
+      const ownershipSpy = spyOn(
+        MockUser,
+        'confirmUserOwnership'
+      ).and.returnValue(Promise.resolve(user));
 
       const auth = mock.reRequire('./auth');
       const deleteAccount = auth.middleware.deleteAccount[1];
@@ -748,7 +763,9 @@ describe('Auth router', () => {
         expect(ownershipSpy).toHaveBeenCalledWith('userid', 'userid');
         expect(passwordSpy).toHaveBeenCalledWith('password');
         expect(removeSpy).toHaveBeenCalledWith();
-        expect(_res.json.output.message).toEqual('Your account was successfully deleted. Goodbye!');
+        expect(_res.json.output.message).toEqual(
+          'Your account was successfully deleted. Goodbye!'
+        );
         done();
       });
     });
@@ -757,14 +774,13 @@ describe('Auth router', () => {
       const user = new MockUser({});
       const removeSpy = spyOn(user, 'remove');
       const passwordSpy = spyOn(user, 'confirmPassword').and.returnValue(
-        Promise.reject(
-          new Error('some error')
-        )
+        Promise.reject(new Error('some error'))
       );
 
-      const ownershipSpy = spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
-        Promise.resolve(user)
-      );
+      const ownershipSpy = spyOn(
+        MockUser,
+        'confirmUserOwnership'
+      ).and.returnValue(Promise.resolve(user));
 
       const auth = mock.reRequire('./auth');
       const deleteAccount = auth.middleware.deleteAccount[1];
@@ -795,7 +811,9 @@ describe('Auth router', () => {
       refreshToken[1](_req, _res, () => {});
       tick(() => {
         expect(_res.json.output.authResponse).toBeDefined();
-        expect(_res.json.output.message).toEqual('Token refreshed successfully.');
+        expect(_res.json.output.message).toEqual(
+          'Token refreshed successfully.'
+        );
         done();
       });
     });

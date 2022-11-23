@@ -1,9 +1,7 @@
 const mongoose = require('mongoose');
 const mock = require('mock-require');
 
-const {
-  MockWishList
-} = mock.reRequire('../../shared/testing');
+const { MockWishList } = mock.reRequire('../../shared/testing');
 
 mongoose.Promise = Promise;
 
@@ -21,11 +19,11 @@ describe('Gift schema', () => {
     _giftDefinition = {
       budget: 1,
       quantity: 1,
-      name: 'Foo'
+      name: 'Foo',
     };
 
     mockUpdateDocumentUtil = {
-      updateDocument() {}
+      updateDocument() {},
     };
 
     mock('../utils/update-document', mockUpdateDocumentUtil);
@@ -108,7 +106,10 @@ describe('Gift schema', () => {
   });
 
   it('should update certain fields', () => {
-    const spy = spyOn(mockUpdateDocumentUtil, 'updateDocument').and.callThrough();
+    const spy = spyOn(
+      mockUpdateDocumentUtil,
+      'updateDocument'
+    ).and.callThrough();
 
     setupMock();
 
@@ -119,27 +120,24 @@ describe('Gift schema', () => {
 
     expect(spy).toHaveBeenCalledWith(
       gift,
-      [
-        'budget',
-        'isReceived',
-        'name',
-        'priority',
-        'quantity'
-      ],
+      ['budget', 'isReceived', 'name', 'priority', 'quantity'],
       formData
     );
   });
 
   it('should replace newlines in the name field', () => {
-    const spy = spyOn(mockUpdateDocumentUtil, 'updateDocument').and.callThrough();
+    const spy = spyOn(
+      mockUpdateDocumentUtil,
+      'updateDocument'
+    ).and.callThrough();
 
     setupMock();
 
     const gift = new MockGift({
-      name: 'old name'
+      name: 'old name',
     });
     const formData = {
-      name: 'foo\nbar\r\nbaz'
+      name: 'foo\nbar\r\nbaz',
     };
 
     gift.updateSync(formData);
@@ -148,17 +146,20 @@ describe('Gift schema', () => {
   });
 
   it('should always set quantity to at least (1)', () => {
-    const spy = spyOn(mockUpdateDocumentUtil, 'updateDocument').and.callThrough();
+    const spy = spyOn(
+      mockUpdateDocumentUtil,
+      'updateDocument'
+    ).and.callThrough();
 
     setupMock();
 
     const gift = new MockGift({
       name: 'Foo',
-      quantity: 5
+      quantity: 5,
     });
 
     const formData = {
-      quantity: 0
+      quantity: 0,
     };
 
     gift.updateSync(formData);
@@ -190,7 +191,7 @@ describe('Gift schema', () => {
 
   it('should move gift to different wish list', (done) => {
     mock('./wish-list', {
-      WishList: MockWishList
+      WishList: MockWishList,
     });
 
     setupMock();
@@ -204,17 +205,16 @@ describe('Gift schema', () => {
       Promise.resolve([
         new MockWishList({
           _id: oldWishListId,
-          gifts: [
-            gift
-          ]
+          gifts: [gift],
         }),
         new MockWishList({
-          _id: newWishListId
-        })
+          _id: newWishListId,
+        }),
       ])
     );
 
-    gift.moveToWishList(newWishListId, userId)
+    gift
+      .moveToWishList(newWishListId, userId)
       .then((result) => {
         expect(result.gift).toBeDefined();
         expect(result.wishListIds[0]).toEqual(oldWishListId);
@@ -222,10 +222,7 @@ describe('Gift schema', () => {
         expect(spy).toHaveBeenCalledWith(
           'userid',
           {
-            $or: [
-              { _id: 'newwishlistid' },
-              { 'gifts._id': gift._id }
-            ]
+            $or: [{ _id: 'newwishlistid' }, { 'gifts._id': gift._id }],
           },
           true
         );
@@ -236,7 +233,7 @@ describe('Gift schema', () => {
 
   it('should not move gift if new wish list ID matches current wish list ID', (done) => {
     mock('./wish-list', {
-      WishList: MockWishList
+      WishList: MockWishList,
     });
 
     setupMock();
@@ -246,19 +243,16 @@ describe('Gift schema', () => {
     const gift = new MockGift({});
 
     spyOn(MockWishList, 'findAuthorized').and.returnValue(
-      Promise.resolve(
-        [
-          new MockWishList({
-            _id: wishListId,
-            gifts: [
-              gift
-            ]
-          })
-        ]
-      )
+      Promise.resolve([
+        new MockWishList({
+          _id: wishListId,
+          gifts: [gift],
+        }),
+      ])
     );
 
-    gift.moveToWishList(wishListId, userId)
+    gift
+      .moveToWishList(wishListId, userId)
       .then((result) => {
         expect(result.gift).toBeDefined();
         expect(result.wishListIds).toBeUndefined();

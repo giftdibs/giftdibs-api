@@ -12,7 +12,7 @@ describe('MongoDbErrorHandlerPlugin', () => {
     mongoError.message = [
       'E11000 duplicate key error collection:',
       'api.User index: dbName.$emailAddress_1 dup key: { : "foo@bar.com" }',
-      'emailAddress_1 dup key: { : "foo@bar.com" }'
+      'emailAddress_1 dup key: { : "foo@bar.com" }',
     ].join(' ');
     mongoError.name = 'MongoError';
     mongoError.code = 11000;
@@ -21,10 +21,10 @@ describe('MongoDbErrorHandlerPlugin', () => {
       paths: {
         emailAddress: {
           options: {
-            unique: [true, 'Some error message.']
-          }
-        }
-      }
+            unique: [true, 'Some error message.'],
+          },
+        },
+      },
     };
   });
 
@@ -77,9 +77,9 @@ describe('MongoDbErrorHandlerPlugin', () => {
     };
     plugin.MongoDbErrorHandlerPlugin(mockSchema);
     _callback.call({ schema: mockSchema }, mongoError, {}, (err) => {
-      const isDefaultMessage = (
-        err.errors.emailAddress.message.indexOf('is expected to be unique') > -1
-      );
+      const isDefaultMessage =
+        err.errors.emailAddress.message.indexOf('is expected to be unique') >
+        -1;
       expect(isDefaultMessage).toEqual(true);
     });
   });

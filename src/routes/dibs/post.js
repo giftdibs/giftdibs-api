@@ -1,12 +1,8 @@
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  handleError
-} = require('./shared');
+const { handleError } = require('./shared');
 
-const {
-  Gift
-} = require('../../database/models/gift');
+const { Gift } = require('../../database/models/gift');
 
 async function createDib(req, res, next) {
   const userId = req.user._id;
@@ -18,7 +14,7 @@ async function createDib(req, res, next) {
 
     authResponse({
       data: { dibId },
-      message: 'Gift successfully dibbed!'
+      message: 'Gift successfully dibbed!',
     })(req, res, next);
   } catch (err) {
     handleError(err, next);
@@ -33,8 +29,8 @@ async function markDibAsDelivered(req, res, next) {
     await Gift.markDibAsDelivered(dibId, user);
 
     authResponse({
-      data: { },
-      message: 'Dib successfully marked as delivered.'
+      data: {},
+      message: 'Dib successfully marked as delivered.',
     })(req, res, next);
   } catch (err) {
     handleError(err, next);
@@ -43,5 +39,5 @@ async function markDibAsDelivered(req, res, next) {
 
 module.exports = {
   createDib,
-  markDibAsDelivered
+  markDibAsDelivered,
 };

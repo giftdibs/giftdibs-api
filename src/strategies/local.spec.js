@@ -7,9 +7,9 @@ describe('local passport strategy', () => {
     const mockUser = {
       find: () => {
         return {
-          limit: () => mockExec()
-        }
-      }
+          limit: () => mockExec(),
+        };
+      },
     };
     mock('../database/models/user', { User: mockUser });
   });
@@ -23,7 +23,7 @@ describe('local passport strategy', () => {
     mock('passport-local', {
       Strategy: function MockStrategy(config) {
         _config = config;
-      }
+      },
     });
     require('./local');
     expect(_config.usernameField).toEqual('emailAddress');
@@ -32,7 +32,7 @@ describe('local passport strategy', () => {
   it('should pass if the email address and password match a record', (done) => {
     const mockUser = {
       confirmPassword: () => Promise.resolve(),
-      save: () => Promise.resolve()
+      save: () => Promise.resolve(),
     };
     mock('passport-local', {
       Strategy: function MockStrategy(config, verify) {
@@ -41,9 +41,9 @@ describe('local passport strategy', () => {
           expect(user.dateLastLoggedIn).toBeDefined();
           done();
         });
-      }
+      },
     });
-    mockExec = () => Promise.resolve([ mockUser ]);
+    mockExec = () => Promise.resolve([mockUser]);
     mock.reRequire('./local');
   });
 
@@ -58,7 +58,7 @@ describe('local passport strategy', () => {
           );
           done();
         });
-      }
+      },
     });
     mockExec = () => Promise.resolve([]);
     mock.reRequire('./local');
@@ -67,23 +67,24 @@ describe('local passport strategy', () => {
   it('should fail if the password is invalid', (done) => {
     const mockUser = {
       confirmPassword: () => Promise.reject(new Error()),
-      save: () => Promise.resolve()
+      save: () => Promise.resolve(),
     };
     mock('passport-local', {
       Strategy: function MockStrategy(config, verify) {
         verify('', '', (err, user, info) => {
           expect(err).toEqual(null);
           expect(user).toEqual(false);
-          expect(info.message)
-            .toEqual([
+          expect(info.message).toEqual(
+            [
               'The email address and password you entered',
-              'did not match an account in our records.'
-            ].join(' '));
+              'did not match an account in our records.',
+            ].join(' ')
+          );
           done();
         });
-      }
+      },
     });
-    mockExec = () => Promise.resolve([ mockUser ]);
+    mockExec = () => Promise.resolve([mockUser]);
     mock.reRequire('./local');
   });
 
@@ -94,7 +95,7 @@ describe('local passport strategy', () => {
           expect(err).toBeDefined();
           done();
         });
-      }
+      },
     });
     mockExec = () => Promise.reject(new Error());
     mock.reRequire('./local');

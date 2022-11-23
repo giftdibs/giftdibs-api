@@ -10,7 +10,7 @@ describe('Friendship schema', () => {
   beforeEach(() => {
     _friendshipDefinition = {
       _friend: new mongoose.Types.ObjectId(),
-      _user: new mongoose.Types.ObjectId()
+      _user: new mongoose.Types.ObjectId(),
     };
     spyOn(console, 'log').and.returnValue();
     Friendship = mock.reRequire('./friendship').Friendship;
@@ -49,7 +49,7 @@ describe('Friendship schema', () => {
 
   it('should beautify native mongo errors', () => {
     let found = Friendship.schema.plugins.filter((plugin) => {
-      return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
+      return plugin.fn.name === 'MongoDbErrorHandlerPlugin';
     })[0];
     expect(found).toBeDefined();
   });
@@ -73,25 +73,26 @@ describe('Friendship schema', () => {
                   return {
                     lean() {
                       return Promise.resolve();
-                    }
+                    },
                   };
-                }
+                },
               };
-            }
+            },
           };
-        }
+        },
       };
-      Friendship.getFriendshipsByUserId.call(context, userId)
+      Friendship.getFriendshipsByUserId
+        .call(context, userId)
         .then(() => {
           expect(_query['$or'][0]._user).toEqual(userId);
           expect(_query['$or'][1]._friend).toEqual(userId);
           expect(_populate1Args).toEqual({
             path: '_friend',
-            fields: 'firstName lastName'
+            fields: 'firstName lastName',
           });
           expect(_populate2Args).toEqual({
             path: '_user',
-            fields: 'firstName lastName'
+            fields: 'firstName lastName',
           });
           done();
         })
@@ -100,7 +101,8 @@ describe('Friendship schema', () => {
 
     it('should fail if user id not provided', (done) => {
       const context = {};
-      Friendship.getFriendshipsByUserId.call(context, undefined)
+      Friendship.getFriendshipsByUserId
+        .call(context, undefined)
         .catch((err) => {
           expect(err.name).toEqual('FriendshipValidationError');
           expect(err.message).toEqual('Please provide a user ID.');

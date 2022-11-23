@@ -13,7 +13,7 @@ const {
   RegistrationValidationError,
   LoginNotFoundError,
   LoginValidationError,
-  ForgottenPasswordValidationError
+  ForgottenPasswordValidationError,
 } = require('../shared/errors');
 
 const mailer = require('../shared/mailer');
@@ -39,27 +39,24 @@ function updatePasswordForUser(user) {
       })
       .then(() => {
         authResponse({
-          message: 'Your password was successfully reset.'
+          message: 'Your password was successfully reset.',
         })(req, res, next);
-      })
+      });
   };
 }
 
 function getUserByResetPasswordToken(resetPasswordToken) {
   // Get a user with a non-expired reset token.
-  return User
-    .find({
-      resetPasswordToken,
-      resetPasswordExpires: { $gt: Date.now() }
-    })
+  return User.find({
+    resetPasswordToken,
+    resetPasswordExpires: { $gt: Date.now() },
+  })
     .limit(1)
     .then((docs) => {
       const user = docs[0];
 
       if (!user) {
-        return Promise.reject(
-          new ResetPasswordTokenValidationError()
-        );
+        return Promise.reject(new ResetPasswordTokenValidationError());
       }
 
       return user;
@@ -84,19 +81,21 @@ const register = [
       firstName: req.body.firstName,
       lastName: req.body.lastName,
       // birthday: req.body.birthday,
-      dateLastLoggedIn: new Date()
+      dateLastLoggedIn: new Date(),
     });
 
-    user.setPassword(req.body.password)
+    user
+      .setPassword(req.body.password)
       .then(() => {
         user.resetEmailAddressVerification();
         return user.save();
       })
       .then((doc) => {
-        return mailer.sendAccountVerificationEmail(
-          doc.emailAddress,
-          doc.emailAddressVerificationToken
-        )
+        return mailer
+          .sendAccountVerificationEmail(
+            doc.emailAddress,
+            doc.emailAddressVerificationToken
+          )
           .then(() => doc)
           .catch((err) => {
             // TODO: Log this to some logger service!
@@ -115,9 +114,9 @@ const register = [
         req.user = doc;
         authResponse({
           data: {
-            userId: doc._id
+            userId: doc._id,
           },
-          message: 'Registration successful!'
+          message: 'Registration successful!',
         })(req, res, next);
       })
       .catch((err) => {
@@ -130,7 +129,7 @@ const register = [
 
         next(err);
       });
-  }
+  },
 ];
 
 const login = [
@@ -160,23 +159,23 @@ const login = [
         switch (info.message) {
           case 'invalid_password':
             code = 101;
-            message = 'The password you\'ve entered is incorrect.';
+            message = "The password you've entered is incorrect.";
             break;
           case 'empty_password':
             code = 112;
             message = [
-              'The account associated with the email address you\'ve',
+              "The account associated with the email address you've",
               'entered does not have a password on record. This can',
-              'occur when you\'ve registered using your Facebook',
+              "occur when you've registered using your Facebook",
               'account, or if you have not logged into GiftDibs in',
-              'several months.'
+              'several months.',
             ].join(' ');
             break;
           case 'user_not_found':
             code = 113;
             message = [
-              'That email address you\'ve entered does',
-              'not match an account.'
+              "That email address you've entered does",
+              'not match an account.',
             ].join(' ');
             break;
         }
@@ -192,10 +191,10 @@ const login = [
       req.user = user;
 
       authResponse({
-        message: `Welcome, ${req.user.firstName}!`
+        message: `Welcome, ${req.user.firstName}!`,
       })(req, res, next);
     })(req, res, next);
-  }
+  },
 ];
 
 const forgotten = [
@@ -205,13 +204,14 @@ const forgotten = [
       return;
     }
 
-    const error = new ForgottenPasswordValidationError('Please provide an email address.');
+    const error = new ForgottenPasswordValidationError(
+      'Please provide an email address.'
+    );
     next(error);
   },
 
   function requestResetPasswordToken(req, res, next) {
-    User
-      .find({ emailAddress: req.body.emailAddress })
+    User.find({ emailAddress: req.body.emailAddress })
       .limit(1)
       .then((docs) => {
         const user = docs[0];
@@ -221,10 +221,12 @@ const forgotten = [
         // Instead, tell the user that "if" this email address is valid, a link
         // to reset their password was sent.
         if (!user) {
-          const err = new Error([
-            `The email address "${req.body.emailAddress}"`,
-            'was not found in our records.'
-          ].join(' '));
+          const err = new Error(
+            [
+              `The email address "${req.body.emailAddress}"`,
+              'was not found in our records.',
+            ].join(' ')
+          );
           err.code = 104;
           err.status = 400;
           return Promise.reject(err);
@@ -244,34 +246,36 @@ const forgotten = [
         return res.json({
           message: [
             'Email sent. Please check your spam folder if it does not appear',
-            'in your inbox within 15 minutes.'
-          ].join(' ')
+            'in your inbox within 15 minutes.',
+          ].join(' '),
         });
       })
       .catch(next);
-  }
+  },
 ];
 
 const resetPassword = [
   function checkPasswordFields(req, res, next) {
     if (!req.body.resetPasswordToken && !req.body.currentPassword) {
-      next(new ResetPasswordValidationError(
-        'Please provide your current password.'
-      ));
+      next(
+        new ResetPasswordValidationError(
+          'Please provide your current password.'
+        )
+      );
       return;
     }
 
     if (!req.body.password || !req.body.passwordAgain) {
-      next(new ResetPasswordValidationError(
-        'Please provide a new password.'
-      ));
+      next(new ResetPasswordValidationError('Please provide a new password.'));
       return;
     }
 
     if (req.body.password !== req.body.passwordAgain) {
-      next(new ResetPasswordValidationError(
-        'The passwords you typed do not match.'
-      ));
+      next(
+        new ResetPasswordValidationError(
+          'The passwords you typed do not match.'
+        )
+      );
       return;
     }
 
@@ -299,7 +303,8 @@ const resetPassword = [
         .then((user) => updatePasswordForUser(user)(req, res, next))
         .catch((err) => handleResetPasswordError(err, next));
     } else {
-      req.user.confirmPassword(req.body.currentPassword)
+      req.user
+        .confirmPassword(req.body.currentPassword)
         .then((user) => {
           // Since the user used their email address to request a
           // reset password token, mark their email as verified.
@@ -309,7 +314,7 @@ const resetPassword = [
         .then((user) => updatePasswordForUser(user)(req, res, next))
         .catch((err) => handleResetPasswordError(err, next));
     }
-  }
+  },
 ];
 
 const resendEmailAddressVerification = [
@@ -317,7 +322,8 @@ const resendEmailAddressVerification = [
 
   function requestEmailAddressVerificationToken(req, res, next) {
     req.user.resetEmailAddressVerification();
-    req.user.save()
+    req.user
+      .save()
       .then(() => {
         return mailer.sendAccountVerificationEmail(
           req.user.emailAddress,
@@ -329,12 +335,12 @@ const resendEmailAddressVerification = [
           message: [
             `Verification email sent to ${req.user.emailAddress}.`,
             'If the email does not appear within 15 minutes,',
-            'check your spam folder.'
-          ].join(' ')
-        })(req, res, next)
+            'check your spam folder.',
+          ].join(' '),
+        })(req, res, next);
       })
       .catch(next);
-  }
+  },
 ];
 
 const verifyEmailAddress = [
@@ -342,9 +348,11 @@ const verifyEmailAddress = [
 
   function checkEmailAddressVerificationToken(req, res, next) {
     if (!req.body.emailAddressVerificationToken) {
-      next(new EmailVerificationTokenValidationError(
-        'Please provide an email address verification token.'
-      ));
+      next(
+        new EmailVerificationTokenValidationError(
+          'Please provide an email address verification token.'
+        )
+      );
       return;
     }
 
@@ -353,10 +361,11 @@ const verifyEmailAddress = [
     );
 
     if (isVerified) {
-      req.user.save()
+      req.user
+        .save()
         .then(() => {
           authResponse({
-            message: 'Email address verified!'
+            message: 'Email address verified!',
           })(req, res, next);
         })
         .catch(next);
@@ -365,7 +374,7 @@ const verifyEmailAddress = [
 
     const error = new EmailVerificationTokenValidationError();
     next(error);
-  }
+  },
 ];
 
 const deleteAccount = [
@@ -378,11 +387,11 @@ const deleteAccount = [
       .then((user) => user.remove())
       .then(() => {
         res.json({
-          message: 'Your account was successfully deleted. Goodbye!'
+          message: 'Your account was successfully deleted. Goodbye!',
         });
       })
       .catch(next);
-  }
+  },
 ];
 
 const refreshToken = [
@@ -390,9 +399,9 @@ const refreshToken = [
 
   (req, res, next) => {
     authResponse({
-      message: 'Token refreshed successfully.'
+      message: 'Token refreshed successfully.',
     })(req, res, next);
-  }
+  },
 ];
 
 const router = express.Router();
@@ -414,7 +423,7 @@ module.exports = {
     register,
     resendEmailAddressVerification,
     resetPassword,
-    verifyEmailAddress
+    verifyEmailAddress,
   },
-  router
+  router,
 };

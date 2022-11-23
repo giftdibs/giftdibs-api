@@ -1,6 +1,4 @@
-const {
-  UserValidationError
-} = require('../../shared/errors');
+const { UserValidationError } = require('../../shared/errors');
 
 function handleError(err, next) {
   if (err.name === 'ValidationError') {
@@ -14,5 +12,5 @@ function handleError(err, next) {
 }
 
 module.exports = {
-  handleError
+  handleError,
 };

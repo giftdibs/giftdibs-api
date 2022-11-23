@@ -1,22 +1,14 @@
-const {
-  GiftValidationError
-} = require('../../shared/errors');
+const { GiftValidationError } = require('../../shared/errors');
 
-const {
-  formatCommentResponse
-} = require('../comments/shared');
+const { formatCommentResponse } = require('../comments/shared');
 
-const {
-  formatDibResponse
-} = require('../dibs/shared');
+const { formatDibResponse } = require('../dibs/shared');
 
 function formatGiftResponse(gift, wishList, userId) {
   const clone = { ...gift };
 
-  const isGiftOwner = (
-    clone._user &&
-    clone._user._id.toString() === userId.toString()
-  );
+  const isGiftOwner =
+    clone._user && clone._user._id.toString() === userId.toString();
 
   // Remove dibs if session user is owner of gift and gift is not received.
   if (wishList.type !== 'registry' && isGiftOwner && !clone.dateReceived) {
@@ -68,5 +60,5 @@ function handleError(err, next) {
 
 module.exports = {
   formatGiftResponse,
-  handleError
+  handleError,
 };

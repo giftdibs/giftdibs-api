@@ -3,16 +3,15 @@ const authResponse = require('../../middleware/auth-response');
 const { handleError } = require('./shared');
 const mailer = require('../../shared/mailer');
 
-const {
-  User
-} = require('../../database/models/user');
+const { User } = require('../../database/models/user');
 
 function updateWithFacebookProfile(user, reqBody) {
   if (!reqBody.facebookUserAccessToken) {
     return Promise.resolve(user);
   }
 
-  return facebook.verifyUserAccessToken(reqBody.facebookUserAccessToken)
+  return facebook
+    .verifyUserAccessToken(reqBody.facebookUserAccessToken)
     .then(() => facebook.getProfile(reqBody.facebookUserAccessToken))
     .then((profile) => {
       user.firstName = profile.first_name;
@@ -36,13 +35,10 @@ function updateUser(req, res, next) {
         return user;
       }
 
-      const emailAddress = (
-        req.body &&
-        req.body.emailAddress
-      );
+      const emailAddress = req.body && req.body.emailAddress;
 
       // If the email address is being changed, need to re-verify.
-      if (emailAddress && (user.emailAddress !== emailAddress)) {
+      if (emailAddress && user.emailAddress !== emailAddress) {
         user.resetEmailAddressVerification();
         _emailAddressChanged = true;
       }
@@ -61,12 +57,12 @@ function updateUser(req, res, next) {
     .then(() => {
       authResponse({
         data: {},
-        message: 'User updated.'
+        message: 'User updated.',
       })(req, res, next);
     })
     .catch((err) => handleError(err, next));
 }
 
 module.exports = {
-  updateUser
+  updateUser,
 };

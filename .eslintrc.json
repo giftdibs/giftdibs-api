@@ -1,8 +1,5 @@
 {
-  "plugins": [
-    "standard",
-    "jasmine"
-  ],
+  "plugins": ["standard", "jasmine"],
   "env": {
     "jasmine": true
   },
@@ -32,12 +29,15 @@
         "next": "return"
       }
     ],
-    "max-len": ["error", {
-      "code": 80,
-      "tabWidth": 2,
-      "ignoreUrls": true,
-      "ignoreStrings": true
-    }],
+    "max-len": [
+      "error",
+      {
+        "code": 80,
+        "tabWidth": 2,
+        "ignoreUrls": true,
+        "ignoreStrings": true
+      }
+    ],
     "jasmine/new-line-before-expect": 0,
     "jasmine/no-spec-dupes": [1, "branch"],
     "jasmine/no-focused-tests": 0

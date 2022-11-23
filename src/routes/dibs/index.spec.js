@@ -4,7 +4,7 @@ const {
   MockWishList,
   MockRequest,
   MockResponse,
-  tick
+  tick,
 } = require('../../shared/testing');
 
 describe('Dibs router', () => {
@@ -16,11 +16,11 @@ describe('Dibs router', () => {
 
     _req = new MockRequest({
       user: {
-        _id: 'userid'
+        _id: 'userid',
       },
       params: {
-        dibId: 'dibid'
-      }
+        dibId: 'dibid',
+      },
     });
 
     _res = new MockResponse();
@@ -29,7 +29,7 @@ describe('Dibs router', () => {
       return (req, res, next) => {
         data.authResponse = {};
         res.json(data);
-      }
+      };
     });
     mock('../../database/models/wish-list', { WishList: MockWishList });
   });
@@ -160,19 +160,19 @@ describe('Dibs router', () => {
       const sessionUser = {
         _id: 'userid',
         firstName: 'Session',
-        lastName: 'User'
+        lastName: 'User',
       };
 
       const user1 = {
         _id: 'userid1',
         firstName: 'John',
-        lastName: 'Doe'
+        lastName: 'Doe',
       };
 
       const user2 = {
         _id: 'userid2',
         firstName: 'Jane',
-        lastName: 'Do'
+        lastName: 'Do',
       };
 
       spyOn(MockWishList, 'findAuthorized').and.returnValue(
@@ -184,11 +184,11 @@ describe('Dibs router', () => {
                 _id: 'giftid0',
                 dibs: [
                   {
-                    _user: sessionUser
-                  }
-                ]
-              }
-            ]
+                    _user: sessionUser,
+                  },
+                ],
+              },
+            ],
           }),
           new MockWishList({
             _user: user1,
@@ -200,16 +200,16 @@ describe('Dibs router', () => {
                 dibs: [
                   {
                     _user: user2,
-                    quantity: 1
+                    quantity: 1,
                   },
                   {
                     _user: sessionUser,
                     quantity: 2,
-                    pricePaid: 15
-                  }
-                ]
-              }
-            ]
+                    pricePaid: 15,
+                  },
+                ],
+              },
+            ],
           }),
           new MockWishList({
             _user: user2,
@@ -219,9 +219,9 @@ describe('Dibs router', () => {
                 budget: 5,
                 dibs: [
                   {
-                    _user: user1
-                  }
-                ]
+                    _user: user1,
+                  },
+                ],
               },
               {
                 _id: 'giftid3',
@@ -229,9 +229,9 @@ describe('Dibs router', () => {
                 dibs: [
                   {
                     _user: sessionUser,
-                    quantity: 3 // dib quantity set, but not gift
-                  }
-                ]
+                    quantity: 3, // dib quantity set, but not gift
+                  },
+                ],
               },
               {
                 _id: 'giftid4',
@@ -240,18 +240,18 @@ describe('Dibs router', () => {
                 dibs: [
                   {
                     _user: sessionUser,
-                    pricePaid: 10
-                  }
-                ]
-              }
-            ]
-          })
+                    pricePaid: 10,
+                  },
+                ],
+              },
+            ],
+          }),
         ])
       );
 
       const { getDibsRecipients } = mock.reRequire('./recipients/get');
 
-      getDibsRecipients(_req, _res, () => { });
+      getDibsRecipients(_req, _res, () => {});
 
       tick(() => {
         const recipients = _res.json.output.data.recipients;
@@ -318,7 +318,7 @@ describe('Dibs router', () => {
       _req.user._id = 'userid';
       _req.params.dibId = 'dibid';
       _req.body = {
-        foo: 'bar'
+        foo: 'bar',
       };
 
       const { updateDib } = mock.reRequire('./patch');
@@ -327,7 +327,7 @@ describe('Dibs router', () => {
 
       tick(() => {
         expect(spy).toHaveBeenCalledWith('dibid', 'userid', {
-          foo: 'bar'
+          foo: 'bar',
         });
         expect(_res.json.output.message).toEqual('Dib successfully updated.');
         done();
@@ -514,15 +514,18 @@ describe('Dibs router', () => {
       const { createDib } = mock.reRequire('./post');
 
       _req.body = {
-        quantity: 5
+        quantity: 5,
       };
 
-      createDib(_req, _res, () => { });
+      createDib(_req, _res, () => {});
 
       tick(() => {
-        expect(createSpy).toHaveBeenCalledWith({
-          quantity: 5
-        }, 'userid');
+        expect(createSpy).toHaveBeenCalledWith(
+          {
+            quantity: 5,
+          },
+          'userid'
+        );
         expect(_res.json.output.data.dibId).toEqual('dibid');
         done();
       });

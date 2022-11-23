@@ -17,7 +17,10 @@ function errorHandler(mongoError, doc, next) {
     if (schema.paths[pathKey].options.unique[1]) {
       errorMessage = schema.paths[pathKey].options.unique[1];
     } else {
-      errorMessage = 'The field, {0}, is expected to be unique.'.replace('{0}', pathKey);
+      errorMessage = 'The field, {0}, is expected to be unique.'.replace(
+        '{0}',
+        pathKey
+      );
     }
 
     validationError.errors[pathKey] = validationError.errors[pathKey] || {};
@@ -26,11 +29,16 @@ function errorHandler(mongoError, doc, next) {
     validationError.errors[pathKey].path = pathKey;
     validationError.errors[pathKey].message = errorMessage;
   } catch (err) {
-    console.error('Unable to parse Mongo Error:', err.message, mongoError.message, validationError);
+    console.error(
+      'Unable to parse Mongo Error:',
+      err.message,
+      mongoError.message,
+      validationError
+    );
   }
 
   next(validationError);
-};
+}
 
 function MongoDbErrorHandlerPlugin(schema) {
   errorHandler.bind({ schema });
@@ -42,5 +50,5 @@ function MongoDbErrorHandlerPlugin(schema) {
 }
 
 module.exports = {
-  MongoDbErrorHandlerPlugin
-}
+  MongoDbErrorHandlerPlugin,
+};

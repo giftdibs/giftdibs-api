@@ -11,7 +11,7 @@ describe('Database service', () => {
 
   it('should expose a connect method', () => {
     mock('mongoose', {
-      connect: (uri) => Promise.resolve()
+      connect: (uri) => Promise.resolve(),
     });
     const db = mock.reRequire('./index');
     expect(typeof db.connect).toEqual('function');
@@ -24,7 +24,7 @@ describe('Database service', () => {
       connect: (uri) => {
         expect(uri).toEqual('uri');
         return Promise.resolve();
-      }
+      },
     });
     const db = mock.reRequire('./index');
     db.connect()
@@ -36,7 +36,7 @@ describe('Database service', () => {
     process.env.DATABASE_URI = 'uri';
     spyOn(logger, 'info').and.returnValue();
     mock('mongoose', {
-      connect: () => Promise.resolve()
+      connect: () => Promise.resolve(),
     });
     const db = mock.reRequire('./index');
     db.connect()
@@ -50,13 +50,14 @@ describe('Database service', () => {
   it('should log an error if the database fails to connect', (done) => {
     spyOn(logger, 'error').and.returnValue();
     mock('mongoose', {
-      connect: () => Promise.reject(new Error('Invalid.'))
+      connect: () => Promise.reject(new Error('Invalid.')),
     });
     const db = mock.reRequire('./index');
     db.connect()
       .then(() => {
-        expect(logger.error)
-          .toHaveBeenCalledWith('Database connection error: Invalid.');
+        expect(logger.error).toHaveBeenCalledWith(
+          'Database connection error: Invalid.'
+        );
         done();
       })
       .catch(done.fail);

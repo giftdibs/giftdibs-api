@@ -6,10 +6,10 @@ const { updateUser } = require('./patch');
 
 const router = express.Router();
 
-router.route('/users')
-  .get([authenticateJwt, getUsers]);
+router.route('/users').get([authenticateJwt, getUsers]);
 
-router.route('/users/:userId')
+router
+  .route('/users/:userId')
   .get([authenticateJwt, getUser])
   .patch([authenticateJwt, updateUser]);
 

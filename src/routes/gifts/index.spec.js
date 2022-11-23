@@ -4,7 +4,7 @@ const {
   MockWishList,
   MockRequest,
   MockResponse,
-  tick
+  tick,
 } = require('../../shared/testing');
 
 describe('Gifts router', () => {
@@ -17,8 +17,8 @@ describe('Gifts router', () => {
     _req = new MockRequest({
       user: {},
       params: {
-        giftId: 'giftid'
-      }
+        giftId: 'giftid',
+      },
     });
 
     _res = new MockResponse();
@@ -27,11 +27,11 @@ describe('Gifts router', () => {
       return (req, res, next) => {
         data.authResponse = {};
         res.json(data);
-      }
+      };
     });
 
     mock('../../database/models/wish-list', {
-      WishList: MockWishList
+      WishList: MockWishList,
     });
   });
 
@@ -55,9 +55,9 @@ describe('Gifts router', () => {
             gifts: [
               {
                 _id: 'giftid',
-                name: 'foo'
-              }
-            ]
+                name: 'foo',
+              },
+            ],
           })
         )
       );
@@ -79,9 +79,7 @@ describe('Gifts router', () => {
       const { getGift } = mock.reRequire('./get');
 
       spyOn(MockWishList, 'findAuthorizedByGiftId').and.returnValue(
-        Promise.reject(
-          new Error('Some error')
-        )
+        Promise.reject(new Error('Some error'))
       );
 
       _req.params.giftId = 'giftid';
@@ -98,14 +96,15 @@ describe('Gifts router', () => {
     it('should create a gift', (done) => {
       const mockWishList = new MockWishList({
         _id: 'wishlistid',
-        gifts: []
+        gifts: [],
       });
 
       const createSpy = spyOn(mockWishList.gifts, 'create').and.callThrough();
       const saveSpy = spyOn(mockWishList, 'save').and.callThrough();
-      const ownershipSpy = spyOn(MockWishList, 'confirmUserOwnership').and.returnValue(
-        Promise.resolve(mockWishList)
-      );
+      const ownershipSpy = spyOn(
+        MockWishList,
+        'confirmUserOwnership'
+      ).and.returnValue(Promise.resolve(mockWishList));
 
       const { createGift } = mock.reRequire('./post');
 
@@ -139,9 +138,7 @@ describe('Gifts router', () => {
 
     it('should handle errors', (done) => {
       spyOn(MockWishList, 'confirmUserOwnership').and.returnValue(
-        Promise.reject(
-          new Error('Some error')
-        )
+        Promise.reject(new Error('Some error'))
       );
 
       const { createGift } = mock.reRequire('./post');
@@ -179,23 +176,27 @@ describe('Gifts router', () => {
         _id: 'wishlistid',
         gifts: [
           {
-            _id: 'giftid'
-          }
-        ]
+            _id: 'giftid',
+          },
+        ],
       });
 
-      const ownershipSpy = spyOn(MockWishList, 'confirmUserOwnershipByGiftId').and.returnValue(
-        Promise.resolve(mockWishList)
-      );
+      const ownershipSpy = spyOn(
+        MockWishList,
+        'confirmUserOwnershipByGiftId'
+      ).and.returnValue(Promise.resolve(mockWishList));
 
-      const removeSpy = spyOn(mockWishList.gifts[0], 'remove').and.callThrough();
+      const removeSpy = spyOn(
+        mockWishList.gifts[0],
+        'remove'
+      ).and.callThrough();
 
       _req.params.giftId = 'giftid';
       _req.user._id = 'userid';
 
       const { deleteGift } = mock.reRequire('./delete');
 
-      deleteGift(_req, _res, () => { });
+      deleteGift(_req, _res, () => {});
 
       tick(() => {
         expect(ownershipSpy).toHaveBeenCalledWith('giftid', 'userid');
@@ -225,16 +226,20 @@ describe('Gifts router', () => {
         _id: 'wishlistid',
         gifts: [
           {
-            _id: 'giftid'
-          }
-        ]
+            _id: 'giftid',
+          },
+        ],
       });
 
-      const ownershipSpy = spyOn(MockWishList, 'confirmUserOwnershipByGiftId').and.returnValue(
-        Promise.resolve(mockWishList)
-      );
+      const ownershipSpy = spyOn(
+        MockWishList,
+        'confirmUserOwnershipByGiftId'
+      ).and.returnValue(Promise.resolve(mockWishList));
 
-      const updateSpy = spyOn(mockWishList.gifts[0], 'updateSync').and.callThrough();
+      const updateSpy = spyOn(
+        mockWishList.gifts[0],
+        'updateSync'
+      ).and.callThrough();
       const saveSpy = spyOn(mockWishList, 'save').and.callThrough();
 
       _req.params.giftId = 'giftid';

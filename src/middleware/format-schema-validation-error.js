@@ -15,7 +15,7 @@ const formatSchemaValidationError = (err, req, res, next) => {
   for (const field in err.errors) {
     errors.push({
       message: err.errors[field].message,
-      field
+      field,
     });
   }
 

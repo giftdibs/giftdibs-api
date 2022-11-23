@@ -9,17 +9,17 @@ const { getDibsRecipients } = require('./recipients/get');
 
 const router = express.Router();
 
-router.route('/gifts/:giftId/dibs')
-  .post([authenticateJwt, createDib]);
+router.route('/gifts/:giftId/dibs').post([authenticateJwt, createDib]);
 
-router.route('/dibs/:dibId')
+router
+  .route('/dibs/:dibId')
   .patch([authenticateJwt, updateDib])
   .delete([authenticateJwt, deleteDib]);
 
-router.route('/dibs/:dibId/delivered')
+router
+  .route('/dibs/:dibId/delivered')
   .post([authenticateJwt, markDibAsDelivered]);
 
-router.route('/dibs/recipients')
-  .get([authenticateJwt, getDibsRecipients]);
+router.route('/dibs/recipients').get([authenticateJwt, getDibsRecipients]);
 
 module.exports = router;

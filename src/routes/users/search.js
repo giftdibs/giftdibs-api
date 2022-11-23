@@ -14,23 +14,22 @@ function searchUsers(req, res, next) {
   const regex = new RegExp(escapedSearchText, 'i');
 
   // See: https://stackoverflow.com/a/37527020/6178885
-  User
-    .aggregate([
-      {
-        $project: {
-          name: {
-            $concat: [ '$firstName', ' ', '$lastName' ]
-          },
-          avatarUrl: '$avatarUrl'
-        }
+  User.aggregate([
+    {
+      $project: {
+        name: {
+          $concat: ['$firstName', ' ', '$lastName'],
+        },
+        avatarUrl: '$avatarUrl',
       },
-      {
-        $match: { name: { $regex: regex } }
-      },
-      {
-        $limit: 10
-      }
-    ])
+    },
+    {
+      $match: { name: { $regex: regex } },
+    },
+    {
+      $limit: 10,
+    },
+  ])
     .then((docs) => {
       const results = docs.map((user) => {
         user.id = user._id;
@@ -39,13 +38,13 @@ function searchUsers(req, res, next) {
       });
       authResponse({
         data: {
-          results
-        }
+          results,
+        },
       })(req, res, next);
     })
     .catch(next);
 }
 
 module.exports = {
-  searchUsers
+  searchUsers,
 };

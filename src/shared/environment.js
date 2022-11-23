@@ -4,7 +4,9 @@ const path = require('path');
 const applyEnvironment = () => {
   // Production environments should set their own values.
   if (process.env.NODE_ENV !== 'development') {
-    firebaseFunctions.logger.log('Environment configuration is not parsed in production mode.');
+    firebaseFunctions.logger.log(
+      'Environment configuration is not parsed in production mode.'
+    );
     return;
   }
 
@@ -15,7 +17,7 @@ const applyEnvironment = () => {
   const filePath = path.resolve(cwd, 'config.env');
 
   const result = dotenv.config({
-    path: filePath
+    path: filePath,
   });
 
   if (result.error) {
@@ -40,5 +42,5 @@ module.exports = {
     }
 
     return value;
-  }
+  },
 };

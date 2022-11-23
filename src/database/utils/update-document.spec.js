@@ -6,7 +6,9 @@ describe('Update document database util', () => {
   beforeEach(() => {
     doc = {
       set() {},
-      toObject() { return this; }
+      toObject() {
+        return this;
+      },
     };
   });
 
@@ -53,7 +55,7 @@ describe('Update document database util', () => {
     const subdoc = {
       _id: '123',
       remove() {},
-      updateSync() {}
+      updateSync() {},
     };
 
     doc.children = [subdoc];
@@ -63,7 +65,7 @@ describe('Update document database util', () => {
     updateDocument(doc, fields, changes);
     expect(spy).toHaveBeenCalledWith({
       _id: '123',
-      name: 'newname'
+      name: 'newname',
     });
   });
 
@@ -71,21 +73,21 @@ describe('Update document database util', () => {
     const { updateDocument } = mock.reRequire('./update-document');
 
     const changes = {
-      children: [
-        { _id: 'efj' },
-        { _id: '123' }
-      ]
+      children: [{ _id: 'efj' }, { _id: '123' }],
     };
 
     const fields = ['foo'];
 
-    doc.children = [{
-      _id: 'abc',
-      remove() {}
-    }, {
-      _id: '123',
-      remove() {}
-    }];
+    doc.children = [
+      {
+        _id: 'abc',
+        remove() {},
+      },
+      {
+        _id: '123',
+        remove() {},
+      },
+    ];
 
     doc.children.id = (id) => {
       return doc.children.find((child) => child._id === id);
@@ -99,9 +101,7 @@ describe('Update document database util', () => {
   it('should add a new subdocument', () => {
     const { updateDocument } = mock.reRequire('./update-document');
     const changes = {
-      children: [
-        { name: 'abc' }
-      ]
+      children: [{ name: 'abc' }],
     };
     const fields = ['foo'];
     doc.children = [];

@@ -12,7 +12,7 @@ describe('Dib schema', () => {
     _dibDefinition = {
       _gift: new mongoose.Types.ObjectId(),
       _user: new mongoose.Types.ObjectId(),
-      quantity: 1
+      quantity: 1,
     };
 
     updateDocumentUtil = mock.reRequire('../utils/update-document');
@@ -49,8 +49,9 @@ describe('Dib schema', () => {
     const dib = new MockDib(_dibDefinition);
     const err = dib.validateSync();
     expect(err.errors.quantity.properties.type).toEqual('required');
-    expect(err.errors.quantity.message)
-      .toEqual('The dib\'s quantity must be provided.');
+    expect(err.errors.quantity.message).toEqual(
+      "The dib's quantity must be provided."
+    );
   });
 
   it('should fail if notes has more characters than allowed', () => {
@@ -65,8 +66,9 @@ describe('Dib schema', () => {
     const err = dib.validateSync();
 
     expect(err.errors.notes.properties.type).toEqual('maxlength');
-    expect(err.errors.notes.message)
-      .toEqual('Notes cannot be longer than 1000 characters.');
+    expect(err.errors.notes.message).toEqual(
+      'Notes cannot be longer than 1000 characters.'
+    );
   });
 
   it('should fail if the pricePaid is less than zero', () => {
@@ -74,8 +76,9 @@ describe('Dib schema', () => {
     const dib = new MockDib(_dibDefinition);
     const err = dib.validateSync();
     expect(err.errors.pricePaid.properties.type).toEqual('min');
-    expect(err.errors.pricePaid.message)
-      .toEqual('The price paid must be at least zero.');
+    expect(err.errors.pricePaid.message).toEqual(
+      'The price paid must be at least zero.'
+    );
   });
 
   it('should fail if the pricePaid is greater than one trillion', () => {
@@ -83,8 +86,9 @@ describe('Dib schema', () => {
     const dib = new MockDib(_dibDefinition);
     const err = dib.validateSync();
     expect(err.errors.pricePaid.properties.type).toEqual('max');
-    expect(err.errors.pricePaid.message)
-      .toEqual('The price paid must be less than 1,000,000,000,000.');
+    expect(err.errors.pricePaid.message).toEqual(
+      'The price paid must be less than 1,000,000,000,000.'
+    );
   });
 
   it('should fail if the quantity is less than one', () => {
@@ -92,8 +96,9 @@ describe('Dib schema', () => {
     const dib = new MockDib(_dibDefinition);
     const err = dib.validateSync();
     expect(err.errors.quantity.properties.type).toEqual('min');
-    expect(err.errors.quantity.message)
-      .toEqual('The dib\'s quantity must be at least 1.');
+    expect(err.errors.quantity.message).toEqual(
+      "The dib's quantity must be at least 1."
+    );
   });
 
   it('should fail if the quantity is greater than one trillion', () => {
@@ -101,8 +106,9 @@ describe('Dib schema', () => {
     const dib = new MockDib(_dibDefinition);
     const err = dib.validateSync();
     expect(err.errors.quantity.properties.type).toEqual('max');
-    expect(err.errors.quantity.message)
-      .toEqual('The dib\'s quantity must be less than 1,000,000,000,000.');
+    expect(err.errors.quantity.message).toEqual(
+      "The dib's quantity must be less than 1,000,000,000,000."
+    );
   });
 
   it('should generate timestamps automatically', () => {
@@ -112,7 +118,7 @@ describe('Dib schema', () => {
 
   it('should beautify native mongo errors', () => {
     const found = MockDib.schema.plugins.filter((plugin) => {
-      return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
+      return plugin.fn.name === 'MongoDbErrorHandlerPlugin';
     })[0];
     expect(found).toBeDefined();
   });
@@ -125,12 +131,7 @@ describe('Dib schema', () => {
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       dib,
-      [
-        'isAnonymous',
-        'notes',
-        'pricePaid',
-        'quantity'
-      ],
+      ['isAnonymous', 'notes', 'pricePaid', 'quantity'],
       formData
     );
   });

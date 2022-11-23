@@ -27,7 +27,7 @@ describe('User schema', () => {
         lastName: 'Bar',
         emailAddress: 'foo@bar.com',
         password: '12345',
-        dateLastLoggedIn: new Date()
+        dateLastLoggedIn: new Date(),
       });
       const err = user.validateSync();
       expect(err).toBeUndefined();
@@ -45,21 +45,21 @@ describe('User schema', () => {
 
     it('should fail if firstName is not between 1 and 50 characters', () => {
       const user = new User({
-        firstName: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        firstName: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       });
-      const err = user.validateSync()
+      const err = user.validateSync();
       expect(err.errors.firstName.properties.type).toEqual('maxlength');
     });
 
     it('should fail if firstName contains duplicate characters', () => {
       let user = new User({ firstName: 'aaa' });
-      const err = user.validateSync()
+      const err = user.validateSync();
       expect(err.errors.firstName.properties.type).toEqual('hasDuplicateChars');
     });
 
     it('should fail if firstName contains symbols or numbers', () => {
       let user = new User({ firstName: 'abc-abc' });
-      let err = user.validateSync()
+      let err = user.validateSync();
       expect(err.errors.firstName.properties.type).toEqual('isAlpha');
 
       user = new User({ firstName: '123' });
@@ -79,7 +79,7 @@ describe('User schema', () => {
 
     it('should fail if lastName is not between 1 and 50 characters', () => {
       const user = new User({
-        lastName: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        lastName: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       });
       const err = user.validateSync();
       expect(err.errors.lastName.properties.type).toEqual('maxlength');
@@ -113,12 +113,10 @@ describe('User schema', () => {
 
     it('should fail if emailAddress is not formatted correctly', (done) => {
       const user = new User({ emailAddress: 'invalid.email' });
-      user
-        .validate()
-        .catch((err) => {
-          expect(err.errors.emailAddress.properties.type).toEqual('isEmail');
-          done();
-        });
+      user.validate().catch((err) => {
+        expect(err.errors.emailAddress.properties.type).toEqual('isEmail');
+        done();
+      });
     });
 
     it('should convert emailAddress to lowercase', () => {
@@ -127,7 +125,7 @@ describe('User schema', () => {
         lastName: 'Bar',
         emailAddress: 'Foo@Bar.com',
         password: '12345',
-        dateLastLoggedIn: new Date()
+        dateLastLoggedIn: new Date(),
       });
       user.validateSync();
       expect(user.emailAddress).toEqual('foo@bar.com');
@@ -135,7 +133,7 @@ describe('User schema', () => {
 
     it('should beautify native mongo errors', () => {
       let found = User.schema.plugins.filter((plugin) => {
-        return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
+        return plugin.fn.name === 'MongoDbErrorHandlerPlugin';
       })[0];
       expect(found).toBeDefined();
     });
@@ -146,7 +144,7 @@ describe('User schema', () => {
         lastName: ' Bar   ',
         emailAddress: '   foo@bar.com ',
         password: '12345',
-        dateLastLoggedIn: new Date()
+        dateLastLoggedIn: new Date(),
       });
       user.validateSync();
       expect(user.firstName).toEqual('Foo');
@@ -165,11 +163,13 @@ describe('User schema', () => {
         lastName: 'Bar',
         emailAddress: 'foo@bar.com',
         password: '1234567',
-        dateLastLoggedIn: new Date()
+        dateLastLoggedIn: new Date(),
       });
-      user.setPassword('1234567')
+      user
+        .setPassword('1234567')
         .then(() => {
-          user.confirmPassword('1234567')
+          user
+            .confirmPassword('1234567')
             .then(() => {
               expect(user.password).not.toEqual('1234567');
               done();
@@ -185,7 +185,7 @@ describe('User schema', () => {
         lastName: 'Bar',
         emailAddress: 'foo@bar.com',
         password: '       ',
-        dateLastLoggedIn: new Date()
+        dateLastLoggedIn: new Date(),
       });
       user.setPassword('       ').catch((err) => {
         expect(err).toBeDefined();
@@ -199,11 +199,13 @@ describe('User schema', () => {
         lastName: 'Bar',
         emailAddress: 'foo@bar.com',
         password: null,
-        dateLastLoggedIn: new Date()
+        dateLastLoggedIn: new Date(),
       });
       user.setPassword(null).catch((err) => {
         expect(err).toBeDefined();
-        expect(err.errors.password.message).toEqual('Please provide a password.');
+        expect(err.errors.password.message).toEqual(
+          'Please provide a password.'
+        );
         done();
       });
     });
@@ -214,11 +216,12 @@ describe('User schema', () => {
         lastName: 'Bar',
         emailAddress: 'foo@bar.com',
         password: 'foo',
-        dateLastLoggedIn: new Date()
+        dateLastLoggedIn: new Date(),
       });
       user.setPassword('abc').catch((err) => {
-        expect(err.errors.password.message)
-          .toEqual('Your password must be between 7 and 50 characters long.');
+        expect(err.errors.password.message).toEqual(
+          'Your password must be between 7 and 50 characters long.'
+        );
         done();
       });
     });
@@ -229,13 +232,14 @@ describe('User schema', () => {
         lastName: 'Bar',
         emailAddress: 'foo@bar.com',
         password: 'foo',
-        dateLastLoggedIn: new Date()
+        dateLastLoggedIn: new Date(),
       });
       user
         .setPassword('1234512345123451234512345123451234512345123451234512345')
         .catch((err) => {
-          expect(err.errors.password.message)
-            .toEqual('Your password must be between 7 and 50 characters long.');
+          expect(err.errors.password.message).toEqual(
+            'Your password must be between 7 and 50 characters long.'
+          );
           done();
         });
     });
@@ -246,26 +250,30 @@ describe('User schema', () => {
         lastName: 'Bar',
         emailAddress: 'foo@bar.com',
         password: 'foobar',
-        dateLastLoggedIn: new Date()
+        dateLastLoggedIn: new Date(),
       });
 
-      user.setPassword('1234567')
+      user
+        .setPassword('1234567')
         .then(() => user.confirmPassword('abc'))
         .catch((err) => {
-          expect(err.message).toEqual('That password did not match what we have on record.');
+          expect(err.message).toEqual(
+            'That password did not match what we have on record.'
+          );
           done();
         });
     });
 
     it('should handle errors from the password hash utility', (done) => {
       const user = new User({
-        password: undefined
+        password: undefined,
       });
-      user.confirmPassword(undefined)
-        .catch((err) => {
-          expect(err.message).toEqual('That password did not match what we have on record.');
-          done();
-        });
+      user.confirmPassword(undefined).catch((err) => {
+        expect(err.message).toEqual(
+          'That password did not match what we have on record.'
+        );
+        done();
+      });
     });
 
     it('should set the reset password token and expiration', () => {
@@ -274,7 +282,7 @@ describe('User schema', () => {
         lastName: 'Bar',
         emailAddress: 'foo@bar.com',
         password: 'foobar',
-        dateLastLoggedIn: new Date()
+        dateLastLoggedIn: new Date(),
       });
 
       user.setResetPasswordToken();
@@ -290,7 +298,7 @@ describe('User schema', () => {
         password: 'foobar',
         dateLastLoggedIn: new Date(),
         resetPasswordToken: 'abc123',
-        resetPasswordExpires: new Date()
+        resetPasswordExpires: new Date(),
       });
 
       user.unsetResetPasswordToken();
@@ -304,7 +312,7 @@ describe('User schema', () => {
         lastName: 'Bar',
         emailAddress: 'foo@bar.com',
         password: 'foobar',
-        dateLastLoggedIn: new Date()
+        dateLastLoggedIn: new Date(),
       });
 
       user.resetEmailAddressVerification();
@@ -319,7 +327,7 @@ describe('User schema', () => {
         emailAddress: 'foo@bar.com',
         password: 'foobar',
         dateLastLoggedIn: new Date(),
-        emailAddressVerificationToken: 'abc123'
+        emailAddressVerificationToken: 'abc123',
       });
 
       const result = user.verifyEmailAddress('abc123');
@@ -335,7 +343,7 @@ describe('User schema', () => {
         emailAddress: 'foo@bar.com',
         password: 'foobar',
         dateLastLoggedIn: new Date(),
-        emailAddressVerificationToken: 'abc123'
+        emailAddressVerificationToken: 'abc123',
       });
 
       const result = user.verifyEmailAddress('foobar');
@@ -349,22 +357,17 @@ describe('User schema', () => {
         lastName: 'Bar',
         emailAddress: 'foo@bar.com',
         password: 'foobar',
-        dateLastLoggedIn: new Date()
+        dateLastLoggedIn: new Date(),
       });
       const formData = {
-        firstName: 'Test'
+        firstName: 'Test',
       };
 
       user.updateSync(formData);
 
       expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
         user,
-        [
-          'firstName',
-          'lastName',
-          'emailAddress',
-          'facebookId'
-        ],
+        ['firstName', 'lastName', 'emailAddress', 'facebookId'],
         formData
       );
     });
@@ -374,7 +377,7 @@ describe('User schema', () => {
     const {
       // MockDib,
       MockFriendship,
-      MockWishList
+      MockWishList,
     } = require('../../shared/testing');
 
     beforeEach(() => {
@@ -399,29 +402,28 @@ describe('User schema', () => {
         Promise.resolve()
       );
 
-      const friendshipRemoveSpy = spyOn(MockFriendship, 'remove').and.returnValue(
-        Promise.resolve()
+      const friendshipRemoveSpy = spyOn(
+        MockFriendship,
+        'remove'
+      ).and.returnValue(Promise.resolve());
+
+      const { removeReferencedDocuments } = mock.reRequire('./user');
+
+      removeReferencedDocuments(
+        {
+          _id: 'userid',
+        },
+        (err) => {
+          expect(wishListRemoveSpy).toHaveBeenCalledWith({
+            _user: 'userid',
+          });
+          expect(friendshipRemoveSpy).toHaveBeenCalledWith({
+            $or: [{ _user: 'userid' }, { _friend: 'userid' }],
+          });
+          expect(err).toBeUndefined();
+          done();
+        }
       );
-
-      const {
-        removeReferencedDocuments
-      } = mock.reRequire('./user');
-
-      removeReferencedDocuments({
-        _id: 'userid'
-      }, (err) => {
-        expect(wishListRemoveSpy).toHaveBeenCalledWith({
-          _user: 'userid'
-        });
-        expect(friendshipRemoveSpy).toHaveBeenCalledWith({
-          $or: [
-            { _user: 'userid' },
-            { _friend: 'userid' }
-          ]
-        });
-        expect(err).toBeUndefined();
-        done();
-      });
     });
 
     it('should handle errors', (done) => {
@@ -429,9 +431,7 @@ describe('User schema', () => {
         Promise.reject(new Error('Some error'))
       );
 
-      const {
-        removeReferencedDocuments
-      } = mock.reRequire('./user');
+      const { removeReferencedDocuments } = mock.reRequire('./user');
 
       removeReferencedDocuments({}, (err) => {
         expect(err.message).toEqual('Some error');

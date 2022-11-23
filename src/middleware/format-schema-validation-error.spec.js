@@ -5,8 +5,8 @@ describe('Format schema validation error middleware', () => {
     error.errors = {
       emailAddress: {
         message: 'Some message.',
-        field: 'emailAddress'
-      }
+        field: 'emailAddress',
+      },
     };
     const middleware = require('./format-schema-validation-error');
     middleware(error, {}, {}, (err) => {

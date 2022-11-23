@@ -1,15 +1,13 @@
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  Gift
-} = require('../../database/models/gift');
+const { Gift } = require('../../database/models/gift');
 
 async function deleteGift(req, res, next) {
   const giftId = req.params.giftId;
 
   try {
     const gifts = await Gift.find({
-      _id: giftId
+      _id: giftId,
     })
       .limit(1)
       .select('_id');
@@ -24,8 +22,8 @@ async function deleteGift(req, res, next) {
     await gift.remove();
 
     authResponse({
-      data: { },
-      message: 'Gift successfully deleted.'
+      data: {},
+      message: 'Gift successfully deleted.',
     })(req, res, next);
   } catch (err) {
     next(err);
@@ -49,15 +47,15 @@ async function getGifts(req, res, next) {
         user: {
           id: gift._user._id,
           firstName: gift._user.firstName,
-          lastName: gift._user.lastName
-        }
+          lastName: gift._user.lastName,
+        },
       };
     });
 
     authResponse({
       data: {
-        gifts: formatted
-      }
+        gifts: formatted,
+      },
     })(req, res, next);
   } catch (err) {
     next(err);
@@ -66,5 +64,5 @@ async function getGifts(req, res, next) {
 
 module.exports = {
   deleteGift,
-  getGifts
+  getGifts,
 };

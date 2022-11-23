@@ -1,20 +1,12 @@
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  Gift
-} = require('../../database/models/gift');
+const { Gift } = require('../../database/models/gift');
 
-const {
-  WishList
-} = require('../../database/models/wish-list');
+const { WishList } = require('../../database/models/wish-list');
 
-const {
-  WishListNotFoundError
-} = require('../../shared/errors');
+const { WishListNotFoundError } = require('../../shared/errors');
 
-const {
-  formatWishListResponse
-} = require('./shared');
+const { formatWishListResponse } = require('./shared');
 
 async function getWishList(req, res, next) {
   const userId = req.user._id;
@@ -34,7 +26,7 @@ async function getWishList(req, res, next) {
 
   try {
     const wishLists = await WishList.findAuthorized(userId, {
-      '_id': wishListId
+      _id: wishListId,
     })
       .limit(1)
       .select('_user dateCreated dateUpdated name privacy type')
@@ -49,24 +41,26 @@ async function getWishList(req, res, next) {
     }
 
     const gifts = await Gift.find({
-      '_wishList': wishListId
+      _wishList: wishListId,
     })
-      .select([
-        'budget',
-        'dateCreated',
-        'dateReceived',
-        'dateUpdated',
-        'dibs._id',
-        'dibs._user',
-        'dibs.dateDelivered',
-        'dibs.dateUpdated',
-        'dibs.isAnonymous',
-        'dibs.quantity',
-        'imageUrl',
-        'name',
-        'priority',
-        'quantity'
-      ].join(' '))
+      .select(
+        [
+          'budget',
+          'dateCreated',
+          'dateReceived',
+          'dateUpdated',
+          'dibs._id',
+          'dibs._user',
+          'dibs.dateDelivered',
+          'dibs.dateUpdated',
+          'dibs.isAnonymous',
+          'dibs.quantity',
+          'imageUrl',
+          'name',
+          'priority',
+          'quantity',
+        ].join(' ')
+      )
       .populate('_user', 'avatarUrl firstName lastName')
       .populate('dibs._user', 'avatarUrl firstName lastName')
       .sort(sortKey)
@@ -77,7 +71,7 @@ async function getWishList(req, res, next) {
     const formatted = formatWishListResponse(wishList, userId);
 
     authResponse({
-      data: { wishList: formatted }
+      data: { wishList: formatted },
     })(req, res, next);
   } catch (err) {
     next(err);
@@ -86,20 +80,23 @@ async function getWishList(req, res, next) {
 
 async function getWishLists(req, res, next) {
   const userId = req.user._id;
-  const getArchived = (req.query.archived === true);
+  const getArchived = req.query.archived === true;
 
   let query;
   if (getArchived) {
     query = {
-      isArchived: true
+      isArchived: true,
     };
   } else {
     query = {
-      $or: [{
-        isArchived: { $exists: false }
-      }, {
-        isArchived: false
-      }]
+      $or: [
+        {
+          isArchived: { $exists: false },
+        },
+        {
+          isArchived: false,
+        },
+      ],
     };
   }
 
@@ -116,9 +113,9 @@ async function getWishLists(req, res, next) {
     const wishListIds = wishLists.map((wl) => wl._id);
 
     const gifts = await Gift.find({
-      '_wishList': {
-        $in: wishListIds
-      }
+      _wishList: {
+        $in: wishListIds,
+      },
     })
       .select('_wishList dateCreated dateUpdated imageUrl name')
       .lean();
@@ -137,7 +134,7 @@ async function getWishLists(req, res, next) {
     });
 
     authResponse({
-      data: { wishLists: formatted }
+      data: { wishLists: formatted },
     })(req, res, next);
   } catch (err) {
     next(err);
@@ -152,5 +149,5 @@ function getArchivedWishLists(req, res, next) {
 module.exports = {
   getArchivedWishLists,
   getWishList,
-  getWishLists
+  getWishLists,
 };

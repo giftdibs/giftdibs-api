@@ -1,8 +1,7 @@
 const mock = require('mock-require');
 
 describe('Facebook service', () => {
-  beforeEach(() => {
-  });
+  beforeEach(() => {});
 
   afterEach(() => {
     mock.stopAll();
@@ -37,10 +36,12 @@ describe('Facebook service', () => {
     const lib = mock.reRequire('./facebook');
     const result = lib.verifyUserAccessToken('myuseraccesstoken');
     expect(typeof result.then).toEqual('function');
-    result.then(() => {
-      expect(_opts[0].qs.grant_type).toEqual('client_credentials');
-      expect(_opts[1].qs.input_token).toEqual('myuseraccesstoken');
-      done();
-    }).catch(done.fail);
+    result
+      .then(() => {
+        expect(_opts[0].qs.grant_type).toEqual('client_credentials');
+        expect(_opts[1].qs.input_token).toEqual('myuseraccesstoken');
+        done();
+      })
+      .catch(done.fail);
   });
 });

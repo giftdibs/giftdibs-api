@@ -1,6 +1,4 @@
-const {
-  FriendshipValidationError
-} = require('../../shared/errors');
+const { FriendshipValidationError } = require('../../shared/errors');
 
 function formatFriendshipResponse(friendship) {
   const clone = { ...friendship };
@@ -29,5 +27,5 @@ function handleError(err, next) {
 
 module.exports = {
   formatFriendshipResponse,
-  handleError
+  handleError,
 };

@@ -5,7 +5,7 @@ describe('routes index', () => {
 
   beforeEach(() => {
     routerExport = {
-      router() {}
+      router() {},
     };
 
     mock('./auth', routerExport);

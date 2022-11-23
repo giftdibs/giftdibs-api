@@ -1,6 +1,4 @@
-const {
-  CommentValidationError
-} = require('../../shared/errors');
+const { CommentValidationError } = require('../../shared/errors');
 
 function formatCommentResponse(comment) {
   const clone = { ...comment };
@@ -29,5 +27,5 @@ function handleError(err, next) {
 
 module.exports = {
   formatCommentResponse,
-  handleError
+  handleError,
 };

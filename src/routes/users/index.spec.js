@@ -4,7 +4,7 @@ const {
   tick,
   MockUser,
   MockRequest,
-  MockResponse
+  MockResponse,
 } = require('../../shared/testing');
 
 describe('Users router', () => {
@@ -16,11 +16,11 @@ describe('Users router', () => {
 
     _req = new MockRequest({
       user: {
-        _id: 'userid'
+        _id: 'userid',
       },
       params: {
-        userId: 'userid'
-      }
+        userId: 'userid',
+      },
     });
     _res = new MockResponse();
 
@@ -30,7 +30,7 @@ describe('Users router', () => {
       return (req, res, next) => {
         data.authResponse = {};
         res.json(data);
-      }
+      };
     });
   });
 
@@ -46,14 +46,12 @@ describe('Users router', () => {
   describe('GET /users', () => {
     it('should GET an array of all documents', (done) => {
       MockUser.overrides.find.returnWith = () => {
-        return Promise.resolve([
-          new MockUser()
-        ]);
+        return Promise.resolve([new MockUser()]);
       };
 
       const { getUsers } = mock.reRequire('./get');
 
-      getUsers(_req, _res, () => { });
+      getUsers(_req, _res, () => {});
 
       tick(() => {
         expect(Array.isArray(_res.json.output.data.users)).toEqual(true);
@@ -63,9 +61,7 @@ describe('Users router', () => {
 
     it('should populate different fields if not the current user', (done) => {
       MockUser.overrides.find.returnWith = () => {
-        return Promise.resolve([
-          new MockUser()
-        ]);
+        return Promise.resolve([new MockUser()]);
       };
 
       const { getUsers } = mock.reRequire('./get');
@@ -75,17 +71,16 @@ describe('Users router', () => {
       getUsers(_req, _req, () => {});
 
       tick(() => {
-        expect(MockUser.selectedFields)
-          .toEqual('firstName lastName emailAddressVerified');
+        expect(MockUser.selectedFields).toEqual(
+          'firstName lastName emailAddressVerified'
+        );
         done();
       });
     });
 
     it('should populate different fields if current user', (done) => {
       MockUser.overrides.find.returnWith = () => {
-        return Promise.resolve([
-          new MockUser()
-        ]);
+        return Promise.resolve([new MockUser()]);
       };
 
       const { getUsers } = mock.reRequire('./get');
@@ -93,10 +88,9 @@ describe('Users router', () => {
       getUsers(_req, _req, () => {});
 
       tick(() => {
-        expect(MockUser.selectedFields)
-          .toEqual(
-            'facebookId firstName lastName emailAddress emailAddressVerified'
-          );
+        expect(MockUser.selectedFields).toEqual(
+          'facebookId firstName lastName emailAddress emailAddressVerified'
+        );
         done();
       });
     });
@@ -118,14 +112,14 @@ describe('Users router', () => {
       MockUser.overrides.find.returnWith = () => {
         return Promise.resolve([
           new MockUser({
-            firstName: 'John'
-          })
+            firstName: 'John',
+          }),
         ]);
       };
 
       const { getUser } = mock.reRequire('./get');
 
-      getUser(_req, _res, () => { });
+      getUser(_req, _res, () => {});
 
       tick(() => {
         expect(_res.json.output.data.user.firstName).toEqual('John');
@@ -135,9 +129,7 @@ describe('Users router', () => {
 
     it('should GET a single document with certain fields', (done) => {
       MockUser.overrides.find.returnWith = () => {
-        return Promise.resolve([
-          new MockUser()
-        ]);
+        return Promise.resolve([new MockUser()]);
       };
 
       const { getUser } = mock.reRequire('./get');
@@ -147,17 +139,16 @@ describe('Users router', () => {
       getUser(_req, _res, () => {});
 
       tick(() => {
-        expect(MockUser.selectedFields)
-          .toEqual('firstName lastName emailAddressVerified');
+        expect(MockUser.selectedFields).toEqual(
+          'firstName lastName emailAddressVerified'
+        );
         done();
       });
     });
 
     it('should return different fields if the user owns the resource', (done) => {
       MockUser.overrides.find.returnWith = () => {
-        return Promise.resolve([
-          new MockUser()
-        ]);
+        return Promise.resolve([new MockUser()]);
       };
 
       const { getUser } = mock.reRequire('./get');
@@ -165,8 +156,9 @@ describe('Users router', () => {
       getUser(_req, _res, () => {});
 
       tick(() => {
-        expect(MockUser.selectedFields)
-          .toEqual('facebookId firstName lastName emailAddress emailAddressVerified');
+        expect(MockUser.selectedFields).toEqual(
+          'facebookId firstName lastName emailAddress emailAddressVerified'
+        );
         done();
       });
     });
@@ -206,7 +198,7 @@ describe('Users router', () => {
       const { updateUser } = mock.reRequire('./patch');
 
       _req.body = {
-        firstName: 'NewName'
+        firstName: 'NewName',
       };
 
       spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
@@ -219,29 +211,28 @@ describe('Users router', () => {
       });
     });
 
-    it('should not update using form data if fb access token is set',
-      (done) => {
-        const user = new MockUser();
-        const spy = spyOn(user, 'updateSync');
+    it('should not update using form data if fb access token is set', (done) => {
+      const user = new MockUser();
+      const spy = spyOn(user, 'updateSync');
 
-        spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
-          Promise.resolve(user)
-        );
+      spyOn(MockUser, 'confirmUserOwnership').and.returnValue(
+        Promise.resolve(user)
+      );
 
-        const { updateUser } = mock.reRequire('./patch');
+      const { updateUser } = mock.reRequire('./patch');
 
-        _req.body = {
-          facebookUserAccessToken: 'fbtoken',
-          firstName: 'NewName'
-        };
+      _req.body = {
+        facebookUserAccessToken: 'fbtoken',
+        firstName: 'NewName',
+      };
 
-        updateUser(_req, _res, () => { });
+      updateUser(_req, _res, () => {});
 
-        tick(() => {
-          expect(spy).not.toHaveBeenCalled();
-          done();
-        });
+      tick(() => {
+        expect(spy).not.toHaveBeenCalled();
+        done();
       });
+    });
 
     it('should update a user if facebook access token is set', (done) => {
       const user = new MockUser();
@@ -252,21 +243,22 @@ describe('Users router', () => {
 
       mock('../../lib/facebook', {
         verifyUserAccessToken: () => Promise.resolve(user),
-        getProfile: () => Promise.resolve({
-          first_name: 'Foo',
-          last_name: 'Bar',
-          email: 'foo@bar.com',
-          id: '0'
-        })
+        getProfile: () =>
+          Promise.resolve({
+            first_name: 'Foo',
+            last_name: 'Bar',
+            email: 'foo@bar.com',
+            id: '0',
+          }),
       });
 
       const { updateUser } = mock.reRequire('./patch');
 
       _req.body = {
-        facebookUserAccessToken: 'abc123'
+        facebookUserAccessToken: 'abc123',
       };
 
-      updateUser(_req, _res, () => { });
+      updateUser(_req, _res, () => {});
 
       tick(() => {
         expect(user.firstName).toEqual('Foo');
@@ -280,7 +272,7 @@ describe('Users router', () => {
 
     it('should issue new email verification token if the email address changes', (done) => {
       const user = new MockUser({
-        emailAddress: 'my@email.com'
+        emailAddress: 'my@email.com',
       });
 
       const { updateUser } = mock.reRequire('./patch');
@@ -290,7 +282,7 @@ describe('Users router', () => {
       );
 
       _req.body = {
-        emailAddress: 'new@email.com'
+        emailAddress: 'new@email.com',
       };
 
       const spy = spyOn(user, 'resetEmailAddressVerification');
@@ -325,13 +317,9 @@ describe('Users router', () => {
         Promise.resolve(user)
       );
 
-      spyOn(user, 'updateSync').and.returnValue(
-        Promise.resolve(user)
-      );
+      spyOn(user, 'updateSync').and.returnValue(Promise.resolve(user));
 
-      spyOn(user, 'save').and.returnValue(
-        Promise.reject(error)
-      );
+      spyOn(user, 'save').and.returnValue(Promise.reject(error));
 
       const { updateUser } = mock.reRequire('./patch');
 

@@ -17,67 +17,35 @@ function authenticateRole(req, res, next) {
   next();
 }
 
-const {
-  getGifts,
-  deleteGift
-} = require('./gifts');
+const { getGifts, deleteGift } = require('./gifts');
 
 const {
   createMailingListSubscription,
   removeMailingListSubscription,
-  updateMailingListSubscription
+  updateMailingListSubscription,
 } = require('./mailing-list-subscription');
 
-const {
-  getUsers,
-  deleteUser
-} = require('./users');
+const { getUsers, deleteUser } = require('./users');
 
-router.route('/admin/gifts')
-  .get([
-    authenticateJwt,
-    authenticateRole,
-    getGifts
-  ]);
+router.route('/admin/gifts').get([authenticateJwt, authenticateRole, getGifts]);
 
-router.route('/admin/gifts/:giftId')
-  .delete([
-    authenticateJwt,
-    authenticateRole,
-    deleteGift
-  ]);
+router
+  .route('/admin/gifts/:giftId')
+  .delete([authenticateJwt, authenticateRole, deleteGift]);
 
-router.route('/admin/mailing-list-subscription')
-  .post([
-    authenticateJwt,
-    authenticateRole,
-    createMailingListSubscription
-  ]);
+router
+  .route('/admin/mailing-list-subscription')
+  .post([authenticateJwt, authenticateRole, createMailingListSubscription]);
 
-router.route('/admin/mailing-list-subscription/:emailAddress')
-  .delete([
-    authenticateJwt,
-    authenticateRole,
-    removeMailingListSubscription
-  ])
-  .patch([
-    authenticateJwt,
-    authenticateRole,
-    updateMailingListSubscription
-  ])
+router
+  .route('/admin/mailing-list-subscription/:emailAddress')
+  .delete([authenticateJwt, authenticateRole, removeMailingListSubscription])
+  .patch([authenticateJwt, authenticateRole, updateMailingListSubscription]);
 
-router.route('/admin/users')
-  .get([
-    authenticateJwt,
-    authenticateRole,
-    getUsers
-  ]);
+router.route('/admin/users').get([authenticateJwt, authenticateRole, getUsers]);
 
-router.route('/admin/users/:userId')
-  .delete([
-    authenticateJwt,
-    authenticateRole,
-    deleteUser
-  ]);
+router
+  .route('/admin/users/:userId')
+  .delete([authenticateJwt, authenticateRole, deleteUser]);
 
 module.exports = router;

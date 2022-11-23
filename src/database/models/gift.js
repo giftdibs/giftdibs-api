@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 
 const {
-  ConfirmUserOwnershipPlugin
+  ConfirmUserOwnershipPlugin,
 } = require('../plugins/confirm-user-ownership');
 
 const {
-  MongoDbErrorHandlerPlugin
+  MongoDbErrorHandlerPlugin,
 } = require('../plugins/mongodb-error-handler');
 
 const {
@@ -16,94 +16,77 @@ const {
   DibValidationError,
   GiftNotFoundError,
   GiftPermissionError,
-  GiftValidationError
+  GiftValidationError,
 } = require('../../shared/errors');
 
-const {
-  updateDocument
-} = require('../utils/update-document');
+const { updateDocument } = require('../utils/update-document');
 
-const {
-  externalUrlSchema
-} = require('./external-url');
+const { externalUrlSchema } = require('./external-url');
 
-const {
-  commentSchema
-} = require('./comment');
+const { commentSchema } = require('./comment');
 
-const {
-  dibSchema
-} = require('./dib');
+const { dibSchema } = require('./dib');
 
 const Schema = mongoose.Schema;
-const giftSchema = new Schema({
-  _user: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'User',
-    required: [
-      true,
-      'A user ID must be provided.'
-    ]
+const giftSchema = new Schema(
+  {
+    _user: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'User',
+      required: [true, 'A user ID must be provided.'],
+    },
+    _wishList: {
+      ref: 'WishList',
+      type: mongoose.SchemaTypes.ObjectId,
+    },
+    budget: {
+      type: Number,
+      min: [0, "The gift's budget must greater than zero."],
+      max: [
+        1000000000000,
+        "The gift's budget must be less than 1,000,000,000,000.",
+      ],
+    },
+    comments: [commentSchema],
+    dateReceived: Date,
+    dibs: [dibSchema],
+    externalUrls: [externalUrlSchema],
+    imageUrl: String,
+    name: {
+      type: String,
+      required: [true, 'Please provide a gift name.'],
+      trim: true,
+      maxlength: [250, "The gift's name cannot be longer than 250 characters."],
+    },
+    notes: {
+      type: String,
+      trim: true,
+      maxlength: [2000, 'Notes cannot be longer than 2000 characters.'],
+    },
+    quantity: {
+      type: Number,
+      min: [1, "The gift's quantity must be greater than zero."],
+      max: [
+        1000000000000,
+        "The gift's quantity must be less than 1,000,000,000,000.",
+      ],
+      default: 1,
+    },
+    priority: {
+      type: Number,
+      min: [1, "The gift's priority must be greater than zero."],
+      max: [5, "The gift's priority must be less than or equal to 5."],
+      default: 3,
+    },
   },
-  _wishList: {
-    ref: 'WishList',
-    type: mongoose.SchemaTypes.ObjectId
-  },
-  budget: {
-    type: Number,
-    min: [0, 'The gift\'s budget must greater than zero.'],
-    max: [
-      1000000000000,
-      'The gift\'s budget must be less than 1,000,000,000,000.'
-    ]
-  },
-  comments: [
-    commentSchema
-  ],
-  dateReceived: Date,
-  dibs: [
-    dibSchema
-  ],
-  externalUrls: [
-    externalUrlSchema
-  ],
-  imageUrl: String,
-  name: {
-    type: String,
-    required: [true, 'Please provide a gift name.'],
-    trim: true,
-    maxlength: [250, 'The gift\'s name cannot be longer than 250 characters.']
-  },
-  notes: {
-    type: String,
-    trim: true,
-    maxlength: [
-      2000,
-      'Notes cannot be longer than 2000 characters.'
-    ]
-  },
-  quantity: {
-    type: Number,
-    min: [1, 'The gift\'s quantity must be greater than zero.'],
-    max: [
-      1000000000000,
-      'The gift\'s quantity must be less than 1,000,000,000,000.'
-    ],
-    default: 1
-  },
-  priority: {
-    type: Number,
-    min: [1, 'The gift\'s priority must be greater than zero.'],
-    max: [5, 'The gift\'s priority must be less than or equal to 5.'],
-    default: 3
+  {
+    collection: 'gift',
+    timestamps: {
+      createdAt: 'dateCreated',
+      updatedAt: 'dateUpdated',
+    },
   }
-}, {
-  collection: 'gift',
-  timestamps: {
-    createdAt: 'dateCreated',
-    updatedAt: 'dateUpdated'
-  }
-});
+);
 
 // #region dibs
 function validateDibQuantity(gift, quantity = 1, dibId) {
@@ -122,13 +105,15 @@ function validateDibQuantity(gift, quantity = 1, dibId) {
     if (totalDibs > gift.quantity) {
       const err = new DibValidationError();
 
-      err.errors = [{
-        message: [
-          'Dib quantity is more than are available.',
-          'Please choose a smaller amount.'
-        ].join(' '),
-        field: 'quantity'
-      }];
+      err.errors = [
+        {
+          message: [
+            'Dib quantity is more than are available.',
+            'Please choose a smaller amount.',
+          ].join(' '),
+          field: 'quantity',
+        },
+      ];
 
       reject(err);
       return;
@@ -141,10 +126,7 @@ function validateDibQuantity(gift, quantity = 1, dibId) {
 // Do not update the date when modifying dibs.
 async function revertDateUpdated(giftId, dateUpdated) {
   // Running the update command from the model does not trigger plugins.
-  await Gift.update(
-    { _id: giftId },
-    { dateUpdated: dateUpdated }
-  );
+  await Gift.update({ _id: giftId }, { dateUpdated: dateUpdated });
 }
 
 function confirmDibUserOwnershipSync(gift, dibId, userId) {
@@ -162,20 +144,16 @@ function confirmDibUserOwnershipSync(gift, dibId, userId) {
 }
 
 async function createDib(giftId, attributes, userId) {
-  const {
-    WishList
-  } = require('./wish-list');
+  const { WishList } = require('./wish-list');
 
-  const gifts = await Gift.find({ '_id': giftId }).limit(1);
+  const gifts = await Gift.find({ _id: giftId }).limit(1);
   const gift = gifts[0];
   if (!gift) {
     throw new GiftNotFoundError();
   }
 
   if (gift._user.toString() === userId.toString()) {
-    throw new DibValidationError(
-      'You cannot dib your own gift.'
-    );
+    throw new DibValidationError('You cannot dib your own gift.');
   }
 
   if (gift.dateReceived) {
@@ -185,19 +163,17 @@ async function createDib(giftId, attributes, userId) {
   }
 
   const foundDib = gift.dibs.find((dib) => {
-    return (dib._user.toString() === userId.toString());
+    return dib._user.toString() === userId.toString();
   });
 
   if (foundDib) {
-    throw new DibValidationError(
-      'You have already dibbed that gift.'
-    );
+    throw new DibValidationError('You have already dibbed that gift.');
   }
 
   await validateDibQuantity(gift, attributes.quantity);
 
   const wishLists = await WishList.findAuthorized(userId, {
-    '_id': gift._wishList
+    _id: gift._wishList,
   })
     .limit(1)
     .select('_id');
@@ -213,7 +189,7 @@ async function createDib(giftId, attributes, userId) {
   gift.dibs.push({
     _user: userId,
     isAnonymous: attributes.isAnonymous,
-    quantity: attributes.quantity
+    quantity: attributes.quantity,
   });
 
   const oldDateUpdated = gift.dateUpdated;
@@ -231,15 +207,10 @@ async function markDibAsDelivered(dibId, user) {
   const userId = user._id;
 
   const gifts = await this.find({
-    'dibs._id': dibId
+    'dibs._id': dibId,
   })
     .limit(1)
-    .select([
-      '_user',
-      'dibs',
-      'name',
-      'quantity'
-    ].join(' '))
+    .select(['_user', 'dibs', 'name', 'quantity'].join(' '))
     .populate('dibs._user', 'firstName lastName');
 
   const gift = gifts[0];
@@ -280,17 +251,15 @@ async function markDibAsDelivered(dibId, user) {
     return;
   }
 
-  const {
-    Notification
-  } = require('./notification');
+  const { Notification } = require('./notification');
 
   const dibs = gift.dibs.map((dib) => {
     const result = {
       user: {
         firstName: '',
-        lastName: ''
+        lastName: '',
       },
-      isAnonymous: !!dib.isAnonymous
+      isAnonymous: !!dib.isAnonymous,
     };
 
     if (!dib.isAnonymous) {
@@ -302,17 +271,11 @@ async function markDibAsDelivered(dibId, user) {
     return result;
   });
 
-  await Notification.notifyGiftDelivered(
-    gift._user,
-    user,
-    gift,
-    dibs
-  );
+  await Notification.notifyGiftDelivered(gift._user, user, gift, dibs);
 }
 
 async function updateDibById(dibId, userId, attributes) {
-  const gifts = await this.find({ 'dibs._id': dibId })
-    .limit(1);
+  const gifts = await this.find({ 'dibs._id': dibId }).limit(1);
 
   const gift = gifts[0];
 
@@ -348,8 +311,7 @@ async function updateDibById(dibId, userId, attributes) {
 }
 
 async function removeDibById(dibId, userId) {
-  const gifts = await this.find({ 'dibs._id': dibId })
-    .limit(1);
+  const gifts = await this.find({ 'dibs._id': dibId }).limit(1);
 
   const gift = gifts[0];
   const dib = confirmDibUserOwnershipSync(gift, dibId, userId);
@@ -365,12 +327,10 @@ async function removeDibById(dibId, userId) {
 
 // #region comments
 async function getCommentById(commentId, userId) {
-  const {
-    WishList
-  } = require('./wish-list');
+  const { WishList } = require('./wish-list');
 
   const gifts = await this.find({
-    'comments._id': commentId
+    'comments._id': commentId,
   })
     .limit(1)
     .select('_wishList comments')
@@ -385,7 +345,7 @@ async function getCommentById(commentId, userId) {
 
   // Verify user has permission to comment.
   const wishLists = await WishList.findAuthorized(userId, {
-    '_id': gift._wishList
+    _id: gift._wishList,
   })
     .limit(1)
     .select('_id');
@@ -397,7 +357,7 @@ async function getCommentById(commentId, userId) {
   }
 
   const comment = gift.comments.find((c) => {
-    return (c._id.toString() === commentId);
+    return c._id.toString() === commentId;
   });
 
   return comment;
@@ -406,15 +366,11 @@ async function getCommentById(commentId, userId) {
 async function createComment(giftId, attributes, user) {
   const userId = user._id;
 
-  const {
-    Notification
-  } = require('./notification');
+  const { Notification } = require('./notification');
 
-  const {
-    WishList
-  } = require('./wish-list');
+  const { WishList } = require('./wish-list');
 
-  const gifts = await this.find({ '_id': giftId }).limit(1);
+  const gifts = await this.find({ _id: giftId }).limit(1);
   const gift = gifts[0];
 
   if (!gift) {
@@ -423,7 +379,7 @@ async function createComment(giftId, attributes, user) {
 
   // Verify user has permission to comment.
   const wishLists = await WishList.findAuthorized(userId, {
-    '_id': gift._wishList
+    _id: gift._wishList,
   })
     .limit(1)
     .select('_id _user');
@@ -436,7 +392,7 @@ async function createComment(giftId, attributes, user) {
 
   gift.comments.push({
     _user: userId,
-    body: attributes.body
+    body: attributes.body,
   });
 
   const doc = await gift.save();
@@ -451,20 +407,12 @@ async function createComment(giftId, attributes, user) {
 
   // Remove ID if it belongs to the commentor, or gift owner.
   userIds = userIds.filter((uId) => {
-    return (
-      uId !== userId.toString() &&
-      uId !== ownerId
-    );
+    return uId !== userId.toString() && uId !== ownerId;
   });
 
   // Send a notification to each user.
   const promises = userIds.map((uId) => {
-    return Notification.notifyGiftCommentAlso(
-      uId,
-      user,
-      gift,
-      comment
-    );
+    return Notification.notifyGiftCommentAlso(uId, user, gift, comment);
   });
 
   await Promise.all(promises);
@@ -472,12 +420,7 @@ async function createComment(giftId, attributes, user) {
   // Owner of gift always receives a standard notification
   // when someone comments on their gift.
   if (ownerId !== userId.toString()) {
-    await Notification.notifyGiftComment(
-      wishList._user,
-      user,
-      gift,
-      comment
-    );
+    await Notification.notifyGiftComment(wishList._user, user, gift, comment);
   }
 
   return comment._id;
@@ -527,7 +470,7 @@ giftSchema.methods.updateSync = function (values) {
     'name',
     'notes',
     'priority',
-    'quantity'
+    'quantity',
   ];
 
   if (!values.quantity) {
@@ -568,8 +511,8 @@ giftSchema.plugin(ConfirmUserOwnershipPlugin, {
   errors: {
     validation: new GiftValidationError('Please provide a gift ID.'),
     notFound: new GiftNotFoundError(),
-    permission: new GiftPermissionError()
-  }
+    permission: new GiftPermissionError(),
+  },
 });
 
 giftSchema.post('remove', function (gift, next) {
@@ -579,7 +522,8 @@ giftSchema.post('remove', function (gift, next) {
     const fragments = gift.imageUrl.split('/');
     const fileName = fragments[fragments.length - 1];
 
-    fileHandler.remove(fileName)
+    fileHandler
+      .remove(fileName)
       .then(() => next())
       .catch(next);
 
@@ -594,5 +538,5 @@ const Gift = mongoose.model('Gift', giftSchema);
 module.exports = {
   // TODO: Remove the schema from exports!
   giftSchema,
-  Gift
+  Gift,
 };

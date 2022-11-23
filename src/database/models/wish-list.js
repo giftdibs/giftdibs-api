@@ -3,86 +3,79 @@ const mongoose = require('mongoose');
 const {
   WishListNotFoundError,
   WishListPermissionError,
-  WishListValidationError
+  WishListValidationError,
 } = require('../../shared/errors');
 
 const {
-  ConfirmUserOwnershipPlugin
+  ConfirmUserOwnershipPlugin,
 } = require('../plugins/confirm-user-ownership');
 
 const {
-  MongoDbErrorHandlerPlugin
+  MongoDbErrorHandlerPlugin,
 } = require('../plugins/mongodb-error-handler');
 
-const {
-  updateDocument
-} = require('../utils/update-document');
+const { updateDocument } = require('../utils/update-document');
 
-const {
-  giftSchema
-} = require('./gift');
+const { giftSchema } = require('./gift');
 
 const Schema = mongoose.Schema;
-const wishListSchema = new Schema({
-  _user: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'User',
-    required: [
-      true,
-      'A user ID must be provided.'
-    ]
-  },
-  description: {
-    type: String,
-    trim: true,
-    maxlength: [
-      2000,
-      'The description cannot be longer than 2000 characters.'
-    ]
-  },
-  // TODO: Remove this array. Legacy.
-  gifts: [
-    giftSchema
-  ],
-  isArchived: {
-    type: Boolean,
-    default: false
-  },
-  name: {
-    type: String,
-    required: [
-      true,
-      'Please provide a wish list name.'
-    ],
-    trim: true,
-    maxlength: [
-      100,
-      'The wish list\'s name cannot be longer than 100 characters.'
-    ]
-  },
-  privacy: {
-    _allow: [{
+const wishListSchema = new Schema(
+  {
+    _user: {
       type: mongoose.SchemaTypes.ObjectId,
-      ref: 'User'
-    }],
+      ref: 'User',
+      required: [true, 'A user ID must be provided.'],
+    },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: [
+        2000,
+        'The description cannot be longer than 2000 characters.',
+      ],
+    },
+    // TODO: Remove this array. Legacy.
+    gifts: [giftSchema],
+    isArchived: {
+      type: Boolean,
+      default: false,
+    },
+    name: {
+      type: String,
+      required: [true, 'Please provide a wish list name.'],
+      trim: true,
+      maxlength: [
+        100,
+        "The wish list's name cannot be longer than 100 characters.",
+      ],
+    },
+    privacy: {
+      _allow: [
+        {
+          type: mongoose.SchemaTypes.ObjectId,
+          ref: 'User',
+        },
+      ],
+      type: {
+        type: String,
+        enum: ['everyone', 'me', 'custom'],
+        default: 'everyone',
+      },
+    },
     type: {
       type: String,
-      enum: ['everyone', 'me', 'custom'],
-      default: 'everyone'
-    }
+      enum: ['wish-list', 'registry'],
+      default: 'wish-list',
+    },
   },
-  type: {
-    type: String,
-    enum: ['wish-list', 'registry'],
-    default: 'wish-list'
+  {
+    collection: 'wishlist',
+    timestamps: {
+      createdAt: 'dateCreated',
+      updatedAt: 'dateUpdated',
+    },
   }
-}, {
-  collection: 'wishlist',
-  timestamps: {
-    createdAt: 'dateCreated',
-    updatedAt: 'dateUpdated'
-  }
-});
+);
 
 /**
  * Returns a query that specifically looks for wish lists
@@ -99,10 +92,10 @@ function getAuthorizedQuery(userId, query = {}) {
         $or: [
           { _user: userId },
           { 'privacy.type': 'everyone' },
-          { 'privacy._allow': userId }
-        ]
-      }
-    ]
+          { 'privacy._allow': userId },
+        ],
+      },
+    ],
   };
 
   return combined;
@@ -124,13 +117,10 @@ async function getAuthorizedFriendsQuery(userId) {
   friendIds.push(userId);
 
   const query = {
-    $or: [
-      { isArchived: { $exists: false } },
-      { isArchived: false }
-    ],
-    '_user': {
-      $in: friendIds
-    }
+    $or: [{ isArchived: { $exists: false } }, { isArchived: false }],
+    _user: {
+      $in: friendIds,
+    },
   };
 
   return query;
@@ -143,13 +133,7 @@ function findAuthorized(userId, query = {}) {
 }
 
 function updateSync(values) {
-  const fields = [
-    'description',
-    'isArchived',
-    'name',
-    'privacy',
-    'type'
-  ];
+  const fields = ['description', 'isArchived', 'name', 'privacy', 'type'];
 
   // TODO: If owner changes privacy of wish list,
   // remove dibs of people that no longer have permission!
@@ -160,34 +144,29 @@ function updateSync(values) {
   return this;
 }
 
-wishListSchema.statics.getAuthorizedFriendsQuery =
-  getAuthorizedFriendsQuery;
+wishListSchema.statics.getAuthorizedFriendsQuery = getAuthorizedFriendsQuery;
 
-wishListSchema.statics.findAuthorized =
-  findAuthorized;
+wishListSchema.statics.findAuthorized = findAuthorized;
 
-wishListSchema.methods.updateSync =
-  updateSync;
+wishListSchema.methods.updateSync = updateSync;
 
 wishListSchema.plugin(MongoDbErrorHandlerPlugin);
 wishListSchema.plugin(ConfirmUserOwnershipPlugin, {
   errors: {
     validation: new WishListValidationError('Please provide a wish list ID.'),
     notFound: new WishListNotFoundError(),
-    permission: new WishListPermissionError()
-  }
+    permission: new WishListPermissionError(),
+  },
 });
 
 wishListSchema.post('remove', function (wishList, next) {
   const { Gift } = require('./gift');
 
   Gift.find({
-    '_wishList': wishList._id
+    _wishList: wishList._id,
   })
     .then((gifts) => {
-      return Promise.all(
-        gifts.map((gift) => gift.remove())
-      );
+      return Promise.all(gifts.map((gift) => gift.remove()));
     })
     .then(() => next())
     .catch(next);
@@ -196,5 +175,5 @@ wishListSchema.post('remove', function (wishList, next) {
 const WishList = mongoose.model('WishList', wishListSchema);
 
 module.exports = {
-  WishList
+  WishList,
 };

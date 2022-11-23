@@ -1,12 +1,8 @@
-const {
-  Gift
-} = require('../../database/models/gift');
+const { Gift } = require('../../database/models/gift');
 
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  handleError
-} = require('./shared');
+const { handleError } = require('./shared');
 
 async function deleteComment(req, res, next) {
   const commentId = req.params.commentId;
@@ -16,7 +12,7 @@ async function deleteComment(req, res, next) {
     await Gift.removeCommentById(commentId, userId);
 
     authResponse({
-      message: 'Comment successfully removed.'
+      message: 'Comment successfully removed.',
     })(req, res, next);
   } catch (err) {
     handleError(err, next);
@@ -24,5 +20,5 @@ async function deleteComment(req, res, next) {
 }
 
 module.exports = {
-  deleteComment
+  deleteComment,
 };

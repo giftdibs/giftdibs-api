@@ -1,20 +1,14 @@
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  formatGiftResponse
-} = require('./shared');
+const { formatGiftResponse } = require('./shared');
 
-const {
-  Gift
-} = require('../../database/models/gift');
+const { Gift } = require('../../database/models/gift');
 
-const {
-  WishList
-} = require('../../database/models/wish-list');
+const { WishList } = require('../../database/models/wish-list');
 
 const {
   GiftNotFoundError,
-  WishListNotFoundError
+  WishListNotFoundError,
 } = require('../../shared/errors');
 
 async function getGift(req, res, next) {
@@ -23,25 +17,27 @@ async function getGift(req, res, next) {
 
   try {
     const gifts = await Gift.find({
-      _id: giftId
+      _id: giftId,
     })
       .limit(1)
-      .select([
-        '_user',
-        '_wishList',
-        'budget',
-        'comments',
-        'dateCreated',
-        'dateReceived',
-        'dateUpdated',
-        'dibs',
-        'externalUrls',
-        'imageUrl',
-        'name',
-        'notes',
-        'priority',
-        'quantity'
-      ].join(' '))
+      .select(
+        [
+          '_user',
+          '_wishList',
+          'budget',
+          'comments',
+          'dateCreated',
+          'dateReceived',
+          'dateUpdated',
+          'dibs',
+          'externalUrls',
+          'imageUrl',
+          'name',
+          'notes',
+          'priority',
+          'quantity',
+        ].join(' ')
+      )
       .populate('_user', 'avatarUrl firstName lastName')
       .populate('_wishList', 'name')
       .populate('comments._user', 'avatarUrl firstName lastName')
@@ -51,14 +47,14 @@ async function getGift(req, res, next) {
     const gift = gifts[0];
 
     if (!gift) {
-      next(new GiftNotFoundError())
+      next(new GiftNotFoundError());
       return;
     }
 
     const wishListId = gift._wishList;
 
     const wishLists = await WishList.findAuthorized(userId, {
-      _id: wishListId
+      _id: wishListId,
     })
       .limit(1)
       .select('name type')
@@ -73,7 +69,7 @@ async function getGift(req, res, next) {
     const formatted = formatGiftResponse(gift, wishList, userId);
 
     authResponse({
-      data: { gift: formatted }
+      data: { gift: formatted },
     })(req, res, next);
   } catch (err) {
     next(err);
@@ -87,48 +83,48 @@ async function getGifts(req, res, next) {
 
   try {
     const query = await WishList.getAuthorizedFriendsQuery(userId);
-    const wishLists = await WishList.find(query)
-      .select('_id')
-      .lean();
+    const wishLists = await WishList.find(query).select('_id').lean();
 
     const wishListIds = wishLists.map((wl) => wl._id);
 
     // TODO: Figure out a better way to do pagination (skip does not scale):
     // https://stackoverflow.com/questions/5539955/how-to-paginate-with-mongoose-in-node-js
     const gifts = await Gift.find({
-      '_wishList': {
-        $in: wishListIds
+      _wishList: {
+        $in: wishListIds,
       },
       dateReceived: { $exists: false },
       $or: [
         {
           quantity: 1,
-          'dibs.dateDelivered': { $exists: false }
+          'dibs.dateDelivered': { $exists: false },
         },
         {
           // Always show multiple dibbed gifts.
           // TODO: Figure out how to filter out multi-dib delivered gifts.
-          quantity: { $gt: 1 }
-        }
-      ]
+          quantity: { $gt: 1 },
+        },
+      ],
     })
       .skip(start)
       .limit(max)
-      .select([
-        '_user',
-        '_wishList',
-        'dateReceived',
-        'dateUpdated',
-        'dibs._id',
-        'dibs._user',
-        'dibs.dateDelivered',
-        'dibs.quantity',
-        'budget',
-        'imageUrl',
-        'name',
-        'priority',
-        'quantity'
-      ].join(' '))
+      .select(
+        [
+          '_user',
+          '_wishList',
+          'dateReceived',
+          'dateUpdated',
+          'dibs._id',
+          'dibs._user',
+          'dibs.dateDelivered',
+          'dibs.quantity',
+          'budget',
+          'imageUrl',
+          'name',
+          'priority',
+          'quantity',
+        ].join(' ')
+      )
       .populate('_user', 'avatarUrl firstName lastName')
       .populate('_wishList', 'name type')
       .populate('dibs._user', 'firstName lastName')
@@ -140,7 +136,7 @@ async function getGifts(req, res, next) {
     });
 
     authResponse({
-      data: { gifts: formatted }
+      data: { gifts: formatted },
     })(req, res, next);
   } catch (err) {
     next(err);
@@ -149,5 +145,5 @@ async function getGifts(req, res, next) {
 
 module.exports = {
   getGift,
-  getGifts
+  getGifts,
 };

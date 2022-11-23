@@ -12,13 +12,11 @@ const routers = [
   require('./products'),
   require('./users'),
   require('./wish-lists'),
-  require('./assets')
+  require('./assets'),
 ];
 
 if (env.get('NODE_ENV') === 'development') {
-  routers.push(
-    require('./admin')
-  );
+  routers.push(require('./admin'));
 }
 
 module.exports = routers;

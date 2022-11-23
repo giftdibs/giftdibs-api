@@ -1,6 +1,4 @@
-const {
-  NotificationValidationError
-} = require('../../shared/errors');
+const { NotificationValidationError } = require('../../shared/errors');
 
 function formatNotificationResponse(notification) {
   const clone = { ...notification };
@@ -33,5 +31,5 @@ function handleError(err, next) {
 
 module.exports = {
   formatNotificationResponse,
-  handleError
+  handleError,
 };

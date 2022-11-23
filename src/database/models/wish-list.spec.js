@@ -11,7 +11,7 @@ describe('WishList schema', () => {
   beforeEach(() => {
     _wishListDefinition = {
       _user: mongoose.Types.ObjectId(),
-      name: 'Foo'
+      name: 'Foo',
     };
     updateDocumentUtil = mock.reRequire('../utils/update-document');
     spyOn(updateDocumentUtil, 'updateDocument').and.returnValue();
@@ -73,7 +73,7 @@ describe('WishList schema', () => {
 
     it('should beautify native mongo errors', () => {
       let found = WishList.schema.plugins.filter((plugin) => {
-        return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
+        return plugin.fn.name === 'MongoDbErrorHandlerPlugin';
       })[0];
       expect(found).toBeDefined();
     });

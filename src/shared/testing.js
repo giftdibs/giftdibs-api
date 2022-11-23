@@ -37,16 +37,16 @@ function assignFind(model) {
       return {
         in() {
           return {
-            populate
-          }
-        }
+            populate,
+          };
+        },
       };
     };
 
     const select = (fields) => {
       model.selectedFields = fields;
       return {
-        lean
+        lean,
       };
     };
 
@@ -58,9 +58,9 @@ function assignFind(model) {
       lean,
       populate,
       select,
-      where
+      where,
     };
-  }
+  };
 }
 
 function assignReset(Model) {
@@ -71,19 +71,16 @@ function assignReset(Model) {
       constructorDefinition: {},
       find: {
         returnWith() {
-          return Promise.resolve([
-            new Model(),
-            new Model()
-          ]);
-        }
+          return Promise.resolve([new Model(), new Model()]);
+        },
       },
       save: {
         returnWith() {
           return Promise.resolve(Model.lastTouched);
-        }
-      }
+        },
+      },
     };
-  }
+  };
 }
 
 function assignConfirmUserOwnership(Model) {
@@ -110,8 +107,8 @@ class MockWishList extends MockDocument {
 
     const defaults = {
       _user: {
-        _id: mongoose.Types.ObjectId()
-      }
+        _id: mongoose.Types.ObjectId(),
+      },
     };
 
     Object.assign(
@@ -124,14 +121,17 @@ class MockWishList extends MockDocument {
     this.gifts = this.gifts || [];
 
     this.gifts.create = (giftDefinition) => {
-      return Object.assign({
-        _id: new mongoose.Types.ObjectId()
-      }, giftDefinition);
+      return Object.assign(
+        {
+          _id: new mongoose.Types.ObjectId(),
+        },
+        giftDefinition
+      );
     };
 
     this.gifts.id = (id) => {
       const found = this.gifts.find((gift) => {
-        return (gift._id === id);
+        return gift._id === id;
       });
 
       return found;
@@ -246,14 +246,18 @@ class MockUser extends MockDocument {
 }
 
 function MockRequest(options = {}) {
-  return Object.assign({}, {
-    body: {},
-    params: {},
-    query: {},
-    user: {
-      _id: mongoose.Types.ObjectId()
-    }
-  }, options);
+  return Object.assign(
+    {},
+    {
+      body: {},
+      params: {},
+      query: {},
+      user: {
+        _id: mongoose.Types.ObjectId(),
+      },
+    },
+    options
+  );
 }
 
 function MockResponse() {
@@ -295,5 +299,5 @@ module.exports = {
   MockExternalUrl,
   MockUser,
   MockRequest,
-  MockResponse
+  MockResponse,
 };

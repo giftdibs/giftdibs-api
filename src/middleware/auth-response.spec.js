@@ -14,14 +14,14 @@ describe('Auth response middleware', () => {
     const middleware = mock.reRequire('./auth-response');
     const req = {
       user: {
-        _id: 0
-      }
+        _id: 0,
+      },
     };
     const res = {
       json: (obj) => {
         expect(obj.authResponse.token).toEqual('token');
         expect(obj.authResponse.user).toBeDefined();
-      }
+      },
     };
     const next = () => {};
 
@@ -39,27 +39,34 @@ describe('Auth response middleware', () => {
 
     const middleware = mock.reRequire('./auth-response');
     const req = {
-      user: { _id: 0 }
+      user: { _id: 0 },
     };
     const res = {
-      json: () => {}
+      json: () => {},
     };
     const next = () => {};
 
     middleware()(req, res, next);
   });
 
-  it([
-    'should not attach auth information to the response',
-    'if the session user does not exist'
-  ].join(' '), () => {
-    const middleware = mock.reRequire('./auth-response');
-    const req = {};
-    const next = () => {};
-    middleware()(req, {
-      json: (obj) => {
-        expect(obj.authResponse).toBeUndefined();
-      }
-    }, next);
-  });
+  it(
+    [
+      'should not attach auth information to the response',
+      'if the session user does not exist',
+    ].join(' '),
+    () => {
+      const middleware = mock.reRequire('./auth-response');
+      const req = {};
+      const next = () => {};
+      middleware()(
+        req,
+        {
+          json: (obj) => {
+            expect(obj.authResponse).toBeUndefined();
+          },
+        },
+        next
+      );
+    }
+  );
 });

@@ -12,13 +12,9 @@ module.exports = (data) => {
 
     const payload = { id: req.user._id };
 
-    const token = jwt.sign(
-      payload,
-      env.get('JWT_SECRET'),
-      {
-        expiresIn: '2h'
-      }
-    );
+    const token = jwt.sign(payload, env.get('JWT_SECRET'), {
+      expiresIn: '2h',
+    });
 
     response.authResponse = {};
     response.authResponse.token = token;
@@ -29,7 +25,7 @@ module.exports = (data) => {
       firstName: req.user.firstName,
       lastName: req.user.lastName,
       emailAddress: req.user.emailAddress,
-      emailAddressVerified: req.user.emailAddressVerified
+      emailAddressVerified: req.user.emailAddressVerified,
     };
 
     res.json(response);

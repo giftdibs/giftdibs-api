@@ -1,12 +1,8 @@
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  User
-} = require('../../database/models/user');
+const { User } = require('../../database/models/user');
 
-const {
-  WishList
-} = require('../../database/models/wish-list');
+const { WishList } = require('../../database/models/wish-list');
 
 const mailer = require('../../shared/mailer');
 
@@ -15,7 +11,7 @@ async function deleteUser(req, res, next) {
 
   try {
     const users = await User.find({
-      _id: userId
+      _id: userId,
     })
       .limit(1)
       .select('_id');
@@ -30,8 +26,8 @@ async function deleteUser(req, res, next) {
     await user.remove();
 
     authResponse({
-      data: { },
-      message: 'User successfully deleted.'
+      data: {},
+      message: 'User successfully deleted.',
     })(req, res, next);
   } catch (err) {
     next(err);
@@ -41,13 +37,13 @@ async function deleteUser(req, res, next) {
 async function getUsers(req, res, next) {
   try {
     const users = await User.find({})
-      .select('firstName lastName dateCreated dateLastLoggedIn emailAddress emailAddressVerified')
+      .select(
+        'firstName lastName dateCreated dateLastLoggedIn emailAddress emailAddressVerified'
+      )
       .sort('-dateLastLoggedIn')
       .lean();
 
-    const wishLists = await WishList.find({})
-      .select('_user name')
-      .lean();
+    const wishLists = await WishList.find({}).select('_user name').lean();
 
     const mailingListMembers = await mailer.getMailingListMembers();
 
@@ -56,7 +52,7 @@ async function getUsers(req, res, next) {
       let emailExistsOnMailingList = false;
 
       const mailingListMember = mailingListMembers.find((member) => {
-        return (member.address === user.emailAddress);
+        return member.address === user.emailAddress;
       });
 
       if (mailingListMember) {
@@ -74,21 +70,23 @@ async function getUsers(req, res, next) {
         dateCreated: user.dateCreated,
         dateLastLoggedIn: user.dateLastLoggedIn,
         isEmailSubscribedToMailingList,
-        wishLists: wishLists.filter((wishList) => {
-          return (wishList._user.toString() === user._id.toString());
-        }).map((wishList) => {
-          return {
-            id: wishList._id,
-            name: wishList.name
-          }
-        })
+        wishLists: wishLists
+          .filter((wishList) => {
+            return wishList._user.toString() === user._id.toString();
+          })
+          .map((wishList) => {
+            return {
+              id: wishList._id,
+              name: wishList.name,
+            };
+          }),
       };
     });
 
     authResponse({
       data: {
-        users: formatted
-      }
+        users: formatted,
+      },
     })(req, res, next);
   } catch (err) {
     next(err);
@@ -97,5 +95,5 @@ async function getUsers(req, res, next) {
 
 module.exports = {
   deleteUser,
-  getUsers
+  getUsers,
 };

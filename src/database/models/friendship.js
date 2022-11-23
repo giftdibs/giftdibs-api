@@ -1,51 +1,50 @@
 const mongoose = require('mongoose');
 
 const {
-  MongoDbErrorHandlerPlugin
+  MongoDbErrorHandlerPlugin,
 } = require('../plugins/mongodb-error-handler');
 
 const {
   FriendshipNotFoundError,
   FriendshipPermissionError,
-  FriendshipValidationError
+  FriendshipValidationError,
 } = require('../../shared/errors');
 
 const {
-  ConfirmUserOwnershipPlugin
+  ConfirmUserOwnershipPlugin,
 } = require('../plugins/confirm-user-ownership');
 
-const {
-  Notification
-} = require('./notification');
+const { Notification } = require('./notification');
 
 const Schema = mongoose.Schema;
-const friendshipSchema = new Schema({
-  _friend: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'User',
-    required: [true, 'A friend ID must be provided.']
+const friendshipSchema = new Schema(
+  {
+    _friend: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'User',
+      required: [true, 'A friend ID must be provided.'],
+    },
+    _user: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'User',
+      required: [true, 'A user ID must be provided.'],
+    },
   },
-  _user: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'User',
-    required: [true, 'A user ID must be provided.']
+  {
+    collection: 'friendship',
+    timestamps: {
+      createdAt: 'dateCreated',
+      updatedAt: 'dateUpdated',
+    },
   }
-}, {
-  collection: 'friendship',
-  timestamps: {
-    createdAt: 'dateCreated',
-    updatedAt: 'dateUpdated'
-  }
-});
+);
 
 friendshipSchema.statics.create = function (friendId, sessionUser) {
   const userId = sessionUser._id;
 
   if (userId.toString() === friendId) {
     return Promise.reject(
-      new FriendshipValidationError(
-        'You cannot follow yourself.'
-      )
+      new FriendshipValidationError('You cannot follow yourself.')
     );
   }
 
@@ -60,8 +59,8 @@ friendshipSchema.statics.create = function (friendId, sessionUser) {
   let _friendship;
 
   return this.find({
-    '_user': userId,
-    '_friend': friendId
+    _user: userId,
+    _friend: friendId,
   })
     .limit(1)
     .lean()
@@ -78,7 +77,7 @@ friendshipSchema.statics.create = function (friendId, sessionUser) {
 
       const friendship = new Friendship({
         _user: userId,
-        _friend: friendId
+        _friend: friendId,
       });
 
       return friendship.save();
@@ -93,33 +92,33 @@ friendshipSchema.statics.create = function (friendId, sessionUser) {
 friendshipSchema.statics.getFollowingByUserId = function (userId) {
   if (!userId) {
     return Promise.reject(
-      new FriendshipValidationError(
-        'Please provide a user ID.'
-      )
+      new FriendshipValidationError('Please provide a user ID.')
     );
   }
 
   return this.find({
-    '_user': userId
+    _user: userId,
   }).lean();
-}
+};
 
 friendshipSchema.statics.getAllByUserId = function (userId) {
   if (!userId) {
     return Promise.reject(
-      new FriendshipValidationError(
-        'Please provide a user ID.'
-      )
+      new FriendshipValidationError('Please provide a user ID.')
     );
   }
 
   return Promise.all([
-    this.find({ '_user': userId }).populate('_friend', 'firstName lastName avatarUrl').lean(), // following
-    this.find({ '_friend': userId }).populate('_user', 'firstName lastName avatarUrl').lean() // followers
+    this.find({ _user: userId })
+      .populate('_friend', 'firstName lastName avatarUrl')
+      .lean(), // following
+    this.find({ _friend: userId })
+      .populate('_user', 'firstName lastName avatarUrl')
+      .lean(), // followers
   ]).then((result) => {
     return {
       following: result[0].map((friendship) => friendship._friend),
-      followers: result[1].map((friendship) => friendship._user)
+      followers: result[1].map((friendship) => friendship._user),
     };
   });
 };
@@ -127,19 +126,21 @@ friendshipSchema.statics.getAllByUserId = function (userId) {
 friendshipSchema.statics.getSummaryByUserId = function (userId) {
   if (!userId) {
     return Promise.reject(
-      new FriendshipValidationError(
-        'Please provide a user ID.'
-      )
+      new FriendshipValidationError('Please provide a user ID.')
     );
   }
 
   return Promise.all([
-    this.find({ '_user': userId }).populate('_friend', 'firstName lastName avatarUrl').lean(), // following
-    this.find({ '_friend': userId }).populate('_user', 'firstName lastName avatarUrl').lean() // followers
+    this.find({ _user: userId })
+      .populate('_friend', 'firstName lastName avatarUrl')
+      .lean(), // following
+    this.find({ _friend: userId })
+      .populate('_user', 'firstName lastName avatarUrl')
+      .lean(), // followers
   ]).then((result) => {
     return {
       following: result[0].map((friendship) => friendship._friend),
-      followers: result[1].map((friendship) => friendship._user)
+      followers: result[1].map((friendship) => friendship._user),
     };
   });
 };
@@ -147,10 +148,12 @@ friendshipSchema.statics.getSummaryByUserId = function (userId) {
 friendshipSchema.plugin(MongoDbErrorHandlerPlugin);
 friendshipSchema.plugin(ConfirmUserOwnershipPlugin, {
   errors: {
-    validation: new FriendshipValidationError('Please provide a friendship ID.'),
+    validation: new FriendshipValidationError(
+      'Please provide a friendship ID.'
+    ),
     notFound: new FriendshipNotFoundError(),
-    permission: new FriendshipPermissionError()
-  }
+    permission: new FriendshipPermissionError(),
+  },
 });
 
 const Friendship = mongoose.model('Friendship', friendshipSchema);

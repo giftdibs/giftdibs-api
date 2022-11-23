@@ -1,12 +1,8 @@
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  handleError
-} = require('./shared');
+const { handleError } = require('./shared');
 
-const {
-  Gift
-} = require('../../database/models/gift');
+const { Gift } = require('../../database/models/gift');
 
 async function updateComment(req, res, next) {
   const commentId = req.params.commentId;
@@ -17,8 +13,8 @@ async function updateComment(req, res, next) {
     await Gift.updateCommentById(commentId, userId, attributes);
 
     authResponse({
-      data: { },
-      message: 'Comment successfully updated.'
+      data: {},
+      message: 'Comment successfully updated.',
     })(req, res, next);
   } catch (err) {
     handleError(err, next);
@@ -26,5 +22,5 @@ async function updateComment(req, res, next) {
 }
 
 module.exports = {
-  updateComment
+  updateComment,
 };

@@ -1,12 +1,8 @@
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  handleError
-} = require('./shared');
+const { handleError } = require('./shared');
 
-const {
-  Gift
-} = require('../../database/models/gift');
+const { Gift } = require('../../database/models/gift');
 
 async function updateDib(req, res, next) {
   const dibId = req.params.dibId;
@@ -17,8 +13,8 @@ async function updateDib(req, res, next) {
     await Gift.updateDibById(dibId, userId, attributes);
 
     authResponse({
-      data: { },
-      message: 'Dib successfully updated.'
+      data: {},
+      message: 'Dib successfully updated.',
     })(req, res, next);
   } catch (err) {
     handleError(err, next);
@@ -26,5 +22,5 @@ async function updateDib(req, res, next) {
 }
 
 module.exports = {
-  updateDib
+  updateDib,
 };

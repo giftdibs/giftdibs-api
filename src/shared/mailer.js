@@ -12,11 +12,13 @@ const mgInstance = new Mailgun(formData);
 const mgClient = mgInstance.client({
   username: 'api',
   key: MAILGUN_API_KEY,
-  public_key: MAILGUN_API_PUBLIC_KEY
+  public_key: MAILGUN_API_PUBLIC_KEY,
 });
 
 function getHtmlTemplate(contents, showUnsubscribe = false) {
-  const unsubscribe = (showUnsubscribe) ? `<a style="color:#888;" href="%mailing_list_unsubscribe_url%">Unsubscribe</a><br>` : '';
+  const unsubscribe = showUnsubscribe
+    ? `<a style="color:#888;" href="%mailing_list_unsubscribe_url%">Unsubscribe</a><br>`
+    : '';
 
   /* eslint-disable max-len */
   return `
@@ -60,7 +62,7 @@ function sendEmail(to, subject, html, showUnsubscribe) {
     from: `GiftDibs <${env.get('NO_REPLY_EMAIL_ADDRESS')}>`,
     to,
     subject,
-    html: getHtmlTemplate(html, showUnsubscribe)
+    html: getHtmlTemplate(html, showUnsubscribe),
   };
 
   return mgClient.messages.create(MAILGUN_DOMAIN, data).catch((error) => {
@@ -80,7 +82,7 @@ function sendPasswordResetEmail(emailAddress, resetPasswordToken) {
     'Reset password request',
     [
       'Please click the link below to reset your password.<br>',
-      `<a href="${href}">${href}</a>`
+      `<a href="${href}">${href}</a>`,
     ].join('')
   );
 }
@@ -89,7 +91,9 @@ function sendAccountVerificationEmail(
   emailAddress,
   emailAddressVerificationToken
 ) {
-  const href = `${env.get('VERIFY_ACCOUNT_URL')}/${emailAddressVerificationToken}`;
+  const href = `${env.get(
+    'VERIFY_ACCOUNT_URL'
+  )}/${emailAddressVerificationToken}`;
 
   console.log('VERIFY ACCOUNT:', href);
 
@@ -106,24 +110,22 @@ function sendFeedbackEmail(reason, body, referrer) {
   return sendEmail(
     env.get('ADMIN_EMAIL_ADDRESS'),
     'Feedback submitted',
-    [
-      `Reason: ${reason}<br>`,
-      `Referrer: ${referrer}<br><br>`,
-      `${body}`
-    ].join('')
+    [`Reason: ${reason}<br>`, `Referrer: ${referrer}<br><br>`, `${body}`].join(
+      ''
+    )
   );
 }
 
 async function addUserToMailingList(user) {
-  const isDevelopment = (env.get('NODE_ENV') === 'development');
+  const isDevelopment = env.get('NODE_ENV') === 'development';
 
   const member = {
     subscribed: true,
     address: user.emailAddress,
     name: user.firstName + ' ' + user.lastName,
     vars: {
-      userId: user.id
-    }
+      userId: user.id,
+    },
   };
 
   let isValid = false;
@@ -182,9 +184,7 @@ function sendUpdateEmail(subject, html) {
 }
 
 function getMailingListMembers() {
-  return mgClient.lists.members.listMembers(
-    MAILGUN_MAILING_LIST_UPDATES
-  );
+  return mgClient.lists.members.listMembers(MAILGUN_MAILING_LIST_UPDATES);
 }
 
 module.exports = {
@@ -196,5 +196,5 @@ module.exports = {
   sendFeedbackEmail,
   sendPasswordResetEmail,
   sendUpdateEmail,
-  updateMailingListMember
+  updateMailingListMember,
 };

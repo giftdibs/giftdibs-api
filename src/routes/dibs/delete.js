@@ -1,12 +1,8 @@
-const {
-  Gift
-} = require('../../database/models/gift');
+const { Gift } = require('../../database/models/gift');
 
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  handleError
-} = require('./shared');
+const { handleError } = require('./shared');
 
 async function deleteDib(req, res, next) {
   const dibId = req.params.dibId;
@@ -16,7 +12,7 @@ async function deleteDib(req, res, next) {
     await Gift.removeDibById(dibId, userId);
 
     authResponse({
-      message: 'Dib successfully removed.'
+      message: 'Dib successfully removed.',
     })(req, res, next);
   } catch (err) {
     handleError(err, next);
@@ -24,5 +20,5 @@ async function deleteDib(req, res, next) {
 }
 
 module.exports = {
-  deleteDib
+  deleteDib,
 };

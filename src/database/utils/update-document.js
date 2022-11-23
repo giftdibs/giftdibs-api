@@ -21,7 +21,7 @@ const updateSubDocuments = (doc, fields, values) => {
     const deleteIds = [];
     subdocs.forEach((subdoc) => {
       const found = formData.find((data) => {
-        return (subdoc._id.toString() === data._id);
+        return subdoc._id.toString() === data._id;
       });
 
       if (!found) {

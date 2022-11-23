@@ -10,7 +10,7 @@ describe('Comment schema', () => {
 
   beforeEach(() => {
     _definition = {
-      _user: new mongoose.Types.ObjectId()
+      _user: new mongoose.Types.ObjectId(),
     };
 
     updateDocumentUtil = mock.reRequire('../utils/update-document');
@@ -19,7 +19,10 @@ describe('Comment schema', () => {
     spyOn(console, 'log').and.returnValue();
 
     // Load up a mock model with the schema we wish to test:
-    MockComment = mongoose.model('MockComment', mock.reRequire('./comment').commentSchema);
+    MockComment = mongoose.model(
+      'MockComment',
+      mock.reRequire('./comment').commentSchema
+    );
   });
 
   afterEach(() => {
@@ -54,8 +57,9 @@ describe('Comment schema', () => {
     const err = comment.validateSync();
 
     expect(err.errors.body.properties.type).toEqual('maxlength');
-    expect(err.errors.body.message)
-      .toEqual('Comments cannot be longer than 2000 characters.');
+    expect(err.errors.body.message).toEqual(
+      'Comments cannot be longer than 2000 characters.'
+    );
   });
 
   it('should generate timestamps automatically', () => {
@@ -65,7 +69,7 @@ describe('Comment schema', () => {
 
   it('should beautify native mongo errors', () => {
     const found = MockComment.schema.plugins.filter((plugin) => {
-      return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
+      return plugin.fn.name === 'MongoDbErrorHandlerPlugin';
     })[0];
     expect(found).toBeDefined();
   });
@@ -78,9 +82,7 @@ describe('Comment schema', () => {
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       comment,
-      [
-        'body'
-      ],
+      ['body'],
       formData
     );
   });

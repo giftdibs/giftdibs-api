@@ -9,14 +9,14 @@ describe('App', () => {
         options: () => {},
         set: () => {},
         use: () => {},
-        port: () => {}
+        port: () => {},
       };
     });
 
     mock('passport', {
       use: () => {},
       initialize: () => {},
-      authenticate: () => {}
+      authenticate: () => {},
     });
 
     mock('./middleware/access-control', {});
@@ -27,7 +27,7 @@ describe('App', () => {
     mock('./strategies/jwt', {});
     mock('./strategies/local', {});
     mock('./database', {
-      connect: () => {}
+      connect: () => {},
     });
   });
 

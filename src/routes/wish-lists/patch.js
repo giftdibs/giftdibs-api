@@ -1,13 +1,8 @@
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  WishList
-} = require('../../database/models/wish-list');
+const { WishList } = require('../../database/models/wish-list');
 
-const {
-  handleError,
-  sanitizeRequestBody
-} = require('./shared');
+const { handleError, sanitizeRequestBody } = require('./shared');
 
 async function updateWishList(req, res, next) {
   const wishListId = req.params.wishListId;
@@ -15,18 +10,15 @@ async function updateWishList(req, res, next) {
   const attributes = sanitizeRequestBody(req.body);
 
   try {
-    const wishList = await WishList.confirmUserOwnership(
-      wishListId,
-      userId
-    );
+    const wishList = await WishList.confirmUserOwnership(wishListId, userId);
 
     wishList.updateSync(attributes);
 
     await wishList.save();
 
     authResponse({
-      data: { },
-      message: 'Wish list updated.'
+      data: {},
+      message: 'Wish list updated.',
     })(req, res, next);
   } catch (err) {
     handleError(err, next);
@@ -34,5 +26,5 @@ async function updateWishList(req, res, next) {
 }
 
 module.exports = {
-  updateWishList
+  updateWishList,
 };

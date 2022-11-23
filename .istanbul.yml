@@ -2,10 +2,7 @@ instrumentation:
   root: src
   include-all-sources: true
   verbose: true
-  excludes: [
-    '**/*.spec.js',
-    '**/testing.js'
-  ]
+  excludes: ['**/*.spec.js', '**/testing.js']
 reporting:
-    reports:
-      - html
+  reports:
+    - html

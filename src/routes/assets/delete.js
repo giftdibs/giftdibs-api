@@ -7,7 +7,7 @@ function deleteAvatar(req, res, next) {
 
   if (!avatarUrl) {
     authResponse({
-      message: 'No avatar to delete.'
+      message: 'No avatar to delete.',
     })(req, res, next);
     return;
   }
@@ -15,14 +15,15 @@ function deleteAvatar(req, res, next) {
   const fragments = avatarUrl.split('/');
   const fileName = fragments[fragments.length - 1];
 
-  fileHandler.remove(fileName)
+  fileHandler
+    .remove(fileName)
     .then(() => {
       req.user.avatarUrl = undefined;
       return req.user.save();
     })
     .then(() => {
       authResponse({
-        message: 'Avatar successfully removed.'
+        message: 'Avatar successfully removed.',
       })(req, res, next);
     })
     .catch(next);
@@ -33,15 +34,11 @@ async function deleteGiftThumbnail(req, res, next) {
   const userId = req.user._id;
 
   if (!giftId) {
-    next(new Error(
-      'Please provide a gift ID.'
-    ));
+    next(new Error('Please provide a gift ID.'));
     return;
   }
 
-  const {
-    Gift
-  } = require('../../database/models/gift');
+  const { Gift } = require('../../database/models/gift');
 
   try {
     const gift = await Gift.confirmUserOwnership(giftId, userId);
@@ -57,7 +54,7 @@ async function deleteGiftThumbnail(req, res, next) {
     }
 
     authResponse({
-      message: 'Thumbnail successfully removed.'
+      message: 'Thumbnail successfully removed.',
     })(req, res, next);
   } catch (err) {
     next(err);
@@ -66,5 +63,5 @@ async function deleteGiftThumbnail(req, res, next) {
 
 module.exports = {
   deleteAvatar,
-  deleteGiftThumbnail
+  deleteGiftThumbnail,
 };

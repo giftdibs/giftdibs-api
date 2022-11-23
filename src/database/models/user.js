@@ -2,29 +2,25 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const randomstring = require('randomstring');
 
-const {
-  isEmail
-} = require('validator');
+const { isEmail } = require('validator');
 
-const {
-  updateDocument
-} = require('../utils/update-document');
+const { updateDocument } = require('../utils/update-document');
 
 const {
   UserNotFoundError,
   UserPermissionError,
-  UserValidationError
+  UserValidationError,
 } = require('../../shared/errors');
 
 const {
-  MongoDbErrorHandlerPlugin
+  MongoDbErrorHandlerPlugin,
 } = require('../plugins/mongodb-error-handler');
 
 const {
-  ConfirmUserOwnershipPlugin
+  ConfirmUserOwnershipPlugin,
 } = require('../plugins/confirm-user-ownership');
 
-const TOKEN_DURATION = 1.728e+8; // 2 days in milliseconds
+const TOKEN_DURATION = 1.728e8; // 2 days in milliseconds
 
 // function hasDuplicateChars(str) {
 //   let regex = /(.)\1{2,}/;
@@ -51,137 +47,140 @@ function isPersonName(value) {
 }
 
 const Schema = mongoose.Schema;
-const userSchema = new Schema({
-  avatarUrl: String,
-  firstName: {
-    type: String,
-    required: [true, 'Please provide a first name.'],
-    trim: true,
-    maxlength: [50, 'Your first name cannot be longer than 50 characters.'],
-    minlength: [1, 'Your first name must be at least one (1) character long.'],
-    validate: [
-      {
-        type: 'isPersonName',
-        validator: isPersonName,
-        message: 'Your first name may not contain line breaks.',
-        isAsync: false
-      }
-    ]
-  },
-  lastName: {
-    type: String,
-    required: [true, 'Please provide a last name.'],
-    trim: true,
-    maxlength: [50, 'Your last name cannot be longer than 50 characters.'],
-    minlength: [1, 'Your last name must be at least one (1) character long.'],
-    validate: [
-      {
-        type: 'isPersonName',
-        validator: isPersonName,
-        message: 'Your first name may not contain line breaks.',
-        isAsync: false
-      }
-    ]
-  },
-  emailAddress: {
-    type: String,
-    required: [true, 'Please provide an email address.'],
-    lowercase: true,
-    unique: [true, 'An account with that email address already exists.'],
-    trim: true,
-    validate: {
-      type: 'isEmail',
-      validator: isEmail,
-      message: 'The email address you provided is not formatted correctly.',
-      isAsync: false
-    }
-  },
-  emailAddressVerified: {
-    type: Boolean,
-    default: false
-  },
-  emailAddressVerificationToken: String,
-  interests: {
-    type: String,
-    trim: true,
-    maxlength: [
-      500,
-      'Interests cannot be longer than 500 characters.'
-    ]
-  },
-  notificationSettings: {
-    'gift_comment': {
-      allowEmail: {
-        type: Boolean,
-        default: true
-      }
+const userSchema = new Schema(
+  {
+    avatarUrl: String,
+    firstName: {
+      type: String,
+      required: [true, 'Please provide a first name.'],
+      trim: true,
+      maxlength: [50, 'Your first name cannot be longer than 50 characters.'],
+      minlength: [
+        1,
+        'Your first name must be at least one (1) character long.',
+      ],
+      validate: [
+        {
+          type: 'isPersonName',
+          validator: isPersonName,
+          message: 'Your first name may not contain line breaks.',
+          isAsync: false,
+        },
+      ],
     },
-    'gift_comment_also': {
-      allowEmail: {
-        type: Boolean,
-        default: true
-      }
+    lastName: {
+      type: String,
+      required: [true, 'Please provide a last name.'],
+      trim: true,
+      maxlength: [50, 'Your last name cannot be longer than 50 characters.'],
+      minlength: [1, 'Your last name must be at least one (1) character long.'],
+      validate: [
+        {
+          type: 'isPersonName',
+          validator: isPersonName,
+          message: 'Your first name may not contain line breaks.',
+          isAsync: false,
+        },
+      ],
     },
-    'gift_delivered': {
-      allowEmail: {
-        type: Boolean,
-        default: true
-      }
+    emailAddress: {
+      type: String,
+      required: [true, 'Please provide an email address.'],
+      lowercase: true,
+      unique: [true, 'An account with that email address already exists.'],
+      trim: true,
+      validate: {
+        type: 'isEmail',
+        validator: isEmail,
+        message: 'The email address you provided is not formatted correctly.',
+        isAsync: false,
+      },
     },
-    'gift_received': {
-      allowEmail: {
-        type: Boolean,
-        default: true
-      }
+    emailAddressVerified: {
+      type: Boolean,
+      default: false,
     },
-    'friendship_new': {
-      allowEmail: {
-        type: Boolean,
-        default: true
-      }
-    }
-  },
-  password: String,
-  resetPasswordToken: String,
-  resetPasswordExpires: Date,
-  role: {
-    type: String,
-    enum: ['admin', 'member'],
-    default: 'member'
-  },
-  // birthday: {
-  //   type: Date,
-  //   // required: true,
-  //   validate: {
-  //     type: 'ageGate',
-  //     validator: function (value) {
-  //       const age = getAge(value);
+    emailAddressVerificationToken: String,
+    interests: {
+      type: String,
+      trim: true,
+      maxlength: [500, 'Interests cannot be longer than 500 characters.'],
+    },
+    notificationSettings: {
+      gift_comment: {
+        allowEmail: {
+          type: Boolean,
+          default: true,
+        },
+      },
+      gift_comment_also: {
+        allowEmail: {
+          type: Boolean,
+          default: true,
+        },
+      },
+      gift_delivered: {
+        allowEmail: {
+          type: Boolean,
+          default: true,
+        },
+      },
+      gift_received: {
+        allowEmail: {
+          type: Boolean,
+          default: true,
+        },
+      },
+      friendship_new: {
+        allowEmail: {
+          type: Boolean,
+          default: true,
+        },
+      },
+    },
+    password: String,
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
+    role: {
+      type: String,
+      enum: ['admin', 'member'],
+      default: 'member',
+    },
+    // birthday: {
+    //   type: Date,
+    //   // required: true,
+    //   validate: {
+    //     type: 'ageGate',
+    //     validator: function (value) {
+    //       const age = getAge(value);
 
-  //       return (age >= 13);
-  //     },
-  //     message: 'You must be 13 years old or older to use GiftDibs.',
-  //     isAsync: false
-  //   }
-  // },
-  facebookId: String,
-  // gender: {
-  //   type: String,
-  //   enum: [
-  //     'female',
-  //     'male'
-  //   ]
-  // },
-  dateLastLoggedIn: {
-    type: Date,
-    required: true
+    //       return (age >= 13);
+    //     },
+    //     message: 'You must be 13 years old or older to use GiftDibs.',
+    //     isAsync: false
+    //   }
+    // },
+    facebookId: String,
+    // gender: {
+    //   type: String,
+    //   enum: [
+    //     'female',
+    //     'male'
+    //   ]
+    // },
+    dateLastLoggedIn: {
+      type: Date,
+      required: true,
+    },
+  },
+  {
+    collection: 'user',
+    timestamps: {
+      createdAt: 'dateCreated',
+      updatedAt: 'dateUpdated',
+    },
   }
-}, {
-  collection: 'user',
-  timestamps: {
-    createdAt: 'dateCreated',
-    updatedAt: 'dateUpdated'
-  }
-});
+);
 
 userSchema.methods.confirmPassword = function (password) {
   const error = new Error(
@@ -191,7 +190,8 @@ userSchema.methods.confirmPassword = function (password) {
   error.code = 101;
 
   return new Promise((resolve, reject) => {
-    bcrypt.compare(password, this.password)
+    bcrypt
+      .compare(password, this.password)
       .then((valid) => {
         if (valid) {
           resolve(this);
@@ -213,8 +213,8 @@ userSchema.methods.setPassword = function (password) {
   error.status = 400;
   error.errors = {
     password: {
-      path: 'password'
-    }
+      path: 'password',
+    },
   };
 
   password = (password || '').trim();
@@ -230,17 +230,16 @@ userSchema.methods.setPassword = function (password) {
   ) {
     error.errors.password.message = [
       `Your password must be between ${PASSWORD_MIN_LENGTH}`,
-      `and ${PASSWORD_MAX_LENGTH} characters long.`
+      `and ${PASSWORD_MAX_LENGTH} characters long.`,
     ].join(' ');
 
     return Promise.reject(error);
   }
 
-  return bcrypt.hash(password, saltRounds)
-    .then((hash) => {
-      this.password = hash;
-      return this;
-    });
+  return bcrypt.hash(password, saltRounds).then((hash) => {
+    this.password = hash;
+    return this;
+  });
 };
 
 userSchema.methods.setResetPasswordToken = function () {
@@ -276,7 +275,7 @@ userSchema.methods.updateSync = function (values) {
     'emailAddress',
     'facebookId',
     // 'gender',
-    'interests'
+    'interests',
   ];
 
   // Translate the requested email settings to the database schema.
@@ -285,7 +284,7 @@ userSchema.methods.updateSync = function (values) {
   if (values.emailNotify) {
     Object.keys(this.notificationSettings).forEach((key) => {
       const notification = this.notificationSettings[key];
-      notification.allowEmail = (values.emailNotify.indexOf(key) > -1);
+      notification.allowEmail = values.emailNotify.indexOf(key) > -1;
     });
   }
 
@@ -311,31 +310,24 @@ async function removeReferencedDocuments(user, next) {
     }
 
     const wishLists = await WishList.find({
-      _user: userId
+      _user: userId,
     });
 
     const notifications = await Notification.find({
-      _user: userId
+      _user: userId,
     });
 
     const friendships = await Friendship.find({
-      $or: [
-        { _user: userId },
-        { _friend: userId }
-      ]
+      $or: [{ _user: userId }, { _friend: userId }],
     });
 
-    await Promise.all(
-      wishLists.map((wishList) => wishList.remove())
-    );
+    await Promise.all(wishLists.map((wishList) => wishList.remove()));
 
     await Promise.all(
       notifications.map((notification) => notification.remove())
     );
 
-    await Promise.all(
-      friendships.map((friendship) => friendship.remove())
-    );
+    await Promise.all(friendships.map((friendship) => friendship.remove()));
 
     const mailer = require('../../shared/mailer');
     await mailer.removeEmailAddressFromMailingList(user.emailAddress);
@@ -354,14 +346,14 @@ userSchema.plugin(ConfirmUserOwnershipPlugin, {
   errors: {
     validation: new UserValidationError('Please provide a user ID.'),
     notFound: new UserNotFoundError(),
-    permission: new UserPermissionError()
+    permission: new UserPermissionError(),
   },
-  userIdField: '_id'
+  userIdField: '_id',
 });
 
 const User = mongoose.model('User', userSchema);
 
 module.exports = {
   User,
-  removeReferencedDocuments
+  removeReferencedDocuments,
 };

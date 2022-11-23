@@ -5,7 +5,7 @@ module.exports = (err, req, res, next) => {
 
   const result = {
     message: err.message,
-    code: err.code || 0
+    code: err.code || 0,
   };
 
   result.errors = err.errors || [];

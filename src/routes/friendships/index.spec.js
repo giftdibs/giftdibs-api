@@ -4,7 +4,7 @@ const {
   MockFriendship,
   MockRequest,
   MockResponse,
-  tick
+  tick,
 } = require('../../shared/testing');
 
 describe('Friendships router', () => {
@@ -16,8 +16,8 @@ describe('Friendships router', () => {
 
     _req = new MockRequest({
       params: {
-        friendshipId: 'friendshipid'
-      }
+        friendshipId: 'friendshipid',
+      },
     });
 
     _res = new MockResponse();
@@ -26,7 +26,7 @@ describe('Friendships router', () => {
       return (req, res, next) => {
         data.authResponse = {};
         res.json(data);
-      }
+      };
     });
 
     mock('../../database/models/friendship', { Friendship: MockFriendship });
@@ -51,8 +51,8 @@ describe('Friendships router', () => {
         Promise.resolve([
           new MockFriendship({
             _friend: 'friendid',
-            _user: 'userid'
-          })
+            _user: 'userid',
+          }),
         ])
       );
 
@@ -119,8 +119,9 @@ describe('Friendships router', () => {
 
       tick(() => {
         expect(spy).toHaveBeenCalledWith();
-        expect(_res.json.output.message)
-          .toEqual('Friendship successfully deleted.');
+        expect(_res.json.output.message).toEqual(
+          'Friendship successfully deleted.'
+        );
 
         done();
       });
@@ -148,7 +149,7 @@ describe('Friendships router', () => {
 
       const spy = spyOn(MockFriendship.prototype, 'save').and.returnValue(
         Promise.resolve({
-          _id: 'friendshipid'
+          _id: 'friendshipid',
         })
       );
 
@@ -156,7 +157,7 @@ describe('Friendships router', () => {
 
       _req.body.friendId = 'friendid';
 
-      createFriendship(_req, _res, () => { });
+      createFriendship(_req, _res, () => {});
 
       tick(() => {
         expect(spy).toHaveBeenCalledWith();
@@ -167,9 +168,7 @@ describe('Friendships router', () => {
 
     it('should fail if already following the user', (done) => {
       MockFriendship.overrides.find.returnWith = () => {
-        return Promise.resolve([
-          new MockFriendship({})
-        ]);
+        return Promise.resolve([new MockFriendship({})]);
       };
 
       _req.user._id = 'requser';
@@ -207,7 +206,9 @@ describe('Friendships router', () => {
       createFriendship(_req, _res, (err) => {
         expect(err.code).toEqual(601);
         expect(err.status).toEqual(400);
-        expect(err.message).toEqual('Please provide the user ID of the friend you wish to follow.');
+        expect(err.message).toEqual(
+          'Please provide the user ID of the friend you wish to follow.'
+        );
         done();
       });
     });

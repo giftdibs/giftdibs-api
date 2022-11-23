@@ -12,9 +12,11 @@ db.connect();
 const app = express();
 app.set('port', env.get('PORT'));
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json({
-  limit: '2mb'
-}));
+app.use(
+  bodyParser.json({
+    limit: '2mb',
+  })
+);
 
 const allowedOrigins = env.get('ALLOW_ORIGINS');
 if (!allowedOrigins) {
@@ -24,30 +26,27 @@ if (!allowedOrigins) {
 
 const whitelist = allowedOrigins.split(',');
 
-app.use(cors({
-  methods: 'GET,POST,PATCH,DELETE,OPTIONS',
-  optionsSuccessStatus: 200,
-  origin: (origin, callback) => {
-    const isAllowed = (
-      // No origin means "same origin":
-      // See: https://github.com/expressjs/cors/issues/118
-      origin === undefined ||
+app.use(
+  cors({
+    methods: 'GET,POST,PATCH,DELETE,OPTIONS',
+    optionsSuccessStatus: 200,
+    origin: (origin, callback) => {
+      const isAllowed =
+        // No origin means "same origin":
+        // See: https://github.com/expressjs/cors/issues/118
+        origin === undefined ||
+        whitelist.indexOf(origin) !== -1 ||
+        // Check if the request is coming from a Chrome extension.
+        (origin && origin.indexOf('chrome-extension://') === 0);
 
-      whitelist.indexOf(origin) !== -1 ||
-
-      // Check if the request is coming from a Chrome extension.
-      (origin && origin.indexOf('chrome-extension://') === 0)
-    );
-
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      callback(
-        new Error(`The domain ${origin} is not allowed access.`)
-      );
-    }
-  }
-}));
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error(`The domain ${origin} is not allowed access.`));
+      }
+    },
+  })
+);
 app.options('*', cors());
 
 const passport = require('passport');

@@ -1,14 +1,10 @@
-const {
-  DibValidationError
-} = require('../../shared/errors');
+const { DibValidationError } = require('../../shared/errors');
 
 function formatDibResponse(dib, userId) {
   const clone = { ...dib };
   const dibId = clone._user._id || clone._user;
 
-  const isDibOwner = (
-    dibId.toString() === userId.toString()
-  );
+  const isDibOwner = dibId.toString() === userId.toString();
 
   if (clone.isAnonymous && !isDibOwner) {
     clone.user = {};
@@ -39,5 +35,5 @@ function handleError(err, next) {
 
 module.exports = {
   formatDibResponse,
-  handleError
+  handleError,
 };

@@ -1,12 +1,8 @@
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  User
-} = require('../../database/models/user');
+const { User } = require('../../database/models/user');
 
-const {
-  UserNotFoundError
-} = require('../../shared/errors');
+const { UserNotFoundError } = require('../../shared/errors');
 
 function getSelectFields(req) {
   let selectFields;
@@ -20,14 +16,10 @@ function getSelectFields(req) {
       'lastName',
       'emailAddress',
       'emailAddressVerified',
-      'notificationSettings'
+      'notificationSettings',
     ].join(' ');
   } else {
-    selectFields = [
-      'avatarUrl',
-      'firstName',
-      'lastName'
-    ].join(' ');
+    selectFields = ['avatarUrl', 'firstName', 'lastName'].join(' ');
   }
 
   return selectFields;
@@ -36,8 +28,7 @@ function getSelectFields(req) {
 function getUser(req, res, next) {
   const selectFields = getSelectFields(req);
 
-  User
-    .find({ _id: req.params.userId })
+  User.find({ _id: req.params.userId })
     .limit(1)
     .select(selectFields)
     .lean()
@@ -52,7 +43,7 @@ function getUser(req, res, next) {
       delete user._id;
 
       authResponse({
-        data: { user }
+        data: { user },
       })(req, res, next);
     })
     .catch(next);
@@ -77,7 +68,7 @@ function getUsers(req, res, next) {
         return user;
       });
       authResponse({
-        data: { users }
+        data: { users },
       })(req, res, next);
     })
     .catch(next);
@@ -85,5 +76,5 @@ function getUsers(req, res, next) {
 
 module.exports = {
   getUser,
-  getUsers
+  getUsers,
 };

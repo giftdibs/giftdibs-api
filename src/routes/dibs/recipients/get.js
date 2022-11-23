@@ -1,16 +1,10 @@
 const authResponse = require('../../../middleware/auth-response');
 
-const {
-  Gift
-} = require('../../../database/models/gift');
+const { Gift } = require('../../../database/models/gift');
 
-const {
-  WishList
-} = require('../../../database/models/wish-list');
+const { WishList } = require('../../../database/models/wish-list');
 
-const {
-  formatWishListResponse
-} = require('../../wish-lists/shared');
+const { formatWishListResponse } = require('../../wish-lists/shared');
 
 function getSumBudget(recipient) {
   let budgeted = 0;
@@ -43,30 +37,32 @@ async function getDibsRecipients(req, res, next) {
     giftsQuery = {
       $and: [
         { 'dibs._user': userId },
-        { 'dibs.dateDelivered': { $exists: true } }
-      ]
+        { 'dibs.dateDelivered': { $exists: true } },
+      ],
     };
   } else {
     giftsQuery = {
       $and: [
         { 'dibs._user': userId },
-        { 'dibs.dateDelivered': { $exists: false } }
-      ]
+        { 'dibs.dateDelivered': { $exists: false } },
+      ],
     };
   }
 
   try {
     const gifts = await Gift.find(giftsQuery)
-      .select([
-        '_user',
-        '_wishList',
-        'budget',
-        'dateReceived',
-        'dateUpdated',
-        'dibs',
-        'imageUrl',
-        'name'
-      ].join(' '))
+      .select(
+        [
+          '_user',
+          '_wishList',
+          'budget',
+          'dateReceived',
+          'dateUpdated',
+          'dibs',
+          'imageUrl',
+          'name',
+        ].join(' ')
+      )
       .populate('_user', 'avatarUrl firstName lastName')
       .populate('dibs._user', 'avatarUrl firstName lastName')
       .lean();
@@ -74,12 +70,9 @@ async function getDibsRecipients(req, res, next) {
     const wishListIds = gifts.map((g) => g._wishList);
 
     const wishLists = await WishList.find({
-      '_id': wishListIds
+      _id: wishListIds,
     })
-      .select([
-        '_user',
-        'name'
-      ].join(' '))
+      .select(['_user', 'name'].join(' '))
       .populate('_user', 'avatarUrl firstName lastName')
       .lean();
 
@@ -87,7 +80,7 @@ async function getDibsRecipients(req, res, next) {
     gifts.forEach((gift) => {
       // Remove any dibs that do not belong to session user.
       const foundDib = gift.dibs.find((dib) => {
-        const isOwner = (dib._user.toString() === userId.toString());
+        const isOwner = dib._user.toString() === userId.toString();
 
         return isOwner;
       });
@@ -101,7 +94,7 @@ async function getDibsRecipients(req, res, next) {
     wishLists.forEach((wishList) => {
       // Add gifts to wish list.
       wishList.gifts = gifts.filter((gift) => {
-        return (gift._wishList.toString() === wishList._id.toString());
+        return gift._wishList.toString() === wishList._id.toString();
       });
 
       if (!wishList.gifts) {
@@ -109,14 +102,12 @@ async function getDibsRecipients(req, res, next) {
       }
 
       const foundRecipient = recipients.find((recipient) => {
-        return (recipient.id.toString() === wishList._user._id.toString());
+        return recipient.id.toString() === wishList._user._id.toString();
       });
 
       // Add to existing recipient?
       if (foundRecipient) {
-        foundRecipient.wishLists.push(
-          formatWishListResponse(wishList, userId)
-        );
+        foundRecipient.wishLists.push(formatWishListResponse(wishList, userId));
         return;
       }
 
@@ -126,9 +117,7 @@ async function getDibsRecipients(req, res, next) {
         firstName: wishList._user.firstName,
         lastName: wishList._user.lastName,
         avatarUrl: wishList._user.avatarUrl,
-        wishLists: [
-          formatWishListResponse(wishList, userId)
-        ]
+        wishLists: [formatWishListResponse(wishList, userId)],
       });
     });
 
@@ -136,8 +125,8 @@ async function getDibsRecipients(req, res, next) {
 
     authResponse({
       data: {
-        recipients
-      }
+        recipients,
+      },
     })(req, res, next);
   } catch (err) {
     next(err);
@@ -145,5 +134,5 @@ async function getDibsRecipients(req, res, next) {
 }
 
 module.exports = {
-  getDibsRecipients
+  getDibsRecipients,
 };

@@ -10,7 +10,8 @@ function ConfirmUserOwnershipPlugin(schema, options) {
 
     const model = this;
 
-    return model.find({ _id: docId })
+    return model
+      .find({ _id: docId })
       .limit(1)
       .then((docs) => {
         const doc = docs[0];
@@ -32,5 +33,5 @@ function ConfirmUserOwnershipPlugin(schema, options) {
 }
 
 module.exports = {
-  ConfirmUserOwnershipPlugin
+  ConfirmUserOwnershipPlugin,
 };

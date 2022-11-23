@@ -1,6 +1,4 @@
-const {
-  findSimilar
-} = require('../../shared/product-search');
+const { findSimilar } = require('../../shared/product-search');
 
 const authResponse = require('../../middleware/auth-response');
 
@@ -10,8 +8,8 @@ function findSimilarProductsByAsin(req, res, next) {
   if (!asin) {
     authResponse({
       data: {
-        results: []
-      }
+        results: [],
+      },
     })(req, res, next);
     return;
   }
@@ -20,13 +18,13 @@ function findSimilarProductsByAsin(req, res, next) {
     .then((results) => {
       authResponse({
         data: {
-          results
-        }
+          results,
+        },
       })(req, res, next);
     })
     .catch(next);
 }
 
 module.exports = {
-  findSimilarProductsByAsin
+  findSimilarProductsByAsin,
 };

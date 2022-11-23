@@ -1,18 +1,14 @@
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  Notification
-} = require('../../database/models/notification');
+const { Notification } = require('../../database/models/notification');
 
-const {
-  formatNotificationResponse
-} = require('./shared');
+const { formatNotificationResponse } = require('./shared');
 
 function getNotifications(req, res, next) {
   const userId = req.user._id;
 
   Notification.find({
-    _user: userId
+    _user: userId,
   })
     .sort('-dateCreated')
     .lean()
@@ -23,12 +19,12 @@ function getNotifications(req, res, next) {
     })
     .then((notifications) => {
       authResponse({
-        data: { notifications }
+        data: { notifications },
       })(req, res, next);
     })
     .catch(next);
 }
 
 module.exports = {
-  getNotifications
+  getNotifications,
 };

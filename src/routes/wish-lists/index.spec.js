@@ -5,7 +5,7 @@ const {
   MockWishList,
   MockRequest,
   MockResponse,
-  tick
+  tick,
 } = require('../../shared/testing');
 
 describe('Wish lists router', () => {
@@ -16,20 +16,20 @@ describe('Wish lists router', () => {
     MockFriendship.reset();
     MockWishList.reset();
 
-    mock('../../database/models/friendship', { Friendship: MockFriendship })
+    mock('../../database/models/friendship', { Friendship: MockFriendship });
     mock('../../database/models/wish-list', { WishList: MockWishList });
 
     mock('../../middleware/auth-response', function authResponse(data) {
       return (req, res, next) => {
         data.authResponse = {};
         res.json(data);
-      }
+      };
     });
 
     _req = new MockRequest({
       params: {
-        wishListId: 0
-      }
+        wishListId: 0,
+      },
     });
 
     _res = new MockResponse();
@@ -48,7 +48,7 @@ describe('Wish lists router', () => {
     it('should get an array of all wish lists', (done) => {
       const { getWishLists } = mock.reRequire('./get');
 
-      getWishLists(_req, _res, () => { });
+      getWishLists(_req, _res, () => {});
 
       tick(() => {
         expect(Array.isArray(_res.json.output.data.wishLists)).toEqual(true);
@@ -73,12 +73,9 @@ describe('Wish lists router', () => {
 
     xit('should only get wish lists the user is authorized to view', () => {
       // const { getWishLists } = mock.reRequire('./get');
-
       // const userId = mongoose.Types.ObjectId();
       // const friendId = mongoose.Types.ObjectId();
-
       // _req.user._id = userId;
-
       // MockWishList.overrides.find.returnWith = () => {
       //   return Promise.resolve([
       //     new MockWishList({
@@ -127,9 +124,7 @@ describe('Wish lists router', () => {
       //     })
       //   ]);
       // };
-
       // getWishLists(_req, _res, () => { });
-
       // tick(() => {
       //   const wishLists = _res.json.output.data.wishLists;
       //   expect(wishLists.length).toEqual(4);
@@ -145,9 +140,7 @@ describe('Wish lists router', () => {
       // MockWishList.overrides.find.returnWith = () => {
       //   return Promise.reject(new Error());
       // };
-
       // const { getWishLists } = mock.reRequire('./get');
-
       // getWishLists(_req, _res, (err) => {
       //   expect(err).toBeDefined();
       //   done();
@@ -163,7 +156,7 @@ describe('Wish lists router', () => {
         Promise.resolve(
           new MockWishList({
             _id: 'wishlistid',
-            name: 'Mock wishlist'
+            name: 'Mock wishlist',
           })
         )
       );
@@ -185,9 +178,7 @@ describe('Wish lists router', () => {
 
     it('should handle errors', (done) => {
       spyOn(MockWishList, 'findAuthorizedById').and.returnValue(
-        Promise.reject(
-          new Error('Some error')
-        )
+        Promise.reject(new Error('Some error'))
       );
 
       const { getWishList } = mock.reRequire('./get');
@@ -200,9 +191,7 @@ describe('Wish lists router', () => {
 
     xit('should only populate certain fields', () => {
       // const { getWishList } = mock.reRequire('./get');
-
       // getWishList(_req, _res, () => {});
-
       // tick(() => {
       //   expect(MockWishList.populatedFields['_user'])
       //     .toEqual('firstName lastName');
@@ -212,13 +201,10 @@ describe('Wish lists router', () => {
 
     xit('should fail if user is unauthorized to view', () => {
       // const { getWishList } = mock.reRequire('./get');
-
       // const userId = mongoose.Types.ObjectId();
-
       // _req.user = {
       //   _id: userId
       // };
-
       // MockWishList.overrides.find.returnWith = () => {
       //   return Promise.resolve([
       //     new MockWishList({
@@ -231,7 +217,6 @@ describe('Wish lists router', () => {
       //     })
       //   ]);
       // };
-
       // getWishList(_req, _res, (err) => {
       //   expect(err.name).toEqual('WishListPermissionError');
       //   expect(err.message).toEqual(
@@ -243,9 +228,7 @@ describe('Wish lists router', () => {
 
     xit('should handle wish list not found', () => {
       // MockWishList.overrides.find.returnWith = () => Promise.resolve([]);
-
       // const { getWishList } = mock.reRequire('./get');
-
       // getWishList(_req, _res, (err) => {
       //   expect(err.name).toEqual('WishListNotFoundError');
       //   done();
@@ -256,9 +239,7 @@ describe('Wish lists router', () => {
       // MockWishList.overrides.find.returnWith = () => {
       //   return Promise.reject(new Error());
       // };
-
       // const { getWishList } = mock.reRequire('./get');
-
       // getWishList(_req, _res, (err) => {
       //   expect(err).toBeDefined();
       //   done();
@@ -276,7 +257,9 @@ describe('Wish lists router', () => {
 
       tick(() => {
         expect(_res.json.output.data.wishListId).toBeDefined();
-        expect(_res.json.output.message).toEqual('Wish list successfully created.');
+        expect(_res.json.output.message).toEqual(
+          'Wish list successfully created.'
+        );
         expect(_res.json.output.authResponse).toBeDefined();
         expect(MockWishList.lastTouched.name).toEqual('New wish list');
         done();
@@ -301,7 +284,7 @@ describe('Wish lists router', () => {
     it('should update a document', (done) => {
       const wishList = new MockWishList({
         name: 'Old name',
-        _id: 'wishlistid'
+        _id: 'wishlistid',
       });
 
       const updateSpy = spyOn(wishList, 'updateSync').and.callThrough();
@@ -324,8 +307,8 @@ describe('Wish lists router', () => {
         expect(updateSpy).toHaveBeenCalledWith({
           name: _req.body.name,
           privacy: {
-            _allow: []
-          }
+            _allow: [],
+          },
         });
         expect(saveSpy).toHaveBeenCalledWith();
         done();

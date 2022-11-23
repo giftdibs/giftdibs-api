@@ -25,7 +25,7 @@ function sortParams(object) {
 }
 
 function capitalize(str) {
-  return str[0].toUpperCase() + str.slice(1)
+  return str[0].toUpperCase() + str.slice(1);
 }
 
 function setDefaultParams(params, defaultParams) {
@@ -54,7 +54,7 @@ function formatQueryParams(query, method, credentials) {
         Condition: 'All',
         ResponseGroup: 'ItemAttributes',
         Keywords: '',
-        ItemPage: '1'
+        ItemPage: '1',
       });
       break;
 
@@ -66,7 +66,7 @@ function formatQueryParams(query, method, credentials) {
         IdType: 'ASIN',
         IncludeReviewsSummary: 'True',
         TruncateReviewsAt: '1000',
-        VariationPage: 'All'
+        VariationPage: 'All',
       });
 
       // Constraints
@@ -81,14 +81,14 @@ function formatQueryParams(query, method, credentials) {
     case 'BrowseNodeLookup':
       params = setDefaultParams(params, {
         BrowseNodeId: '',
-        ResponseGroup: 'BrowseNodeInfo'
+        ResponseGroup: 'BrowseNodeInfo',
       });
       break;
 
     case 'SimilarityLookup':
       params = setDefaultParams(params, {
         SimilarityType: 'Intersection',
-        ResponseGroup: 'ItemAttributes'
+        ResponseGroup: 'ItemAttributes',
       });
       break;
   }
@@ -116,14 +116,21 @@ function generateQueryString(query, method, credentials) {
 
   const unsignedString = Object.keys(params)
     .map((key) => {
-      return key + '=' + encodeURIComponent(params[key]).replace(/[!'()*]/g, (c) => {
-        return '%' + c.charCodeAt(0).toString(16);
-      });
+      return (
+        key +
+        '=' +
+        encodeURIComponent(params[key]).replace(/[!'()*]/g, (c) => {
+          return '%' + c.charCodeAt(0).toString(16);
+        })
+      );
     })
     .join('&');
 
   const signature = encodeURIComponent(
-    generateSignature('GET\n' + domain + '\n/onca/xml\n' + unsignedString, credentials.awsSecret)
+    generateSignature(
+      'GET\n' + domain + '\n/onca/xml\n' + unsignedString,
+      credentials.awsSecret
+    )
   ).replace(/\+/g, '%2B');
 
   const queryString = `https://${domain}/onca/xml?${unsignedString}&Signature=${signature}`;
@@ -144,11 +151,7 @@ function getPrice(item) {
     return formatNumber(item.OfferSummary[0].LowestNewPrice[0].Amount[0]);
   }
 
-  if (
-    item.Offers &&
-    item.Offers[0].Offer &&
-    item.Offers[0].Offer[0].Amount
-  ) {
+  if (item.Offers && item.Offers[0].Offer && item.Offers[0].Offer[0].Amount) {
     return formatNumber(item.Offers[0].Offer[0].Amount[0]);
   }
 
@@ -171,63 +174,71 @@ function getImage(item) {
 async function runQuery(type, query, credentials) {
   const url = generateQueryString(query, type, credentials);
 
-  return request(url)
-    .then((body) => {
-      return new Promise((resolve, reject) => {
-        parseXML(body, (err, parsed) => {
-          if (err) {
-            reject(err);
-            return;
-          }
+  return request(url).then((body) => {
+    return new Promise((resolve, reject) => {
+      parseXML(body, (err, parsed) => {
+        if (err) {
+          reject(err);
+          return;
+        }
 
-          const results = parsed[`${type}Response`];
-          const itemResults = results.Items[0].Item;
+        const results = parsed[`${type}Response`];
+        const itemResults = results.Items[0].Item;
 
-          let items;
-          if (itemResults) {
-            items = itemResults.map((item) => {
+        let items;
+        if (itemResults) {
+          items = itemResults
+            .map((item) => {
               return {
                 name: item.ItemAttributes[0].Title[0],
                 imageUrl: getImage(item),
                 price: getPrice(item),
-                url: item.DetailPageURL[0]
+                url: item.DetailPageURL[0],
               };
             })
-              .filter((item) => item.price && item.imageUrl);
-          }
+            .filter((item) => item.price && item.imageUrl);
+        }
 
-          resolve(items || []);
-        });
+        resolve(items || []);
       });
     });
+  });
 }
 
 function productSearch(keywords) {
-  return runQuery('ItemSearch', {
-    // condition: 'New',
-    availability: 'Available',
-    keywords,
-    includeReviewsSummary: false,
-    responseGroup: 'ItemAttributes,Images,Offers'
-  }, {
-    awsId: env.get('AWS_ADVERTISING_API_ACCESS_KEY'),
-    awsSecret: env.get('AWS_ADVERTISING_API_SECRET'),
-    awsTag: env.get('AWS_ADVERTISING_API_ASSOCIATE_TAG')
-  });
+  return runQuery(
+    'ItemSearch',
+    {
+      // condition: 'New',
+      availability: 'Available',
+      keywords,
+      includeReviewsSummary: false,
+      responseGroup: 'ItemAttributes,Images,Offers',
+    },
+    {
+      awsId: env.get('AWS_ADVERTISING_API_ACCESS_KEY'),
+      awsSecret: env.get('AWS_ADVERTISING_API_SECRET'),
+      awsTag: env.get('AWS_ADVERTISING_API_ASSOCIATE_TAG'),
+    }
+  );
 }
 
 function findSimilar(asin) {
-  return runQuery('SimilarityLookup', {
-    itemId: asin,
-    responseGroup: 'ItemAttributes,Images,Offers'
-  }, {
-    awsId: env.get('AWS_ADVERTISING_API_ACCESS_KEY'),
-    awsSecret: env.get('AWS_ADVERTISING_API_SECRET'),
-    awsTag: env.get('AWS_ADVERTISING_API_ASSOCIATE_TAG')
-  });
+  return runQuery(
+    'SimilarityLookup',
+    {
+      itemId: asin,
+      responseGroup: 'ItemAttributes,Images,Offers',
+    },
+    {
+      awsId: env.get('AWS_ADVERTISING_API_ACCESS_KEY'),
+      awsSecret: env.get('AWS_ADVERTISING_API_SECRET'),
+      awsTag: env.get('AWS_ADVERTISING_API_ASSOCIATE_TAG'),
+    }
+  );
 }
 
 module.exports = {
   findSimilar,
-  productSearch
+  productSearch,
 };

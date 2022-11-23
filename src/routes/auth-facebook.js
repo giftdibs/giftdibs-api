@@ -5,15 +5,13 @@ const authResponse = require('../middleware/auth-response');
 const { User } = require('../database/models/user');
 
 function findUserByFacebookId(facebookId) {
-  return User
-    .find({ facebookId })
+  return User.find({ facebookId })
     .limit(1)
     .then((docs) => docs[0]);
 }
 
 function findUserByEmailAddress(facebookEmailAddress) {
-  return User
-    .find({ emailAddress: facebookEmailAddress })
+  return User.find({ emailAddress: facebookEmailAddress })
     .limit(1)
     .then((docs) => docs[0]);
 }
@@ -32,12 +30,10 @@ function updateOrCreateUserWithFacebookProfile(user, facebookProfile) {
     emailAddressVerified: true,
     firstName: facebookProfile.first_name,
     lastName: facebookProfile.last_name,
-    facebookId: facebookProfile.id
+    facebookId: facebookProfile.id,
   });
 
-  return newUser
-    .setPassword(randomstring.generate())
-    .then(() => newUser);
+  return newUser.setPassword(randomstring.generate()).then(() => newUser);
 }
 
 function loginWithFacebook(req, res, next) {
@@ -51,12 +47,12 @@ function loginWithFacebook(req, res, next) {
 
       // Attempt to find or register a user with
       // the Facebook profile information.
-      return facebook.getProfile(req.body.facebookUserAccessToken)
+      return facebook
+        .getProfile(req.body.facebookUserAccessToken)
         .then((profile) => {
-          return findUserByEmailAddress(profile.email)
-            .then((user) => {
-              return updateOrCreateUserWithFacebookProfile(user, profile);
-            });
+          return findUserByEmailAddress(profile.email).then((user) => {
+            return updateOrCreateUserWithFacebookProfile(user, profile);
+          });
         });
     })
     .then((user) => {
@@ -67,7 +63,7 @@ function loginWithFacebook(req, res, next) {
     .then((user) => {
       req.user = user;
       authResponse({
-        message: `Welcome, ${req.user.firstName}!`
+        message: `Welcome, ${req.user.firstName}!`,
       })(req, res, next);
     })
     .catch((err) => {
@@ -88,7 +84,7 @@ router.post('/auth/login-facebook', loginWithFacebook);
 
 module.exports = {
   middleware: {
-    loginWithFacebook
+    loginWithFacebook,
   },
-  router
+  router,
 };

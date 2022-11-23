@@ -7,10 +7,10 @@ const { deleteNotification } = require('./delete');
 
 const router = express.Router();
 
-router.route('/notifications')
-  .get([authenticateJwt, getNotifications]);
+router.route('/notifications').get([authenticateJwt, getNotifications]);
 
-router.route('/notifications/:notificationId')
+router
+  .route('/notifications/:notificationId')
   // .patch([authenticateJwt, updateNotification])
   .delete([authenticateJwt, deleteNotification]);
 

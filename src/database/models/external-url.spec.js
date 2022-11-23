@@ -10,7 +10,7 @@ describe('ExternalUrl schema', () => {
 
   beforeEach(() => {
     _externalUrlDefinition = {
-      url: 'http://foo.com'
+      url: 'http://foo.com',
     };
     updateDocumentUtil = mock.reRequire('../utils/update-document');
     spyOn(updateDocumentUtil, 'updateDocument').and.returnValue();
@@ -65,7 +65,7 @@ describe('ExternalUrl schema', () => {
 
   it('should beautify native mongo errors', () => {
     let found = ExternalUrl.schema.plugins.filter((plugin) => {
-      return (plugin.fn.name === 'MongoDbErrorHandlerPlugin');
+      return plugin.fn.name === 'MongoDbErrorHandlerPlugin';
     })[0];
     expect(found).toBeDefined();
   });
@@ -78,7 +78,7 @@ describe('ExternalUrl schema', () => {
 
     expect(updateDocumentUtil.updateDocument).toHaveBeenCalledWith(
       externalUrl,
-      [ 'url', 'price' ],
+      ['url', 'price'],
       formData
     );
   });

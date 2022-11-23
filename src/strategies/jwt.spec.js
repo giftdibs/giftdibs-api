@@ -10,9 +10,9 @@ describe('jwt passport strategy', () => {
       find: (query) => {
         _findQuery = query;
         return {
-          limit: () => mockExec()
-        }
-      }
+          limit: () => mockExec(),
+        };
+      },
     };
     mock('../database/models/user', { User: mockUser });
   });
@@ -28,9 +28,9 @@ describe('jwt passport strategy', () => {
       ExtractJwt: {
         fromAuthHeaderWithScheme: () => {
           _called = true;
-        }
+        },
       },
-      Strategy: function MockStrategy() {}
+      Strategy: function MockStrategy() {},
     });
     mock.reRequire('./jwt');
     expect(_called).toEqual(true);
@@ -41,11 +41,11 @@ describe('jwt passport strategy', () => {
     process.env.JWT_SECRET = 'secret';
     mock('passport-jwt', {
       ExtractJwt: {
-        fromAuthHeaderWithScheme: () => {}
+        fromAuthHeaderWithScheme: () => {},
       },
       Strategy: function MockStrategy(config) {
         _config = config;
-      }
+      },
     });
     mock.reRequire('./jwt');
     expect(_config.secretOrKey).toEqual('secret');
@@ -53,10 +53,10 @@ describe('jwt passport strategy', () => {
 
   it('should authenticate a user from the jwt payload', (done) => {
     const mockUser = {};
-    mockExec = () => Promise.resolve([ mockUser ]);
+    mockExec = () => Promise.resolve([mockUser]);
     mock('passport-jwt', {
       ExtractJwt: {
-        fromAuthHeaderWithScheme: () => {}
+        fromAuthHeaderWithScheme: () => {},
       },
       Strategy: function MockStrategy(config, verify) {
         verify({}, { id: 0 }, (err, user, info) => {
@@ -65,7 +65,7 @@ describe('jwt passport strategy', () => {
           expect(user).toBeDefined();
           done();
         });
-      }
+      },
     });
     mock.reRequire('./jwt');
   });
@@ -74,18 +74,19 @@ describe('jwt passport strategy', () => {
     mockExec = () => Promise.resolve([]);
     mock('passport-jwt', {
       ExtractJwt: {
-        fromAuthHeaderWithScheme: () => {}
+        fromAuthHeaderWithScheme: () => {},
       },
       Strategy: function MockStrategy(config, verify) {
         verify({}, { id: 0 }, (err, user, info) => {
           expect(_findQuery._id).toEqual(0);
           expect(err).toBeUndefined();
           expect(user).toEqual(false);
-          expect(info.message)
-            .toEqual('A user was not found that matched that access token.');
+          expect(info.message).toEqual(
+            'A user was not found that matched that access token.'
+          );
           done();
         });
-      }
+      },
     });
     mock.reRequire('./jwt');
   });
@@ -94,24 +95,24 @@ describe('jwt passport strategy', () => {
     mockExec = () => Promise.reject(new Error());
     mock('passport-jwt', {
       ExtractJwt: {
-        fromAuthHeaderWithScheme: () => {}
+        fromAuthHeaderWithScheme: () => {},
       },
       Strategy: function MockStrategy(config, verify) {
         verify({}, { id: 0 }, (err) => {
           expect(err).toBeDefined();
           done();
         });
-      }
+      },
     });
     mock.reRequire('./jwt');
   });
 
   it('should attach the authenticated user to the request object', (done) => {
     const mockUser = {};
-    mockExec = () => Promise.resolve([ mockUser ]);
+    mockExec = () => Promise.resolve([mockUser]);
     mock('passport-jwt', {
       ExtractJwt: {
-        fromAuthHeaderWithScheme: () => {}
+        fromAuthHeaderWithScheme: () => {},
       },
       Strategy: function MockStrategy(config, verify) {
         let req = {};
@@ -120,7 +121,7 @@ describe('jwt passport strategy', () => {
           expect(req.user).toBeDefined();
           done();
         });
-      }
+      },
     });
     mock.reRequire('./jwt');
   });

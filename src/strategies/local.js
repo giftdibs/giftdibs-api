@@ -2,7 +2,7 @@ const LocalStrategy = require('passport-local').Strategy;
 const { User } = require('../database/models/user');
 
 const strategyConfig = {
-  usernameField: 'emailAddress'
+  usernameField: 'emailAddress',
 };
 
 const verify = (emailAddress, password, done) => {
@@ -13,7 +13,7 @@ const verify = (emailAddress, password, done) => {
 
       if (!user) {
         done(null, false, {
-          message: 'user_not_found'
+          message: 'user_not_found',
         });
         return;
       }
@@ -21,20 +21,20 @@ const verify = (emailAddress, password, done) => {
       // User has registered, but does not have a password.
       if (!user.password) {
         done(null, false, {
-          message: 'empty_password'
+          message: 'empty_password',
         });
         return;
       }
 
-      user.confirmPassword(password)
+      user
+        .confirmPassword(password)
         .then(() => {
           user.dateLastLoggedIn = new Date();
-          return user.save()
-            .then(() => done(null, user));
+          return user.save().then(() => done(null, user));
         })
         .catch(() => {
           done(null, false, {
-            message: 'invalid_password'
+            message: 'invalid_password',
           });
         });
     })

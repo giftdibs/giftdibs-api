@@ -1,13 +1,8 @@
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  Gift
-} = require('../../database/models/gift');
+const { Gift } = require('../../database/models/gift');
 
-const {
-  formatCommentResponse,
-  handleError
-} = require('./shared');
+const { formatCommentResponse, handleError } = require('./shared');
 
 async function getComment(req, res, next) {
   const commentId = req.params.commentId;
@@ -19,7 +14,7 @@ async function getComment(req, res, next) {
     const formatted = formatCommentResponse(comment);
 
     authResponse({
-      data: { comment: formatted }
+      data: { comment: formatted },
     })(req, res, next);
   } catch (err) {
     handleError(err, next);
@@ -27,5 +22,5 @@ async function getComment(req, res, next) {
 }
 
 module.exports = {
-  getComment
+  getComment,
 };

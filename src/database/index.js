@@ -9,7 +9,8 @@ const databaseUri = env.get('DATABASE_URI');
 
 module.exports = {
   connect: () => {
-    return mongoose.connect(databaseUri)
+    return mongoose
+      .connect(databaseUri)
       .then(() => {
         logger.info(`Database connected at ${databaseUri}`);
       })
@@ -19,5 +20,5 @@ module.exports = {
   },
   disconnect: () => {
     mongoose.disconnect();
-  }
+  },
 };

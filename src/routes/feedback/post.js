@@ -1,10 +1,6 @@
-const {
-  Feedback
-} = require('../../database/models/feedback');
+const { Feedback } = require('../../database/models/feedback');
 
-const {
-  handleError
-} = require('./shared');
+const { handleError } = require('./shared');
 
 const mailer = require('../../shared/mailer');
 
@@ -26,29 +22,31 @@ function createFeedback(req, res, next) {
   const feedback = new Feedback({
     message: attributes.message,
     reason: attributes.reason,
-    referrer: attributes.referrer
+    referrer: attributes.referrer,
   });
 
-  feedback.save()
+  feedback
+    .save()
     .then((doc) => {
-      return mailer.sendFeedbackEmail(
-        attributes.reason,
-        attributes.message,
-        attributes.referrer
-      )
+      return mailer
+        .sendFeedbackEmail(
+          attributes.reason,
+          attributes.message,
+          attributes.referrer
+        )
         .then(() => doc);
     })
     .then((doc) => {
       res.json({
         data: {
-          feedbackId: doc._id
+          feedbackId: doc._id,
         },
-        message: 'Feedback successfully sent.'
+        message: 'Feedback successfully sent.',
       });
     })
     .catch((err) => handleError(err, next));
 }
 
 module.exports = {
-  createFeedback
+  createFeedback,
 };

@@ -23,12 +23,11 @@ describe('environment', () => {
   it('should log a message if the config file is not found', () => {
     spyOn(logger, 'warn').and.returnValue();
     spyOn(dotenv, 'config').and.returnValue({
-      error: new Error('not found')
+      error: new Error('not found'),
     });
     mock.reRequire('./environment').applyEnvironment();
-    expect(logger.warn)
-      .toHaveBeenCalledWith(
-        'Environment configuration could not be parsed from config.env.'
-      );
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Environment configuration could not be parsed from config.env.'
+    );
   });
 });

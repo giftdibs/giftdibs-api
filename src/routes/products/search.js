@@ -1,6 +1,4 @@
-const {
-  productSearch
-} = require('../../shared/product-search');
+const { productSearch } = require('../../shared/product-search');
 
 const authResponse = require('../../middleware/auth-response');
 
@@ -10,8 +8,8 @@ function searchProductsByKeyword(req, res, next) {
   if (!query) {
     authResponse({
       data: {
-        results: []
-      }
+        results: [],
+      },
     })(req, res, next);
     return;
   }
@@ -20,13 +18,13 @@ function searchProductsByKeyword(req, res, next) {
     .then((results) => {
       authResponse({
         data: {
-          results
-        }
+          results,
+        },
       })(req, res, next);
     })
     .catch(next);
 }
 
 module.exports = {
-  searchProductsByKeyword
+  searchProductsByKeyword,
 };

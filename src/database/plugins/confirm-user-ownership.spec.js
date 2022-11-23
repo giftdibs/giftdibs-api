@@ -14,12 +14,10 @@ describe('ConfirmUserOwnershipPlugin', () => {
       find() {
         return {
           limit: () => {
-            return Promise.resolve([
-              new MockSchema()
-            ])
-          }
+            return Promise.resolve([new MockSchema()]);
+          },
         };
-      }
+      },
     };
 
     MockPermissionError = function () {};
@@ -33,11 +31,12 @@ describe('ConfirmUserOwnershipPlugin', () => {
     MockSchema.statics = {};
   });
 
-  afterEach(() => {
-  });
+  afterEach(() => {});
 
   it('should add a static method to the schema', () => {
-    const { ConfirmUserOwnershipPlugin } = mock.reRequire('./confirm-user-ownership');
+    const { ConfirmUserOwnershipPlugin } = mock.reRequire(
+      './confirm-user-ownership'
+    );
     const plugin = new ConfirmUserOwnershipPlugin(MockSchema, {});
 
     expect(plugin).toBeDefined();
@@ -45,18 +44,20 @@ describe('ConfirmUserOwnershipPlugin', () => {
   });
 
   it('should fail if the session does not own the resource', (done) => {
-    const { ConfirmUserOwnershipPlugin } = mock.reRequire('./confirm-user-ownership');
+    const { ConfirmUserOwnershipPlugin } = mock.reRequire(
+      './confirm-user-ownership'
+    );
 
     _docUserId = 'diffuserid';
 
     const plugin = new ConfirmUserOwnershipPlugin(MockSchema, {
       errors: {
-        permission: new MockPermissionError()
-      }
+        permission: new MockPermissionError(),
+      },
     });
 
-    MockSchema.statics
-      .confirmUserOwnership.apply(_context, ['docid', 'userid'])
+    MockSchema.statics.confirmUserOwnership
+      .apply(_context, ['docid', 'userid'])
       .catch((err) => {
         expect(plugin).toBeDefined();
         expect(err instanceof MockPermissionError).toEqual(true);
@@ -65,7 +66,9 @@ describe('ConfirmUserOwnershipPlugin', () => {
   });
 
   it('should continue if the session does own the resource', (done) => {
-    const { ConfirmUserOwnershipPlugin } = mock.reRequire('./confirm-user-ownership');
+    const { ConfirmUserOwnershipPlugin } = mock.reRequire(
+      './confirm-user-ownership'
+    );
     const plugin = new ConfirmUserOwnershipPlugin(MockSchema, {});
 
     MockSchema.statics.confirmUserOwnership
@@ -84,9 +87,11 @@ describe('ConfirmUserOwnershipPlugin', () => {
     };
     MockSchema.statics = {};
 
-    const { ConfirmUserOwnershipPlugin } = mock.reRequire('./confirm-user-ownership');
+    const { ConfirmUserOwnershipPlugin } = mock.reRequire(
+      './confirm-user-ownership'
+    );
     const plugin = new ConfirmUserOwnershipPlugin(MockSchema, {
-      userIdField: '_somefield'
+      userIdField: '_somefield',
     });
 
     MockSchema.statics.confirmUserOwnership
@@ -102,18 +107,18 @@ describe('ConfirmUserOwnershipPlugin', () => {
   it('should handle errors', (done) => {
     spyOn(_context, 'find').and.returnValue({
       limit: () => {
-        return Promise.reject(
-          new Error('Some error')
-        )
-      }
+        return Promise.reject(new Error('Some error'));
+      },
     });
 
-    const { ConfirmUserOwnershipPlugin } = mock.reRequire('./confirm-user-ownership');
+    const { ConfirmUserOwnershipPlugin } = mock.reRequire(
+      './confirm-user-ownership'
+    );
 
-    const plugin = new ConfirmUserOwnershipPlugin(MockSchema, { });
+    const plugin = new ConfirmUserOwnershipPlugin(MockSchema, {});
 
-    MockSchema.statics
-      .confirmUserOwnership.apply(_context, ['docid', 'userid'])
+    MockSchema.statics.confirmUserOwnership
+      .apply(_context, ['docid', 'userid'])
       .catch((err) => {
         expect(plugin).toBeDefined();
         expect(err.message).toEqual('Some error');
@@ -124,20 +129,22 @@ describe('ConfirmUserOwnershipPlugin', () => {
   it('should handle resource not found error', (done) => {
     spyOn(_context, 'find').and.returnValue({
       limit: () => {
-        return Promise.resolve([])
-      }
+        return Promise.resolve([]);
+      },
     });
 
-    const { ConfirmUserOwnershipPlugin } = mock.reRequire('./confirm-user-ownership');
+    const { ConfirmUserOwnershipPlugin } = mock.reRequire(
+      './confirm-user-ownership'
+    );
 
     const plugin = new ConfirmUserOwnershipPlugin(MockSchema, {
       errors: {
-        notFound: new MockNotFoundError()
-      }
+        notFound: new MockNotFoundError(),
+      },
     });
 
-    MockSchema.statics
-      .confirmUserOwnership.apply(_context, ['docid', 'userid'])
+    MockSchema.statics.confirmUserOwnership
+      .apply(_context, ['docid', 'userid'])
       .catch((err) => {
         expect(plugin).toBeDefined();
         expect(err instanceof MockNotFoundError).toEqual(true);
@@ -146,16 +153,18 @@ describe('ConfirmUserOwnershipPlugin', () => {
   });
 
   it('should handle resource id validation', (done) => {
-    const { ConfirmUserOwnershipPlugin } = mock.reRequire('./confirm-user-ownership');
+    const { ConfirmUserOwnershipPlugin } = mock.reRequire(
+      './confirm-user-ownership'
+    );
 
     const plugin = new ConfirmUserOwnershipPlugin(MockSchema, {
       errors: {
-        validation: new MockValidationError()
-      }
+        validation: new MockValidationError(),
+      },
     });
 
-    MockSchema.statics
-      .confirmUserOwnership.apply(_context, [undefined, 'userid'])
+    MockSchema.statics.confirmUserOwnership
+      .apply(_context, [undefined, 'userid'])
       .catch((err) => {
         expect(plugin).toBeDefined();
         expect(err instanceof MockValidationError).toEqual(true);

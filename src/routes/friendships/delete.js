@@ -1,8 +1,6 @@
 const authResponse = require('../../middleware/auth-response');
 
-const {
-  Friendship
-} = require('../../database/models/friendship');
+const { Friendship } = require('../../database/models/friendship');
 
 function deleteFriendship(req, res, next) {
   const friendshipId = req.params.friendshipId;
@@ -13,12 +11,12 @@ function deleteFriendship(req, res, next) {
     .then(() => {
       authResponse({
         data: {},
-        message: 'Friendship successfully deleted.'
+        message: 'Friendship successfully deleted.',
       })(req, res, next);
     })
     .catch(next);
 }
 
 module.exports = {
-  deleteFriendship
+  deleteFriendship,
 };

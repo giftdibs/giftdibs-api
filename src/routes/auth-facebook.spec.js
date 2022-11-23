@@ -15,7 +15,7 @@ describe('Auth Facebook router', () => {
 
     static find(query) {
       return {
-        limit: () => getCallback(query)
+        limit: () => getCallback(query),
       };
     }
   }
@@ -37,11 +37,13 @@ describe('Auth Facebook router', () => {
     };
     mock('../middleware/auth-response', () => {});
     mock('../database/models/user', { User: MockUser });
-    spyOn(facebook, 'verifyUserAccessToken').and.returnValue(Promise.resolve({
-      data: {
-        user_id: '0'
-      }
-    }));
+    spyOn(facebook, 'verifyUserAccessToken').and.returnValue(
+      Promise.resolve({
+        data: {
+          user_id: '0',
+        },
+      })
+    );
   });
 
   afterEach(() => {
@@ -51,7 +53,7 @@ describe('Auth Facebook router', () => {
   it('should log a user in using a facebook user access token', () => {
     spyOn(facebook, 'getProfile').and.returnValue(
       Promise.resolve({
-        email: 'foo@bar.com'
+        email: 'foo@bar.com',
       })
     );
 
@@ -59,8 +61,8 @@ describe('Auth Facebook router', () => {
     const loginWithFacebook = route.middleware.loginWithFacebook;
     const req = {
       body: {
-        facebookUserAccessToken: 'abc123'
-      }
+        facebookUserAccessToken: 'abc123',
+      },
     };
 
     const res = {
@@ -69,7 +71,7 @@ describe('Auth Facebook router', () => {
         expect(req.user.dateLastLoggedIn).toBeDefined();
         expect(data.authResponse).toBeDefined();
         expect(data.authResponse.token).toBeDefined();
-      }
+      },
     };
 
     loginWithFacebook(req, res, () => {});
@@ -78,7 +80,7 @@ describe('Auth Facebook router', () => {
   it('should log a user in using a facebook email address (and token)', () => {
     spyOn(facebook, 'getProfile').and.returnValue(
       Promise.resolve({
-        email: 'foo@bar.com'
+        email: 'foo@bar.com',
       })
     );
 
@@ -94,27 +96,29 @@ describe('Auth Facebook router', () => {
     const loginWithFacebook = route.middleware.loginWithFacebook;
     const req = {
       body: {
-        facebookUserAccessToken: 'abc123'
-      }
+        facebookUserAccessToken: 'abc123',
+      },
     };
 
     const res = {
       json: (data) => {
         expect(req.user).toBeDefined();
         expect(req.user.dateLastLoggedIn).toBeDefined();
-      }
+      },
     };
 
     loginWithFacebook(req, res, () => {});
   });
 
   it('should register a new user with facebook profile', () => {
-    spyOn(facebook, 'getProfile').and.returnValue(Promise.resolve({
-      first_name: '',
-      last_name: '',
-      email: 'foo@bar.com',
-      id: '0'
-    }));
+    spyOn(facebook, 'getProfile').and.returnValue(
+      Promise.resolve({
+        first_name: '',
+        last_name: '',
+        email: 'foo@bar.com',
+        id: '0',
+      })
+    );
 
     _findCallback = (query) => {
       return Promise.resolve([]);
@@ -124,8 +128,8 @@ describe('Auth Facebook router', () => {
     const loginWithFacebook = route.middleware.loginWithFacebook;
     const req = {
       body: {
-        facebookUserAccessToken: 'abc123'
-      }
+        facebookUserAccessToken: 'abc123',
+      },
     };
 
     const res = {
@@ -133,7 +137,7 @@ describe('Auth Facebook router', () => {
         expect(req.user).toBeDefined();
         expect(req.user.dateLastLoggedIn).toBeDefined();
         expect(req.user.emailAddressVerified).toEqual(true);
-      }
+      },
     };
 
     loginWithFacebook(req, res, () => {});
@@ -146,12 +150,14 @@ describe('Auth Facebook router', () => {
       return Promise.reject(err);
     };
 
-    spyOn(facebook, 'getProfile').and.returnValue(Promise.resolve({
-      first_name: '',
-      last_name: '',
-      email: 'foo@bar.com',
-      id: '0'
-    }));
+    spyOn(facebook, 'getProfile').and.returnValue(
+      Promise.resolve({
+        first_name: '',
+        last_name: '',
+        email: 'foo@bar.com',
+        id: '0',
+      })
+    );
 
     _findCallback = (query) => {
       return Promise.resolve([]);
@@ -161,8 +167,8 @@ describe('Auth Facebook router', () => {
     const loginWithFacebook = route.middleware.loginWithFacebook;
     const req = {
       body: {
-        facebookUserAccessToken: 'abc123'
-      }
+        facebookUserAccessToken: 'abc123',
+      },
     };
 
     loginWithFacebook(req, {}, (err) => {
@@ -183,7 +189,7 @@ describe('Auth Facebook router', () => {
         first_name: '',
         last_name: '',
         email: 'foo@bar.com',
-        id: '0'
+        id: '0',
       })
     );
 
@@ -195,8 +201,8 @@ describe('Auth Facebook router', () => {
     const loginWithFacebook = route.middleware.loginWithFacebook;
     const req = {
       body: {
-        facebookUserAccessToken: 'abc123'
-      }
+        facebookUserAccessToken: 'abc123',
+      },
     };
 
     loginWithFacebook(req, {}, (err) => {

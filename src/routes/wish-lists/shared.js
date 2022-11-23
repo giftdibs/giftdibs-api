@@ -1,10 +1,6 @@
-const {
-  WishListValidationError
-} = require('../../shared/errors');
+const { WishListValidationError } = require('../../shared/errors');
 
-const {
-  formatGiftResponse
-} = require('../gifts/shared');
+const { formatGiftResponse } = require('../gifts/shared');
 
 function formatWishListResponse(wishList, userId) {
   const clone = { ...wishList };
@@ -16,10 +12,13 @@ function formatWishListResponse(wishList, userId) {
   }
 
   const privacy = clone.privacy || {};
-  clone.privacy = Object.assign({
-    type: 'everyone',
-    _allow: []
-  }, privacy);
+  clone.privacy = Object.assign(
+    {
+      type: 'everyone',
+      _allow: [],
+    },
+    privacy
+  );
   clone.privacy.allowedUserIds = clone.privacy._allow;
 
   clone.user = { ...clone._user };
@@ -76,5 +75,5 @@ function sanitizeRequestBody(reqBody) {
 module.exports = {
   formatWishListResponse,
   handleError,
-  sanitizeRequestBody
+  sanitizeRequestBody,
 };
