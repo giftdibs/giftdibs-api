@@ -112,7 +112,7 @@ async function getWishLists(req, res, next) {
     const wishLists = await WishList.findAuthorized(userId, query)
       .skip(start)
       .limit(max)
-      .select('_user name dateUpdated type')
+      .select('_user name dateUpdated privacy type')
       .sort('-dateUpdated')
       .populate('_user', 'avatarUrl firstName lastName')
       .lean();
