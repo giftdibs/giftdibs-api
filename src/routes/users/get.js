@@ -19,7 +19,12 @@ function getSelectFields(req) {
       'notificationSettings',
     ].join(' ');
   } else {
-    selectFields = ['avatarUrl', 'firstName', 'lastName'].join(' ');
+    selectFields = [
+      'avatarUrl',
+      'dateLastLoggedIn',
+      'firstName',
+      'lastName',
+    ].join(' ');
   }
 
   return selectFields;
@@ -60,6 +65,7 @@ function getUsers(req, res, next) {
 
   User.find({})
     .select(selectFields)
+    .sort('lastName')
     .lean()
     .then((users) => {
       users = users.map((user) => {

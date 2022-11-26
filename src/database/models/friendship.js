@@ -110,10 +110,10 @@ friendshipSchema.statics.getAllByUserId = function (userId) {
 
   return Promise.all([
     this.find({ _user: userId })
-      .populate('_friend', 'firstName lastName avatarUrl')
+      .populate('_friend', 'firstName lastName avatarUrl dateLastLoggedIn')
       .lean(), // following
     this.find({ _friend: userId })
-      .populate('_user', 'firstName lastName avatarUrl')
+      .populate('_user', 'firstName lastName avatarUrl dateLastLoggedIn')
       .lean(), // followers
   ]).then((result) => {
     return {
@@ -132,10 +132,10 @@ friendshipSchema.statics.getSummaryByUserId = function (userId) {
 
   return Promise.all([
     this.find({ _user: userId })
-      .populate('_friend', 'firstName lastName avatarUrl')
+      .populate('_friend', 'firstName lastName avatarUrl dateLastLoggedIn')
       .lean(), // following
     this.find({ _friend: userId })
-      .populate('_user', 'firstName lastName avatarUrl')
+      .populate('_user', 'firstName lastName avatarUrl dateLastLoggedIn')
       .lean(), // followers
   ]).then((result) => {
     return {

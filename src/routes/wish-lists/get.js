@@ -29,7 +29,7 @@ async function getWishList(req, res, next) {
       _id: wishListId,
     })
       .limit(1)
-      .select('_user dateCreated dateUpdated name privacy type')
+      .select('_user dateCreated dateUpdated isArchived name privacy type')
       .populate('_user', 'avatarUrl firstName lastName')
       .lean();
 
@@ -80,6 +80,8 @@ async function getWishList(req, res, next) {
 
 async function getWishLists(req, res, next) {
   const userId = req.user._id;
+  const start = parseInt(req.query.startIndex) || 0;
+  const max = 12;
   const getArchived = req.query.archived === true;
 
   let query;
@@ -105,8 +107,13 @@ async function getWishLists(req, res, next) {
   }
 
   try {
+    // TODO: Figure out a better way to do pagination (skip does not scale):
+    // https://stackoverflow.com/questions/5539955/how-to-paginate-with-mongoose-in-node-js
     const wishLists = await WishList.findAuthorized(userId, query)
-      .select('_user name')
+      .skip(start)
+      .limit(max)
+      .select('_user name dateUpdated type')
+      .sort('-dateUpdated')
       .populate('_user', 'avatarUrl firstName lastName')
       .lean();
 
@@ -118,6 +125,7 @@ async function getWishLists(req, res, next) {
       },
     })
       .select('_wishList dateCreated dateUpdated imageUrl name')
+      .sort('-dateUpdated')
       .lean();
 
     wishLists.forEach((wishList) => {

@@ -24,18 +24,16 @@ async function updateGift(req, res, next) {
       );
     }
 
-    const wishLists = await WishList.find({
-      _id: gift._wishList,
-    })
-      .limit(1)
-      .select('_id');
-
-    const wishList = wishLists[0];
-
     gift.updateSync(attributes);
 
     await gift.save();
-    await wishList.save();
+
+    await WishList.findOneAndUpdate(
+      {
+        _id: gift._wishList,
+      },
+      { dateUpdated: Date.now() }
+    );
 
     authResponse({
       data: {},
